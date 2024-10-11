@@ -52,7 +52,7 @@ def generate_launch_description():
 
     xacro_file = os.path.join(fws_robot_description_path,
                               'robots',
-                              'mir_600.urdf.xacro')
+                              'mir_600.gazebo.urdf')
 
     doc = xacro.process_file(xacro_file, mappings={'use_sim' : 'true'})
 
