@@ -3,6 +3,7 @@
 	<xacro:include filename="$(find mir_description)/urdf/mir_600/mir_600_wheels.gazebo.xacro" />
 	<xacro:include filename="$(find mir_description)/urdf/general/sick_s300.gazebo.xacro" />
 	<xacro:include filename="$(find mir_description)/urdf/general/imu.gazebo.xacro" />
+	<xacro:include filename="$(find mir_description)/urdf/general/mir.ros2_control.xacro" />
 	<xacro:include filename="$(find mir_description)/urdf/general/plugins.gazebo.xacro" />
 	<xacro:include filename="$(find mir_description)/urdf/general/_d435.gazebo.xacro" />
 
