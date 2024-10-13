@@ -18,5 +18,6 @@
 	<!-- Init the plugins that run the MiR in Gazebo -->
 	<xacro:controller_plugin_gazebo robot_namespace="$(arg robot_namespace)"/>
 	<xacro:p3d_base_controller robot_namespace="$(arg robot_namespace)"/>
+	<xacro:gazebo_sim_sensors robot_namespace="$(arg robot_namespace)"/>
 
 </robot>
