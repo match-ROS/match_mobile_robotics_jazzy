@@ -97,11 +97,6 @@ def generate_launch_description():
             ("/diffbot_base_controller/cmd_vel", "/cmd_vel"),
         ],
     )
-    robot_controller_spawner = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=["diffbot_base_controller", "--param-file", robot_controllers],
-    )
 
     gpio_controller_spawner = Node(
         package="controller_manager",
@@ -130,9 +125,17 @@ def generate_launch_description():
         output='screen'
     )
 
-    load_forward_position_controller = ExecuteProcess(
-        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
-             'forward_position_controller'],
+    # launch rqt_robot_steering
+    rqt_robot_steering = Node(
+        package='rqt_robot_steering',
+        executable='rqt_robot_steering',
+        output='screen'
+    )
+
+    # launch repub.py
+    repub = Node(
+        package='fws_robot_sim',
+        executable='repub.py',
         output='screen'
     )
 
@@ -179,8 +182,7 @@ def generate_launch_description():
         RegisterEventHandler(
             event_handler=OnProcessExit(
                target_action=load_joint_state_controller,
-               on_exit=[load_forward_velocity_controller,
-                        load_forward_position_controller],
+               on_exit=[load_forward_velocity_controller],
             )
         ),
         gazebo_resource_path,
@@ -189,5 +191,12 @@ def generate_launch_description():
         node_robot_state_publisher,
         gz_spawn_entity,
         bridge,
-        rviz
+        rviz,
+        #control_node,
+        # gpio_controller_spawner,
+        # joint_state_broadcaster_spawner,
+        # load_joint_state_controller,
+        # load_forward_velocity_controller,
+        rqt_robot_steering,
+        repub
     ])

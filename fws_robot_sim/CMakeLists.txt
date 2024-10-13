@@ -22,8 +22,13 @@ find_package(xacro REQUIRED)
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
 
+install(PROGRAMS
+  scripts/repub.py  # Replace with the path to your Python node
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 install(
-  DIRECTORY launch worlds
+  DIRECTORY launch worlds scripts
   DESTINATION share/${PROJECT_NAME}
 )
 
