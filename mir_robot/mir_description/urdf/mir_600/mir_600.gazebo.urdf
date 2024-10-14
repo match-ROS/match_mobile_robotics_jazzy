@@ -9,8 +9,7 @@
 	<xacro:include filename="$(find mir_description)/urdf/mir_600/mir_600.urdf.xacro" />
 	<xacro:include filename="$(find mir_description)/urdf/mir_600/mir_600.gazebo.xacro" />
 	<xacro:include filename="$(find fws_robot_description)/gazebo/mir_robot.gazebo.xacro" />
-	<xacro:include filename="$(find fws_robot_description)/robots/parts/lidar_head/lidar_head.urdf.xacro"/>
-	<xacro:include filename="$(find fws_robot_description)/robots/parts/lidar_base/lidar_base.urdf.xacro"/>
+	<xacro:include filename="$(find mir_description)/urdf/general/sick_s300.gazebo.xacro" />
 
 	<!-- Include plugin xacros -->
 	<xacro:include filename="$(find mir_description)/urdf/general/plugins.gazebo.xacro" />
@@ -24,25 +23,9 @@
 	<xacro:p3d_base_controller robot_namespace="$(arg robot_namespace)"/>
 	<xacro:gazebo_sim_sensors robot_namespace="$(arg robot_namespace)"/>
 
-	  <!-- lidar head -->
-  	<!-- <xacro:lidar_head_gazebo_v0/> -->
-	<xacro:mir_robot_gazebo/>
 
-	<!-- lidar_base -->
-	<xacro:lidar_base_v0 parent="base_link">
-		<origin xyz="-0.022 0 0.035"/>
-	</xacro:lidar_base_v0>
-
-	<xacro:lidar_head_v0 parent="base_link">
-		<origin xyz="0.0 0 0.035"/>
-  	</xacro:lidar_head_v0>
-
-	<!-- lidar base -->
-  	<xacro:lidar_base_gazebo_v0/>
-
-	<!-- lidar head -->
- 	<xacro:lidar_head_gazebo_v0/>
-
-
+	<!-- <xacro:mir_robot_gazebo/> -->
+	<!-- <xacro:sick_s300_gazebo link="front_laser_link" robot_namespace="" topic="scan" tf_prefix=""/> -->
+	<!-- <xacro:mir_robot_gazebo/> -->
 
 </robot>
