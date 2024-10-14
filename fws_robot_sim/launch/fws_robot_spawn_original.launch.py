@@ -8,7 +8,7 @@ from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchD
 from launch.actions import RegisterEventHandler, SetEnvironmentVariable
 from launch.event_handlers import OnProcessExit
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
@@ -19,9 +19,6 @@ def generate_launch_description():
 
     fws_robot_description_path = os.path.join(
         get_package_share_directory('fws_robot_description'))
-    
-    mir_description_path = os.path.join(
-        get_package_share_directory('mir_description'))
     
     fws_robot_sim_path = os.path.join(
         get_package_share_directory('fws_robot_sim'))
@@ -53,18 +50,13 @@ def generate_launch_description():
                 ]
              )
 
-    xacro_file = os.path.join(mir_description_path, 'urdf', 'mir_600', 'mir_600.gazebo.urdf')
+    xacro_file = os.path.join(fws_robot_description_path,
+                              'robots',
+                              'fws_robot.urdf.xacro')
 
     doc = xacro.process_file(xacro_file, mappings={'use_sim' : 'true'})
 
     robot_desc = doc.toprettyxml(indent='  ')
-    robot_controllers = PathJoinSubstitution(
-        [
-            FindPackageShare('mir_description'),
-            'config',
-            'diffdrive_controller.yaml',
-        ]
-    )
 
     params = {'robot_description': robot_desc}
     
@@ -89,30 +81,6 @@ def generate_launch_description():
                    '-name', 'fws_robot',
                    '-allow_renaming', 'false'],
     )
-    control_node = Node(
-        package="controller_manager",
-        executable="ros2_control_node",
-        parameters=[robot_controllers],
-        output="both",
-        remappings=[
-            ("/diffbot_base_controller/cmd_vel", "/cmd_vel"),
-        ],
-    )
-
-    gpio_controller_spawner = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=["mobile_base_controller", 
-                   "-c", "/controller_manager",
-                   "-t", "diff_drive_controller/DiffDriveController", robot_controllers
-                  ],
-)
-
-    joint_state_broadcaster_spawner = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=["joint_state_broadcaster"],
-    )
 
     load_joint_state_controller = ExecuteProcess(
         cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
@@ -122,21 +90,13 @@ def generate_launch_description():
 
     load_forward_velocity_controller = ExecuteProcess(
         cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
-             'mobile_base_controller'],
+             'forward_velocity_controller'],
         output='screen'
     )
 
-    # launch rqt_robot_steering
-    rqt_robot_steering = Node(
-        package='rqt_robot_steering',
-        executable='rqt_robot_steering',
-        output='screen'
-    )
-
-    # launch repub.py
-    repub = Node(
-        package='fws_robot_sim',
-        executable='repub.py',
+    load_forward_position_controller = ExecuteProcess(
+        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
+             'forward_position_controller'],
         output='screen'
     )
 
@@ -158,21 +118,6 @@ def generate_launch_description():
         arguments=["-d", rviz_config_file],
     )
 
-    # Delay start of joint_state_broadcaster after `robot_controller`
-    # TODO(anyone): This is a workaround for flaky tests. Remove when fixed.
-    # delay_joint_state_broadcaster_after_robot_controller_spawner = RegisterEventHandler(
-    #     event_handler=OnProcessExit(
-    #         target_action=robot_controller_spawner,
-    #         on_exit=[joint_state_broadcaster_spawner],
-    #     )
-    # )
-
-    # nodes = [
-    #     control_node,
-    #     robot_controller_spawner,
-    #     delay_joint_state_broadcaster_after_robot_controller_spawner,
-    # ]
-
     return LaunchDescription([
         RegisterEventHandler(
             event_handler=OnProcessExit(
@@ -183,7 +128,8 @@ def generate_launch_description():
         RegisterEventHandler(
             event_handler=OnProcessExit(
                target_action=load_joint_state_controller,
-               on_exit=[load_forward_velocity_controller],
+               on_exit=[load_forward_velocity_controller,
+                        load_forward_position_controller],
             )
         ),
         gazebo_resource_path,
@@ -193,11 +139,4 @@ def generate_launch_description():
         gz_spawn_entity,
         bridge,
         rviz,
-        #control_node,
-        # gpio_controller_spawner,
-        # joint_state_broadcaster_spawner,
-        # load_joint_state_controller,
-        # load_forward_velocity_controller,
-        rqt_robot_steering,
-        repub
     ])
