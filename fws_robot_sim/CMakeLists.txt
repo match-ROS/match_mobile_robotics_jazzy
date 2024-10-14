@@ -23,7 +23,7 @@ find_package(xacro REQUIRED)
 # find_package(<dependency> REQUIRED)
 
 install(PROGRAMS
-  scripts/repub.py  # Replace with the path to your Python node
+  scripts/repub_twist.py  # Replace with the path to your Python node
   DESTINATION lib/${PROJECT_NAME}
 )
 

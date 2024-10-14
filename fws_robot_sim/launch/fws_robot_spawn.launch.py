@@ -133,10 +133,10 @@ def generate_launch_description():
         output='screen'
     )
 
-    # launch repub.py
-    repub = Node(
+    # launch repub_twist.py
+    repub_twist = Node(
         package='fws_robot_sim',
-        executable='repub.py',
+        executable='repub_twist.py',
         output='screen'
     )
 
@@ -199,5 +199,5 @@ def generate_launch_description():
         # load_joint_state_controller,
         # load_forward_velocity_controller,
         rqt_robot_steering,
-        repub
+        repub_twist
     ])

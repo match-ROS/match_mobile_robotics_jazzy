@@ -21,7 +21,6 @@ class CmdVelRepublisher(Node):
         twist_stamped.header.stamp = self.get_clock().now().to_msg()
         twist_stamped.twist = msg
         self.publisher.publish(twist_stamped)
-        print('Published TwistStamped message')
 
 def main(args=None):
     rclpy.init(args=args)
