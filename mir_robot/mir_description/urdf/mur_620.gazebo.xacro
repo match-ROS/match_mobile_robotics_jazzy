@@ -1,12 +1,13 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://wiki.ros.org/xacro" name="mur620" >
 
+
 	<xacro:arg name="robot_namespace" default=''/>
-	<xacro:arg name="tf_prefix" default=''/>
+	<xacro:arg name="tf_prefix" default='UR10_l/'/>
+	<xacro:arg name="tf_prefix_mir" default='mur620'/>
+	<xacro:arg name="name" default=''/>
 	<xacro:arg name="use_lift" default='true'/>
 	<xacro:property name="use_lift" value="$(arg use_lift)"/>
-	<xacro:arg name="sim" default='true'/>
-	<xacro:property name="sim" value="$(arg sim)"/>
 	<xacro:arg name="ur_l_xyz" default='0 0 0'/>
 	<xacro:arg name="ur_l_rpy" default='0 0 0'/>
 	<xacro:property name="ur_l_xyz" value="$(arg ur_l_xyz)"/>
@@ -16,35 +17,80 @@
 	<xacro:property name="ur_r_xyz" value="$(arg ur_r_xyz)"/>
 	<xacro:property name="ur_r_rpy" value="$(arg ur_r_rpy)"/>
 
-	<!-- MiR200 base -->
+	<!-- UR parameters -->
+	<xacro:arg name="ur_type" default="ur10e"/>
+	<xacro:arg name="joint_limit_params" default="$(find ur_description)/config/$(arg ur_type)/joint_limits.yaml"/>
+	<xacro:arg name="kinematics_params" default="$(find ur_description)/config/$(arg ur_type)/default_kinematics.yaml"/>
+	<xacro:arg name="physical_params" default="$(find ur_description)/config/$(arg ur_type)/physical_parameters.yaml"/>
+	<xacro:arg name="visual_params" default="$(find ur_description)/config/$(arg ur_type)/visual_parameters.yaml"/>
+	<xacro:arg name="transmission_hw_interface" default=""/>
+	<xacro:arg name="safety_limits" default="false"/>
+	<xacro:arg name="safety_pos_margin" default="0.15"/>
+	<xacro:arg name="safety_k_position" default="20"/>
+
+	<xacro:arg name="simulation_controllers" default="" />
+
+
+	<!-- MiR600 base -->
 	<xacro:include filename="$(find mir_description)/urdf/mir_600/mir_600.urdf.xacro" />
 	<xacro:include filename="$(find mir_description)/urdf/mir_600/mir_600.gazebo.xacro" />
-	<!-- UR5 robot arm -->
-  	<xacro:include filename="$(find ur_sim_gz)/urdf/ur.urdf.xacro"/>
-	<!-- <xacro:include filename="$(find ur_description)/urdf/inc/ur10e_macro.xacro"/> -->
-	<!-- Lift modules -->
+	<xacro:include filename="$(find fws_robot_description)/gazebo/mir_robot.gazebo.xacro" />
+	<xacro:include filename="$(find mir_description)/urdf/general/sick_s300.gazebo.xacro" />
+	<!-- <xacro:include filename="$(find ur_simulation_gz)/urdf/ur_gz.urdf.xacro"/> -->
+	<xacro:include filename="$(find ur_simulation_gz)/urdf/ur_gz.ros2_control.xacro" />
+	<xacro:include filename="$(find ur_description)/urdf/ur_macro.xacro"/>
+
 	<xacro:include filename="$(find mir_description)/urdf/mir_600/mir_600_top_lift.urdf.xacro" />
+
 	<!-- Include plugin xacros -->
 	<xacro:include filename="$(find mir_description)/urdf/general/plugins.gazebo.xacro" />
-	<!-- <xacro:p3d_base_controller robot_namespace="$(arg robot_namespace)"/> -->
-	<!-- include gripper -->
-	<!-- <xacro:if value="${sim}">
-		<xacro:include filename="$(find schunk_emh_rp_45)/urdf/schunk_emh_rp_045.urdf.xacro"/>
-	</xacro:if> -->
-	<!-- Init the MiR200 marco that is also used for the hardware -->
-	<xacro:mir_600 />
-	<!-- Init the MiR200 macro that includes all infos that Gazebo need to function -->
-	<xacro:mir_600_gazebo tf_prefix="$(arg tf_prefix)" robot_namespace="$(arg robot_namespace)"/>
 
-	<!-- Init the UR5 robot arm macro -->
-	<xacro:ur_robot tf_prefix="UR10_l/"/>
-	<!-- <xacro:ur10e_robot prefix="UR10_r/" transmission_hw_interface="hardware_interface/VelocityJointInterface"/> -->
-	<!-- <xacro:ur10e_robot prefix="UR10_l/" transmission_hw_interface="hardware_interface/PositionJointInterface"/>
-	<xacro:ur10e_robot prefix="UR10_r/" transmission_hw_interface="hardware_interface/PositionJointInterface"/> -->
+	<!-- Init the MiR600 marco that is also used for the hardware -->
+	<xacro:mir_600/>
+	<!-- Init the MiR600 macro that includes all infos that Gazebo need to function -->
+	<xacro:mir_600_gazebo tf_prefix="$(arg tf_prefix_mir)" robot_namespace="$(arg robot_namespace)"/>
 	<!-- Init the plugins that run the MiR in Gazebo -->
-	<!-- <xacro:controller_plugin_gazebo robot_namespace="$(arg robot_namespace)"/> -->
+	<xacro:controller_plugin_gazebo robot_namespace="$(arg robot_namespace)"/>
+	<xacro:p3d_base_controller robot_namespace="$(arg robot_namespace)"/>
+	<xacro:gazebo_sim_sensors robot_namespace="$(arg robot_namespace)"/>
 
-	<!-- virtual link rotated to show in same direction like mir  -->
+
+	<!-- UR10_l -->
+	<xacro:ur_robot
+		name="UR10_l"
+		tf_prefix="UR10_l"
+		parent="UR10_l/base_ideal"
+		joint_limits_parameters_file="$(arg joint_limit_params)"
+		kinematics_parameters_file="$(arg kinematics_params)"
+		physical_parameters_file="$(arg physical_params)"
+		visual_parameters_file="$(arg visual_params)"
+		safety_limits="$(arg safety_limits)"
+		safety_pos_margin="$(arg safety_pos_margin)"
+		safety_k_position="$(arg safety_k_position)"
+		force_abs_paths="true"
+		>
+		<origin xyz="0 0 0" rpy="0 0 0" />          <!-- position robot in the world -->
+  	</xacro:ur_robot>
+
+	<xacro:ur_robot
+		name="UR10_r"
+		tf_prefix="UR10_r"
+		parent="UR10_r/base_ideal"
+		joint_limits_parameters_file="$(arg joint_limit_params)"
+		kinematics_parameters_file="$(arg kinematics_params)"
+		physical_parameters_file="$(arg physical_params)"
+		visual_parameters_file="$(arg visual_params)"
+		safety_limits="$(arg safety_limits)"
+		safety_pos_margin="$(arg safety_pos_margin)"
+		safety_k_position="$(arg safety_k_position)"
+		force_abs_paths="true"
+		>
+		<origin xyz="0 0 0" rpy="0 0 0" />          <!-- position robot in the world -->
+  	</xacro:ur_robot>
+
+
+
+		<!-- virtual link rotated to show in same direction like mir  -->
 	<link name="UR10_l/base_ideal" />
 	<link name="UR10_r/base_ideal" />
 
@@ -81,57 +127,19 @@
 	</xacro:unless>
 
 	<!-- Because one arm is mounted backwards. TODO: use calibrated pose -->
-	<joint name="plattform_ur_calibration_joint_l" type="fixed">
+	<!-- <joint name="plattform_ur_calibration_joint_l" type="fixed">
 			<parent link="UR10_l/base_ideal" />
 			<child link="UR10_l/base_link" />
-			<origin xyz="${ur_l_xyz}" rpy="${ur_l_rpy}" /> <!-- 0 0 0" -->
-	</joint>
-
-	<joint name="plattform_ur_calibration_joint_r" type="fixed">
-			<parent link="UR10_r/base_ideal" />
-			<child link="UR10_r/base_link" />
-			<origin xyz="${ur_r_xyz}" rpy="${ur_r_rpy}" /> <!-- 0 0 3.14159265" -->
-	</joint>
-
-	<xacro:if value="${sim}">
-		<xacro:schunk_emh_rp_045 tf_prefix="UR10_r"	tool_link="UR10_r/flange"/>
-		<xacro:schunk_emh_rp_045 tf_prefix="UR10_l"	tool_link="UR10_l/flange"/>
-	</xacro:if>
-	<!-- <gazebo>
-		<plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">		
-			<robotNamespace>mir</robotNamespace>
-			<robotParam>mir/robot_description</robotParam>
-			<controlPeriod>0.001</controlPeriod>
-			<legacyModeNS>true</legacyModeNS>
-		</plugin>
-	</gazebo>
-	 -->
-	<!-- <joint name="plattform_manipulator_joint" type="fixed">
-			<parent link="mir/base_link" />
-			<child link="ur/base_link" />
-			<origin xyz="0.215 0.1 0.35" rpy="0 0 0" />
+			<origin xyz="${ur_l_xyz}" rpy="${ur_l_rpy}" /> 
 	</joint> -->
 
-	<!-- UR5 -->
-	<!-- <xacro:arg name="transmission_hw_interface" default="hardware_interface/PositionJointInterface"/> -->
+	<!-- <joint name="plattform_ur_calibration_joint_r" type="fixed">
+			<parent link="UR10_r/base_ideal" />
+			<child link="UR10_r/base_link" />
+			<origin xyz="${ur_r_xyz}" rpy="${ur_r_rpy}" /> 
+	</joint> -->
+	<!-- <xacro:mir_robot_gazebo/> -->
+	<!-- <xacro:sick_s300_gazebo link="front_laser_link" robot_namespace="" topic="scan" tf_prefix=""/> -->
+	<!-- <xacro:mir_robot_gazebo/> -->
 
-	<!-- ur5 -->
-	<!-- <xacro:include filename="$(find ur_description)/urdf/ur5.urdf.xacro" /> -->
-
-	<!-- arm -->
-	<!--xacro:arg name="kinematics_config" default="$(find ur_description)/config/ur5_default.yaml"/>
-	<xacro:ur5_robot prefix="ur/" joint_limited="false"
-		transmission_hw_interface="$(arg transmission_hw_interface)"
-		kinematics_file="${load_yaml('$(arg kinematics_config)')}"
-	/> -->
-
-
-	<!-- <gazebo>
-		<plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">		
-			<robotNamespace>ur</robotNamespace>
-			<robotParam>ur/robot_description</robotParam>
-			<controlPeriod>0.001</controlPeriod>
-			<legacyModeNS>true</legacyModeNS>
-		</plugin>
-	</gazebo> -->
 </robot>
