@@ -16,22 +16,16 @@ from launch_ros.substitutions import FindPackageShare
 def generate_launch_description():
     # Launch Arguments
     use_sim_time = LaunchConfiguration('use_sim_time', default=True)
-
-    fws_robot_description_path = os.path.join(
-        get_package_share_directory('fws_robot_description'))
+    
+    mir_gazebo_path = os.path.join(get_package_share_directory('mir_gazebo'))
     
     mir_description_path = os.path.join(
         get_package_share_directory('mir_description'))
-    
-    fws_robot_sim_path = os.path.join(
-        get_package_share_directory('mir_gazebo'))
-
-    # Set gazebo sim resource path
+   
     gazebo_resource_path = SetEnvironmentVariable(
         name='GZ_SIM_RESOURCE_PATH',
         value=[
-            os.path.join(fws_robot_sim_path, 'worlds'), ':' +
-            str(Path(fws_robot_description_path).parent.resolve())
+            os.path.join(mir_gazebo_path, 'worlds')
             ]
         )
 
@@ -86,7 +80,7 @@ def generate_launch_description():
                    '-R', '0.0',
                    '-P', '0.0',
                    '-Y', '0.0',
-                   '-name', 'fws_robot',
+                   '-name', 'mir_600',
                    '-allow_renaming', 'false'],
     )
     control_node = Node(
@@ -135,7 +129,7 @@ def generate_launch_description():
 
     # launch repub_twist.py
     repub_twist = Node(
-        package='fws_robot_sim',
+        package='mir_gazebo',
         executable='repub_twist.py',
         output='screen'
     )
@@ -148,7 +142,7 @@ def generate_launch_description():
         output='screen'
     )
 
-    rviz_config_file = os.path.join(fws_robot_description_path, 'config', 'fws_robot_config.rviz')
+    rviz_config_file = os.path.join(mir_gazebo_path, 'rviz', 'mir600.rviz')
 
     rviz = Node(
         package="rviz2",
@@ -157,21 +151,6 @@ def generate_launch_description():
         output="log",
         arguments=["-d", rviz_config_file],
     )
-
-    # Delay start of joint_state_broadcaster after `robot_controller`
-    # TODO(anyone): This is a workaround for flaky tests. Remove when fixed.
-    # delay_joint_state_broadcaster_after_robot_controller_spawner = RegisterEventHandler(
-    #     event_handler=OnProcessExit(
-    #         target_action=robot_controller_spawner,
-    #         on_exit=[joint_state_broadcaster_spawner],
-    #     )
-    # )
-
-    # nodes = [
-    #     control_node,
-    #     robot_controller_spawner,
-    #     delay_joint_state_broadcaster_after_robot_controller_spawner,
-    # ]
 
     return LaunchDescription([
         RegisterEventHandler(
@@ -193,11 +172,6 @@ def generate_launch_description():
         gz_spawn_entity,
         bridge,
         rviz,
-        #control_node,
-        # gpio_controller_spawner,
-        # joint_state_broadcaster_spawner,
-        # load_joint_state_controller,
-        # load_forward_velocity_controller,
         rqt_robot_steering,
         repub_twist
     ])

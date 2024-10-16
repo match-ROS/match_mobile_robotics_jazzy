@@ -22,8 +22,13 @@ find_package(mir_description REQUIRED)
 # find_package(gazebo_ros_pkgs REQUIRED)
 # find_package(ira_laser_tools REQUIRED)
 
+install(PROGRAMS
+  scripts/repub_twist.py  # Replace with the path to your Python node
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 install(DIRECTORY
-  launch worlds maps rviz
+  launch worlds maps rviz scripts
   DESTINATION share/${PROJECT_NAME}
 )
 
