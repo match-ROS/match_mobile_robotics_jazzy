@@ -39,7 +39,7 @@
 	<!-- <xacro:include filename="$(find ur_simulation_gz)/urdf/ur_gz.urdf.xacro"/> -->
 	<xacro:include filename="$(find ur_simulation_gz)/urdf/ur_gz.ros2_control.xacro" />
 	<xacro:include filename="$(find ur_description)/urdf/ur_macro.xacro"/>
-
+	<xacro:include filename="$(find ur_simulation_gz)/urdf/ur_gz.ros2_control.xacro" />
 	<xacro:include filename="$(find mir_description)/urdf/mir_600/mir_600_top_lift.urdf.xacro" />
 
 	<!-- Include plugin xacros -->
@@ -69,7 +69,7 @@
 		safety_k_position="$(arg safety_k_position)"
 		force_abs_paths="true"
 		>
-		<origin xyz="0 0 0" rpy="0 0 0" />          <!-- position robot in the world -->
+		<origin xyz="0 0 0" rpy="$(arg ur_l_rpy)" />          <!-- position robot in the world -->
   	</xacro:ur_robot>
 
 	<xacro:ur_robot
@@ -85,9 +85,20 @@
 		safety_k_position="$(arg safety_k_position)"
 		force_abs_paths="true"
 		>
-		<origin xyz="0 0 0" rpy="0 0 0" />          <!-- position robot in the world -->
+		<origin xyz="0 0 0" rpy="$(arg ur_r_rpy)" />          <!-- position robot in the world -->
   	</xacro:ur_robot>
 
+	<xacro:ur_ros2_control
+		name="UR10_l"
+		tf_prefix="UR10_l"
+		transmission_hw_interface="$(arg transmission_hw_interface)"
+	/>
+
+	<xacro:ur_ros2_control
+		name="UR10_r"
+		tf_prefix="UR10_r"
+		transmission_hw_interface="$(arg transmission_hw_interface)"
+	/>
 
 
 		<!-- virtual link rotated to show in same direction like mir  -->
