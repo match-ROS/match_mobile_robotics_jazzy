@@ -146,6 +146,22 @@ def generate_launch_description():
                     )
                 ]
              )
+    
+    ur_type = LaunchConfiguration("ur_type")
+    safety_limits = LaunchConfiguration("safety_limits")
+    # General arguments
+    controllers_file = LaunchConfiguration("controllers_file")
+    description_file = LaunchConfiguration("description_file")
+    moveit_launch_file = LaunchConfiguration("moveit_launch_file")
+
+    ur_moveit_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(moveit_launch_file),
+        launch_arguments={
+            "ur_type": ur_type,
+            "use_sim_time": "true",
+            "launch_rviz": "true",
+        }.items(),
+    )
 
     xacro_file = os.path.join(mir_description_path, 'urdf', 'mur_620.gazebo.xacro')
 
@@ -156,7 +172,7 @@ def generate_launch_description():
         [
             FindPackageShare('mir_description'),
             'config',
-            'diffdrive_controller.yaml',
+            'mur_controllers.yaml',
         ]
     )
 
@@ -193,7 +209,7 @@ def generate_launch_description():
         ],
     )
 
-    gpio_controller_spawner = Node(
+    mobile_base_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
         arguments=["mobile_base_controller", 
@@ -201,6 +217,12 @@ def generate_launch_description():
                    "-t", "diff_drive_controller/DiffDriveController", robot_controllers
                   ],
     )
+
+    # left_lift_controller_spawner = Node(
+    #     package="controller_manager",
+    #     executable="spawner",
+    #     arguments=["lift_controller_r",  robot_controllers],
+    # )
 
     joint_state_broadcaster_spawner = Node(
         package="controller_manager",
@@ -214,11 +236,17 @@ def generate_launch_description():
         output='screen'
     )
 
-    load_forward_velocity_controller = ExecuteProcess(
+    load_mobile_base_controller = ExecuteProcess(
         cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
              'mobile_base_controller'],
         output='screen'
     )
+
+    # load_right_lift_controller = ExecuteProcess(
+    #     cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
+    #             'lift_controller_r'],
+    #     output='screen'
+    # )
 
     # launch rqt_robot_steering
     rqt_robot_steering = Node(
@@ -327,20 +355,47 @@ def generate_launch_description():
             description="URDF/XACRO description file (absolute path) with the robot.",
         )
     )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "moveit_launch_file",
+            default_value=PathJoinSubstitution(
+                [
+                    FindPackageShare("mur_moveit_config"),
+                    "launch",
+                    "ur_moveit.launch.py",
+                ]
+            ),
+            description="Absolute path for MoveIt launch file, part of a config package with robot SRDF/XACRO files. Usually the argument "
+            "is not set, it enables use of a custom moveit config.",
+        )
+    )
+
+    # Delay start of joint_state_broadcaster after `robot_controller`
+    # TODO(anyone): This is a workaround for flaky tests. Remove when fixed.
+    # delay_joint_state_broadcaster_after_robot_controller_spawner = RegisterEventHandler(
+    #     event_handler=OnProcessExit(
+    #         target_action=load_mobile_base_controller,
+    #         on_exit=[joint_state_broadcaster_spawner],
+    #     )
+    # )
 
     return LaunchDescription([
-        RegisterEventHandler(
-            event_handler=OnProcessExit(
-                target_action=gz_spawn_entity,
-                on_exit=[load_joint_state_controller],
-            )
-        ),
-        RegisterEventHandler(
-            event_handler=OnProcessExit(
-               target_action=load_joint_state_controller,
-               on_exit=[load_forward_velocity_controller],
-            )
-        ),
+        # RegisterEventHandler(
+        #     event_handler=OnProcessExit(
+        #         target_action=gz_spawn_entity,
+        #         on_exit=[load_joint_state_controller],
+        #     )
+        # ),
+        # RegisterEventHandler(
+        #     event_handler=OnProcessExit(
+        #        target_action=load_joint_state_controller,
+        #        on_exit=[load_mobile_base_controller],
+        #     )
+        # ),
+        mobile_base_controller_spawner,
+        control_node,
+        load_joint_state_controller,
+        load_mobile_base_controller,
         gazebo_resource_path,
         arguments,
         gazebo,
@@ -351,7 +406,9 @@ def generate_launch_description():
         rqt_robot_steering,
         repub_twist,
         *declared_arguments,
+        #joint_state_broadcaster_spawner,
         OpaqueFunction(function=launch_setup)
+        #ur_moveit_launch
     ])
 
 

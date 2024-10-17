@@ -25,7 +25,7 @@ find_package(urdf REQUIRED)
 find_package(xacro REQUIRED)
 
 install(
-  DIRECTORY urdf rviz meshes config launch
+  DIRECTORY urdf rviz meshes config launch ros2_control
   DESTINATION share/${PROJECT_NAME}
 )
 
