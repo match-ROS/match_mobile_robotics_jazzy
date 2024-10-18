@@ -33,86 +33,7 @@ def launch_setup(context, *args, **kwargs):
     gazebo_gui = LaunchConfiguration("gazebo_gui")
     world_file = LaunchConfiguration("world_file")
 
-    robot_description_content = Command(
-        [
-            PathJoinSubstitution([FindExecutable(name="xacro")]),
-            " ",
-            description_file,
-            " ",
-            "safety_limits:=",
-            safety_limits,
-            " ",
-            "safety_pos_margin:=",
-            safety_pos_margin,
-            " ",
-            "safety_k_position:=",
-            safety_k_position,
-            " ",
-            "name:=",
-            "ur",
-            " ",
-            "ur_type:=",
-            ur_type,
-            " ",
-            "tf_prefix:=",
-            tf_prefix,
-            " ",
-            "simulation_controllers:=",
-            controllers_file,
-        ]
-    )
-    robot_description = {"robot_description": robot_description_content}
-
-    # robot_state_publisher_node = Node(
-    #     package="robot_state_publisher",
-    #     executable="robot_state_publisher",
-    #     output="both",
-    #     parameters=[{"use_sim_time": True}, robot_description],
-    # )
-
-    # There may be other controllers of the joints, but this is the initially-started one
-    initial_joint_controller_spawner_started = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=[initial_joint_controller, "-c", "/controller_manager"],
-        condition=IfCondition(activate_joint_controller),
-    )
-    initial_joint_controller_spawner_stopped = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=[initial_joint_controller, "-c", "/controller_manager", "--stopped"],
-        condition=UnlessCondition(activate_joint_controller),
-    )
-
-    # GZ nodes
-    gz_spawn_entity = Node(
-        package="ros_gz_sim",
-        executable="create",
-        output="screen",
-        arguments=[
-            "-string",
-            robot_description_content,
-            "-name",
-            "ur",
-            "-allow_renaming",
-            "true",
-            "-x", "2", "-y", "0", "-z", "0"  # Position for robot 2
-        ],
-    )
-
-    nodes_to_start = [
-        #robot_state_publisher_node,
-        #joint_state_broadcaster_spawner,
-        #delay_rviz_after_joint_state_broadcaster_spawner,
-        initial_joint_controller_spawner_stopped,
-        initial_joint_controller_spawner_started,
-        #gz_spawn_entity,
-        #gz_launch_description,
-    ]
-
-    return nodes_to_start
-
-
+  
 def generate_launch_description():
     # Launch Arguments
     use_sim_time = LaunchConfiguration('use_sim_time', default=True)
@@ -202,7 +123,7 @@ def generate_launch_description():
     control_node = Node(
         package="controller_manager",
         executable="ros2_control_node",
-        parameters=[robot_controllers],
+        parameters=[robot_controllers,{'robot_description': params}],
         output="both",
         remappings=[
             ("/diffbot_base_controller/cmd_vel", "/cmd_vel"),
@@ -239,7 +160,7 @@ def generate_launch_description():
         arguments=["joint_state_broadcaster"],
     )
 
-    load_joint_state_controller = ExecuteProcess(
+    load_joint_state_broadcaster = ExecuteProcess(
         cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
              'joint_state_broadcaster'],
         output='screen'
@@ -272,7 +193,7 @@ def generate_launch_description():
     )
 
     # Bridge
-    bridge = Node(
+    ros_gz_bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
         arguments=['/b_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan','/f_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan'],
@@ -387,54 +308,63 @@ def generate_launch_description():
     #         on_exit=[joint_state_broadcaster_spawner],
     #     )
     # )
-    delayed_joint_state_broadcaster = TimerAction(
-    period=2.0,  # Delay in seconds for joint state broadcaster
-    actions=[control_node,joint_state_broadcaster_spawner]
-    )
+    # delayed_control_node = TimerAction(
+    # period=10.0,  # Delay in seconds for joint state broadcaster
+    # actions=[control_node]
+    # )
+
+    # delayed_joint_state_broadcaster = TimerAction(
+    # period=14.0,  # Delay in seconds for joint state broadcaster
+    # actions=[load_joint_state_broadcaster]
+    # )
 
     # Delay controllers to ensure Gazebo and the state publisher are up
-    delayed_controllers = TimerAction(
-        period=5.0,  # Delay in seconds for controllers
-        actions=[
-            #initial_joint_controller_spawner_started,
-            mobile_base_controller_spawner,
-            left_lift_controller_spawner,
-            load_mobile_base_controller,
-            load_right_lift_controller
-        ]
-    )
+    # delayed_controllers = TimerAction(
+    #     period=16.0,  # Delay in seconds for controllers
+    #     actions=[
+    #         #initial_joint_controller_spawner_started,
+    #         ,
+    #         left_lift_controller_spawner,
+    #         load_mobile_base_controller,
+    #         load_right_lift_controller
+    #     ]
+    # )
 
     return LaunchDescription([
-        # RegisterEventHandler(
-        #     event_handler=OnProcessExit(
-        #         target_action=gz_spawn_entity,
-        #         on_exit=[load_joint_state_controller],
-        #     )
-        # ),
-        # RegisterEventHandler(
-        #     event_handler=OnProcessExit(
-        #        target_action=load_joint_state_controller,
-        #        on_exit=[load_mobile_base_controller],
-        #     )
-        # ),
-        delayed_joint_state_broadcaster,
-        delayed_controllers,
+        RegisterEventHandler(
+            event_handler=OnProcessExit(
+                target_action=gz_spawn_entity,
+                on_exit=[load_joint_state_broadcaster],
+            )
+        ),
+        RegisterEventHandler(
+            event_handler=OnProcessExit(
+               target_action=load_joint_state_broadcaster,
+               on_exit=[left_lift_controller_spawner,
+                        load_mobile_base_controller,
+                        load_right_lift_controller],
+            )
+        ),
+        #delayed_joint_state_broadcaster,
+        #delayed_controllers,
+        mobile_base_controller_spawner,
+        # delayed_control_node,
         #mobile_base_controller_spawner,
         #control_node,
-        load_joint_state_controller,
+        #load_joint_state_broadcaster,
         #load_mobile_base_controller,
         gazebo_resource_path,
         arguments,
         gazebo,
         node_robot_state_publisher,
         gz_spawn_entity,
-        bridge,
+        ros_gz_bridge,
         rviz,
         rqt_robot_steering,
         repub_twist,
         #left_lift_controller_spawner,
         *declared_arguments,
-        #joint_state_broadcaster_spawner,
+        joint_state_broadcaster_spawner,
         OpaqueFunction(function=launch_setup)
         #ur_moveit_launch
     ])
