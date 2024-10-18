@@ -108,7 +108,10 @@ def generate_launch_description():
     control_node = Node(
         package="controller_manager",
         executable="ros2_control_node",
-        parameters=[robot_controllers,{'robot_description': params}],
+        parameters=[{
+            'robot_description': robot_desc,
+            'robot_controllers': robot_controllers
+        }],
         output="both",
     )
 
@@ -267,10 +270,20 @@ def generate_launch_description():
         ),
         RegisterEventHandler(
             event_handler=OnProcessExit(
-               target_action=load_joint_state_broadcaster,
-               on_exit=[load_mobile_base_controller,
-                        load_right_lift_controller,
-                        load_left_lift_controller],
+                target_action=load_joint_state_broadcaster,
+                on_exit=[load_mobile_base_controller],
+            )
+        ),
+        RegisterEventHandler(
+            event_handler=OnProcessExit(
+                target_action=load_mobile_base_controller,
+                on_exit=[load_right_lift_controller],
+            )
+        ),
+        RegisterEventHandler(
+            event_handler=OnProcessExit(
+                target_action=load_right_lift_controller,
+                on_exit=[load_left_lift_controller],
             )
         ),
         #delayed_joint_state_broadcaster,
