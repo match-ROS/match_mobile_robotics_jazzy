@@ -148,11 +148,11 @@ def generate_launch_description():
                   ],
     )
 
-    # left_lift_controller_spawner = Node(
-    #     package="controller_manager",
-    #     executable="spawner",
-    #     arguments=["lift_controller_r",  robot_controllers],
-    # )
+    right_lift_controller_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["lift_controller_r",  robot_controllers],
+    )
 
     joint_state_broadcaster_spawner = Node(
         package="controller_manager",
@@ -175,6 +175,12 @@ def generate_launch_description():
     load_right_lift_controller = ExecuteProcess(
         cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
                 'lift_controller_r'],
+        output='screen'
+    )
+
+    load_left_lift_controller = ExecuteProcess(
+        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
+                'lift_controller_l'],
         output='screen'
     )
 
@@ -340,7 +346,7 @@ def generate_launch_description():
         RegisterEventHandler(
             event_handler=OnProcessExit(
                target_action=load_joint_state_broadcaster,
-               on_exit=[left_lift_controller_spawner,
+               on_exit=[load_left_lift_controller,
                         load_mobile_base_controller,
                         load_right_lift_controller],
             )
@@ -348,6 +354,8 @@ def generate_launch_description():
         #delayed_joint_state_broadcaster,
         #delayed_controllers,
         mobile_base_controller_spawner,
+        right_lift_controller_spawner,
+        left_lift_controller_spawner,
         # delayed_control_node,
         #mobile_base_controller_spawner,
         #control_node,

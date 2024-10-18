@@ -112,30 +112,6 @@ def generate_launch_description():
         output="both",
     )
 
-    mobile_base_controller_spawner = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=["mobile_base_controller", 
-                   "-c", "/controller_manager",
-                   "-t", "diff_drive_controller/DiffDriveController", robot_controllers
-                  ],
-    )
-
-    left_lift_controller_spawner = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=["lift_controller_l", 
-                   "-c", "/controller_manager",
-                   "-t", "position_controllers/JointGroupPositionController", robot_controllers
-                  ],
-    )
-
-    joint_state_broadcaster_spawner = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=["joint_state_broadcaster"],
-    )
-
     load_joint_state_broadcaster = ExecuteProcess(
         cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
              'joint_state_broadcaster'],
@@ -151,6 +127,12 @@ def generate_launch_description():
     load_right_lift_controller = ExecuteProcess(
         cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
                 'lift_controller_r'],
+        output='screen'
+    )
+
+    load_left_lift_controller = ExecuteProcess(
+        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
+                'lift_controller_l'],
         output='screen'
     )
 
@@ -286,14 +268,14 @@ def generate_launch_description():
         RegisterEventHandler(
             event_handler=OnProcessExit(
                target_action=load_joint_state_broadcaster,
-               on_exit=[left_lift_controller_spawner,
-                        load_mobile_base_controller,
-                        load_right_lift_controller],
+               on_exit=[load_mobile_base_controller,
+                        load_right_lift_controller,
+                        load_left_lift_controller],
             )
         ),
         #delayed_joint_state_broadcaster,
         #delayed_controllers,
-        mobile_base_controller_spawner,
+        #mobile_base_controller_spawner,
         # delayed_control_node,
         #mobile_base_controller_spawner,
         #control_node,
@@ -310,7 +292,7 @@ def generate_launch_description():
         repub_twist,
         #left_lift_controller_spawner,
         *declared_arguments,
-        joint_state_broadcaster_spawner,
+        #joint_state_broadcaster_spawner,
         OpaqueFunction(function=launch_setup)
         #ur_moveit_launch
     ])
