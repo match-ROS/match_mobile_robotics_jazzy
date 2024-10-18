@@ -5,7 +5,7 @@ from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription
-from launch.actions import RegisterEventHandler, SetEnvironmentVariable, OpaqueFunction
+from launch.actions import RegisterEventHandler, SetEnvironmentVariable, OpaqueFunction, TimerAction
 from launch.event_handlers import OnProcessExit
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, FindExecutable, Command, IfElseSubstitution
@@ -63,12 +63,12 @@ def launch_setup(context, *args, **kwargs):
     )
     robot_description = {"robot_description": robot_description_content}
 
-    robot_state_publisher_node = Node(
-        package="robot_state_publisher",
-        executable="robot_state_publisher",
-        output="both",
-        parameters=[{"use_sim_time": True}, robot_description],
-    )
+    # robot_state_publisher_node = Node(
+    #     package="robot_state_publisher",
+    #     executable="robot_state_publisher",
+    #     output="both",
+    #     parameters=[{"use_sim_time": True}, robot_description],
+    # )
 
     # There may be other controllers of the joints, but this is the initially-started one
     initial_joint_controller_spawner_started = Node(
@@ -101,7 +101,7 @@ def launch_setup(context, *args, **kwargs):
     )
 
     nodes_to_start = [
-        robot_state_publisher_node,
+        #robot_state_publisher_node,
         #joint_state_broadcaster_spawner,
         #delay_rviz_after_joint_state_broadcaster_spawner,
         initial_joint_controller_spawner_stopped,
@@ -218,6 +218,15 @@ def generate_launch_description():
                   ],
     )
 
+    left_lift_controller_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["lift_controller_l", 
+                   "-c", "/controller_manager",
+                   "-t", "position_controllers/JointGroupPositionController", robot_controllers
+                  ],
+    )
+
     # left_lift_controller_spawner = Node(
     #     package="controller_manager",
     #     executable="spawner",
@@ -242,11 +251,11 @@ def generate_launch_description():
         output='screen'
     )
 
-    # load_right_lift_controller = ExecuteProcess(
-    #     cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
-    #             'lift_controller_r'],
-    #     output='screen'
-    # )
+    load_right_lift_controller = ExecuteProcess(
+        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
+                'lift_controller_r'],
+        output='screen'
+    )
 
     # launch rqt_robot_steering
     rqt_robot_steering = Node(
@@ -378,6 +387,22 @@ def generate_launch_description():
     #         on_exit=[joint_state_broadcaster_spawner],
     #     )
     # )
+    delayed_joint_state_broadcaster = TimerAction(
+    period=2.0,  # Delay in seconds for joint state broadcaster
+    actions=[control_node,joint_state_broadcaster_spawner]
+    )
+
+    # Delay controllers to ensure Gazebo and the state publisher are up
+    delayed_controllers = TimerAction(
+        period=5.0,  # Delay in seconds for controllers
+        actions=[
+            #initial_joint_controller_spawner_started,
+            mobile_base_controller_spawner,
+            left_lift_controller_spawner,
+            load_mobile_base_controller,
+            load_right_lift_controller
+        ]
+    )
 
     return LaunchDescription([
         # RegisterEventHandler(
@@ -392,10 +417,12 @@ def generate_launch_description():
         #        on_exit=[load_mobile_base_controller],
         #     )
         # ),
-        mobile_base_controller_spawner,
-        control_node,
+        delayed_joint_state_broadcaster,
+        delayed_controllers,
+        #mobile_base_controller_spawner,
+        #control_node,
         load_joint_state_controller,
-        load_mobile_base_controller,
+        #load_mobile_base_controller,
         gazebo_resource_path,
         arguments,
         gazebo,
@@ -405,6 +432,7 @@ def generate_launch_description():
         rviz,
         rqt_robot_steering,
         repub_twist,
+        #left_lift_controller_spawner,
         *declared_arguments,
         #joint_state_broadcaster_spawner,
         OpaqueFunction(function=launch_setup)

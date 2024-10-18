@@ -117,7 +117,7 @@ This is the Gazebo URDF model for the Intel RealSense D435 camera
     </gazebo>
 
     <!-- tf_prefix is necessary for the configuration of the plugin as it looks like the plugin doesnt use the robot_state_publishers tf_prefix-->
-    <gazebo>
+    <!-- <gazebo>
       <plugin name="${topics_ns}" filename="librealsense_gazebo_plugin.so">
         <prefix>${camera_name}</prefix>
         <depthUpdateRate>30.0</depthUpdateRate>
@@ -142,7 +142,7 @@ This is the Gazebo URDF model for the Intel RealSense D435 camera
         <pointCloudCutoff>0.25</pointCloudCutoff>
         <pointCloudCutoffMax>9.0</pointCloudCutoffMax>
       </plugin>
-    </gazebo>
+    </gazebo> -->
 
   </xacro:macro>
 </robot>
