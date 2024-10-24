@@ -146,6 +146,13 @@ def generate_launch_description():
         output='screen'
     )
 
+    #launch rqt_controller_manager
+    rqt_controller_manager = Node(
+        package='rqt_controller_manager',
+        executable='rqt_controller_manager',
+        output='screen'
+    )
+
     # launch repub_twist.py
     repub_twist = Node(
         package='mir_gazebo',
@@ -284,6 +291,12 @@ def generate_launch_description():
             event_handler=OnProcessExit(
                 target_action=load_right_lift_controller,
                 on_exit=[load_left_lift_controller],
+            )
+        ),
+        RegisterEventHandler(
+            event_handler=OnProcessExit(
+                target_action=load_left_lift_controller,
+                on_exit=[rqt_controller_manager],
             )
         ),
         #delayed_joint_state_broadcaster,
