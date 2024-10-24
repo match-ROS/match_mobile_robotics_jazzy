@@ -70,10 +70,10 @@
 		<transmission name="left_lift_transmission">
 			<type>transmission_interface/SimpleTransmission</type>
 			<joint name="left_lift_joint">
-			  <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+			  <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
 			</joint>
 			<actuator name="left_lift_joint_motor">
-			  <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+			  <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
 			  <mechanicalReduction>1</mechanicalReduction>
 			</actuator>
 		</transmission>
@@ -81,10 +81,10 @@
 		<transmission name="right_lift_transmission">
 			<type>transmission_interface/SimpleTransmission</type>
 			<joint name="right_lift_joint">
-			  <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+			  <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
 			</joint>
 			<actuator name="right_lift_joint_motor">
-			  <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+			  <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
 			  <mechanicalReduction>1</mechanicalReduction>
 			</actuator>
 		</transmission>

@@ -3,7 +3,7 @@
 	<xacro:macro name="controller_plugin_gazebo" params="robot_namespace">
 		<gazebo>
 			<plugin filename="libgz_ros2_control-system.so" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
-				<parameters>$(find mir_description)/config/diffdrive_controller.yaml</parameters>
+				<parameters>$(find mir_description)/config/mur_controllers.yaml</parameters>
 				<ros>
 					<xacro:unless value="${robot_namespace == ''}">
 						<robotNamespace>${robot_namespace}</robotNamespace>
