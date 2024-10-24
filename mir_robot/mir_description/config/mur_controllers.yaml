@@ -10,6 +10,7 @@ controller_manager:
 
     lift_controller_l: 
       type: position_controllers/JointGroupPositionController # for some reason the single joint controller doesn't work - so we use the group controller with a single joint #TODO: fix this
+      interface_name: position
       joints: ["left_lift_joint"]
       pid:
         p: 5.0
@@ -18,6 +19,7 @@ controller_manager:
 
     lift_controller_r: 
       type: position_controllers/JointGroupPositionController
+      interface_name: position
       joints: ["right_lift_joint"]
       pid:
         p: 5.0
@@ -41,6 +43,7 @@ lift_controller_l:
   ros__parameters:
     type: position_controllers/JointGroupPositionController
     joints: ["left_lift_joint"]
+    interface_name: position
     pid:
       p: 5.0
       i: 20.0
@@ -50,6 +53,7 @@ lift_controller_r:
   ros__parameters:
     type: position_controllers/JointGroupPositionController
     joints: ["right_lift_joint"]
+    interface_name: position
     pid:
       p: 5.0
       i: 20.0

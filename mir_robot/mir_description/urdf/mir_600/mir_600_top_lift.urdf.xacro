@@ -31,13 +31,13 @@
 				</material>
 		</gazebo>
 
-		<joint name="left_lift_joint" type="prismatic">
+		<joint name="left_lift_joint" type="continuous">
 			<origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
 			<parent link="left_lift_bottom" />
 			<child link="left_lift_top" />
 			<dynamics damping="1.0" friction="1.0"/>
-			<limit lower="0.0" upper="0.5" effort="1000000" velocity="1.0"/>
-			<axis xyz="0 0 1" />
+			<limit lower="0.0" upper="1.0" effort="1000000" velocity="1.0"/>
+			<axis xyz="0 1 0" />
 			<gazebo>
 				<plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin"/>
 				<hardwareInterface>PositionJointInterface</hardwareInterface> <!-- or Effort/Velocity -->
