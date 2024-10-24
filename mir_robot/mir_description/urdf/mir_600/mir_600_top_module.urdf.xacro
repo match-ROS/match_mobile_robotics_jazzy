@@ -25,7 +25,12 @@
 		</link>
 
 		<gazebo reference="top_module">
-			<material>Gazebo/Grey</material>
+			      <material>
+					<ambient>0.5 0.5 0.5 1.0</ambient> <!-- Adjust as needed -->
+					<diffuse>0.5 0.5 0.5 1.0</diffuse>
+					<specular>0.1 0.1 0.1 1.0</specular>
+					<emissive>0 0 0 1</emissive>
+				</material>
 		</gazebo>
 
 		<joint name="top_module_joint" type="fixed">
@@ -55,7 +60,12 @@
 		</link>
 
 		<gazebo reference="left_lift_bottom">
-			<material>Gazebo/DarkGrey</material>
+			<material>
+				<ambient>0.3 0.3 0.3 1.0</ambient> <!-- Dark grey -->
+				<diffuse>0.3 0.3 0.3 1.0</diffuse>
+				<specular>0.1 0.1 0.1 1.0</specular>
+				<emissive>0 0 0 1</emissive>
+			</material>
 		</gazebo>
 
 		<joint name="left_lift_bottom_joint" type="fixed">
@@ -85,7 +95,12 @@
 		</link>
 
 		<gazebo reference="right_lift_bottom">
-			<material>Gazebo/DarkGrey</material>
+			    <material>
+					<ambient>0.3 0.3 0.3 1.0</ambient> <!-- Dark grey -->
+					<diffuse>0.3 0.3 0.3 1.0</diffuse>
+					<specular>0.1 0.1 0.1 1.0</specular>
+					<emissive>0 0 0 1</emissive>
+				</material>
 		</gazebo>
 
 		<joint name="right_lift_bottom_joint" type="fixed">
