@@ -7,6 +7,8 @@ import os
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, FindExecutable, Command, IfElseSubstitution
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
+from launch.actions import RegisterEventHandler, SetEnvironmentVariable, OpaqueFunction, TimerAction
+from launch.event_handlers import OnProcessExit
 
 
 def launch_setup(context, *args, **kwargs):
@@ -35,6 +37,12 @@ def launch_setup(context, *args, **kwargs):
             "launch_rviz": "true",
         }.items(),
     )
+
+    nodes_to_launch = [
+        ur_moveit_launch,
+    ]
+
+    return nodes_to_launch
 
 
 def generate_launch_description():
@@ -137,13 +145,13 @@ def generate_launch_description():
         output='screen'
     )
     load_forward_position_controller_l = ExecuteProcess(
-        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
+        cmd=['ros2', 'control', 'load_controller', '--set-state', 'inactive',
              'forward_position_controller_l'],
         output='screen'
     )
 
     load_forward_position_controller_r = ExecuteProcess(
-        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
+        cmd=['ros2', 'control', 'load_controller', '--set-state', 'inactive',
              'forward_position_controller_r'],
         output='screen'
     )
@@ -160,6 +168,18 @@ def generate_launch_description():
         output='screen'
     )
 
+    load_joint_trajectory_controller_l = ExecuteProcess(
+        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
+             'joint_trajectory_controller_l'],
+        output='screen'
+    )
+
+    load_joint_trajectory_controller_r = ExecuteProcess(
+        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
+             'joint_trajectory_controller_r'],
+        output='screen'
+    )
+
 
     return LaunchDescription([
         IncludeLaunchDescription(
@@ -169,6 +189,8 @@ def generate_launch_description():
         load_forward_position_controller_r,
         load_forward_velocity_controller_l,
         load_forward_velocity_controller_r,
+        load_joint_trajectory_controller_l,
+        load_joint_trajectory_controller_r,
         *declared_arguments,
         OpaqueFunction(function=launch_setup)
 

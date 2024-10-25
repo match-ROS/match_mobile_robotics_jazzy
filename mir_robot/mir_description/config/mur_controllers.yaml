@@ -41,7 +41,12 @@ controller_manager:
 
     forward_position_controller_r:
       type: position_controllers/JointGroupPositionController
+
+    joint_trajectory_controller_l:
+      type: joint_trajectory_controller/JointTrajectoryController
       
+    joint_trajectory_controller_r:
+      type: joint_trajectory_controller/JointTrajectoryController
 
 # -----------------------------------
 mobile_base_controller:
@@ -135,3 +140,58 @@ forward_position_controller_r:
       - UR10_r/wrist_1_joint
       - UR10_r/wrist_2_joint
       - UR10_r/wrist_3_joint
+
+joint_trajectory_controller_l:
+  ros__parameters:
+    joints:
+      - UR10_l/shoulder_pan_joint
+      - UR10_l/shoulder_lift_joint
+      - UR10_l/elbow_joint
+      - UR10_l/wrist_1_joint
+      - UR10_l/wrist_2_joint
+      - UR10_l/wrist_3_joint
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity
+    state_publish_rate: 100.0
+    action_monitor_rate: 20.0
+    allow_partial_joints_goal: false
+    constraints:
+      stopped_velocity_tolerance: 0.2
+      goal_time: 0.0
+      shoulder_pan_joint: { trajectory: 0.2, goal: 0.1 }
+      shoulder_lift_joint: { trajectory: 0.2, goal: 0.1 }
+      elbow_joint: { trajectory: 0.2, goal: 0.1 }
+      wrist_1_joint: { trajectory: 0.2, goal: 0.1 }
+      wrist_2_joint: { trajectory: 0.2, goal: 0.1 }
+      wrist_3_joint: { trajectory: 0.2, goal: 0.1 }
+
+
+joint_trajectory_controller_r:
+  ros__parameters:
+    joints:
+      - UR10_r/shoulder_pan_joint
+      - UR10_r/shoulder_lift_joint
+      - UR10_r/elbow_joint
+      - UR10_r/wrist_1_joint
+      - UR10_r/wrist_2_joint
+      - UR10_r/wrist_3_joint
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity
+    state_publish_rate: 100.0
+    action_monitor_rate: 20.0
+    allow_partial_joints_goal: false
+    constraints:
+      stopped_velocity_tolerance: 0.2
+      goal_time: 0.0
+      shoulder_pan_joint: { trajectory: 0.2, goal: 0.1 }
+      shoulder_lift_joint: { trajectory: 0.2, goal: 0.1 }
+      elbow_joint: { trajectory: 0.2, goal: 0.1 }
+      wrist_1_joint: { trajectory: 0.2, goal: 0.1 }
+      wrist_2_joint: { trajectory: 0.2, goal: 0.1 }
+      wrist_3_joint: { trajectory: 0.2, goal: 0.1 }
