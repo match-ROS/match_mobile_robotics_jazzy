@@ -105,16 +105,6 @@ def generate_launch_description():
                    '-allow_renaming', 'false'],
     )
 
-    control_node = Node(
-        package="controller_manager",
-        executable="ros2_control_node",
-        parameters=[{
-            'robot_description': robot_desc,
-            'robot_controllers': robot_controllers
-        }],
-        output="both",
-    )
-
     load_joint_state_broadcaster = ExecuteProcess(
         cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
              'joint_state_broadcaster'],
@@ -299,14 +289,6 @@ def generate_launch_description():
                 on_exit=[rqt_controller_manager],
             )
         ),
-        #delayed_joint_state_broadcaster,
-        #delayed_controllers,
-        #mobile_base_controller_spawner,
-        # delayed_control_node,
-        #mobile_base_controller_spawner,
-        #control_node,
-        #load_joint_state_broadcaster,
-        #load_mobile_base_controller,
         gazebo_resource_path,
         arguments,
         gazebo,
@@ -316,11 +298,8 @@ def generate_launch_description():
         rviz,
         rqt_robot_steering,
         repub_twist,
-        #left_lift_controller_spawner,
         *declared_arguments,
-        #joint_state_broadcaster_spawner,
         OpaqueFunction(function=launch_setup)
-        #ur_moveit_launch
     ])
 
 
