@@ -19,7 +19,7 @@
 
 	<!-- UR parameters -->
 	<xacro:arg name="ur_type" default="ur10e"/>
-	<xacro:arg name="joint_limit_params" default="$(find ur_description)/config/$(arg ur_type)/joint_limits.yaml"/>
+	<xacro:arg name="joint_limit_params" default="$(find mur_moveit_config)/config/joint_limits_ur.yaml"/>
 	<xacro:arg name="kinematics_params" default="$(find ur_description)/config/$(arg ur_type)/default_kinematics.yaml"/>
 	<xacro:arg name="physical_params" default="$(find ur_description)/config/$(arg ur_type)/physical_parameters.yaml"/>
 	<xacro:arg name="visual_params" default="$(find ur_description)/config/$(arg ur_type)/visual_parameters.yaml"/>

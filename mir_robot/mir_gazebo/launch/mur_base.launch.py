@@ -16,7 +16,7 @@ from launch.conditions import IfCondition, UnlessCondition
   
 def generate_launch_description():
     # Launch Arguments
-    # use_sim_time = LaunchConfiguration('use_sim_time', default=True)
+    use_sim_time = LaunchConfiguration('use_sim_time', default=True)
     
     mir_gazebo_path = os.path.join(get_package_share_directory('mir_gazebo'))
     
@@ -137,7 +137,7 @@ def generate_launch_description():
         executable="rviz2",
         name="rviz2",
         output="log",
-        arguments=["-d", rviz_config_file],
+        arguments=["-d", rviz_config_file, {'use_sim_time': True}],
     )
 
     return LaunchDescription([

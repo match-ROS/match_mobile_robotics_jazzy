@@ -11,6 +11,8 @@ moveit_simple_controller_manager:
   controller_names:
     - scaled_joint_trajectory_controller
     - joint_trajectory_controller
+    - joint_trajectory_controller_l
+    - joint_trajectory_controller_r
 
   scaled_joint_trajectory_controller:
     action_ns: follow_joint_trajectory
@@ -36,3 +38,27 @@ moveit_simple_controller_manager:
       - wrist_1_joint
       - wrist_2_joint
       - wrist_3_joint
+
+  joint_trajectory_controller_l:
+    action_ns: follow_joint_trajectory
+    type: FollowJointTrajectory
+    default: false
+    joints:
+      - UR10_l/shoulder_pan_joint
+      - UR10_l/shoulder_lift_joint
+      - UR10_l/elbow_joint
+      - UR10_l/wrist_1_joint
+      - UR10_l/wrist_2_joint
+      - UR10_l/wrist_3_joint
+
+  joint_trajectory_controller_r:  
+    action_ns: follow_joint_trajectory
+    type: FollowJointTrajectory
+    default: false
+    joints:
+      - UR10_r/shoulder_pan_joint
+      - UR10_r/shoulder_lift_joint
+      - UR10_r/elbow_joint
+      - UR10_r/wrist_1_joint
+      - UR10_r/wrist_2_joint
+      - UR10_r/wrist_3_joint
