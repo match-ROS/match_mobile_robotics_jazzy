@@ -25,7 +25,16 @@ def launch_setup(context, *args, **kwargs):
     rviz_config_file = LaunchConfiguration("rviz_config_file")
     gazebo_gui = LaunchConfiguration("gazebo_gui")
     world_file = LaunchConfiguration("world_file")
+    moveit_launch_file = LaunchConfiguration("moveit_launch_file")
 
+    ur_moveit_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(moveit_launch_file),
+        launch_arguments={
+            "ur_type": ur_type,
+            "use_sim_time": "true",
+            "launch_rviz": "true",
+        }.items(),
+    )
 
 
 def generate_launch_description():
@@ -127,5 +136,8 @@ def generate_launch_description():
     return LaunchDescription([
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(mur_base_launch_path)
-        )
+        ),
+        *declared_arguments,
+        OpaqueFunction(function=launch_setup)
+
     ])

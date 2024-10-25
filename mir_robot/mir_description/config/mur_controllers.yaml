@@ -25,6 +25,22 @@ controller_manager:
         p: 5.0
         i: 20.0
         i_clamp: 100.0
+
+    force_torque_sensor_broadcaster:
+      #type: ur_controllers/ForceTorqueStateBroadcaster
+      type: force_torque_sensor_broadcaster/ForceTorqueSensorBroadcaster
+
+    forward_velocity_controller_l:
+      type: velocity_controllers/JointGroupVelocityController
+
+    forward_position_controller_l:
+      type: position_controllers/JointGroupPositionController
+
+    forward_velocity_controller_r:
+      type: velocity_controllers/JointGroupVelocityController
+
+    forward_position_controller_r:
+      type: position_controllers/JointGroupPositionController
       
 
 # -----------------------------------
@@ -58,3 +74,64 @@ lift_controller_r:
       p: 5.0
       i: 20.0
       i_clamp: 100.0
+
+
+speed_scaling_state_broadcaster:
+  ros__parameters:
+    state_publish_rate: 100.0
+
+
+force_torque_sensor_broadcaster:
+  ros__parameters:
+    sensor_name: tcp_fts_sensor
+    state_interface_names:
+      - force.x
+      - force.y
+      - force.z
+      - torque.x
+      - torque.y
+      - torque.z
+    frame_id: tool0
+    topic_name: ft_data
+
+forward_velocity_controller_l:
+  ros__parameters:
+    joints:
+      - UR10_l/shoulder_pan_joint
+      - UR10_l/shoulder_lift_joint
+      - UR10_l/elbow_joint
+      - UR10_l/wrist_1_joint
+      - UR10_l/wrist_2_joint
+      - UR10_l/wrist_3_joint
+    interface_name: velocity
+
+forward_velocity_controller_r:
+  ros__parameters:
+    joints:
+      - UR10_r/shoulder_pan_joint
+      - UR10_r/shoulder_lift_joint
+      - UR10_r/elbow_joint
+      - UR10_r/wrist_1_joint
+      - UR10_r/wrist_2_joint
+      - UR10_r/wrist_3_joint
+    interface_name: velocity
+
+forward_position_controller_l:
+  ros__parameters:
+    joints:
+      - UR10_l/shoulder_pan_joint
+      - UR10_l/shoulder_lift_joint
+      - UR10_l/elbow_joint
+      - UR10_l/wrist_1_joint
+      - UR10_l/wrist_2_joint
+      - UR10_l/wrist_3_joint
+
+forward_position_controller_r:
+  ros__parameters:
+    joints:
+      - UR10_r/shoulder_pan_joint
+      - UR10_r/shoulder_lift_joint
+      - UR10_r/elbow_joint
+      - UR10_r/wrist_1_joint
+      - UR10_r/wrist_2_joint
+      - UR10_r/wrist_3_joint
