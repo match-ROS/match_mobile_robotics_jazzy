@@ -131,12 +131,44 @@ def generate_launch_description():
         )
     )
 
+    load_joint_state_broadcaster = ExecuteProcess(
+        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
+             'joint_state_broadcaster'],
+        output='screen'
+    )
+    load_forward_position_controller_l = ExecuteProcess(
+        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
+             'forward_position_controller_l'],
+        output='screen'
+    )
+
+    load_forward_position_controller_r = ExecuteProcess(
+        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
+             'forward_position_controller_r'],
+        output='screen'
+    )
+
+    load_forward_velocity_controller_l = ExecuteProcess(
+        cmd=['ros2', 'control', 'load_controller', '--set-state', 'inactive',
+             'forward_velocity_controller_l'],
+        output='screen'
+    )
+
+    load_forward_velocity_controller_r = ExecuteProcess(
+        cmd=['ros2', 'control', 'load_controller', '--set-state', 'inactive',
+             'forward_velocity_controller_r'],
+        output='screen'
+    )
 
 
     return LaunchDescription([
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(mur_base_launch_path)
         ),
+        load_forward_position_controller_l,
+        load_forward_position_controller_r,
+        load_forward_velocity_controller_l,
+        load_forward_velocity_controller_r,
         *declared_arguments,
         OpaqueFunction(function=launch_setup)
 
