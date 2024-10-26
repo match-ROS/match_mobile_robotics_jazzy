@@ -31,12 +31,13 @@
 				</material>
 		</gazebo>
 
-		<joint name="left_lift_joint" type="continuous">
+		<!-- for some reason prismatic joint dont work, so we use a continuous joint - this is a workaround and should be fixed -->
+		<joint name="left_lift_joint" type="continuous">   
 			<origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
 			<parent link="left_lift_bottom" />
 			<child link="left_lift_top" />
 			<dynamics damping="1.0" friction="1.0"/>
-			<limit lower="0.0" upper="1.0" effort="1000000" velocity="1.0"/>
+			<limit lower="-0.01" upper="1.0" effort="1000000" velocity="1.0"/>
 			<axis xyz="0 1 0" />
 			<gazebo>
 				<plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin"/>
@@ -72,12 +73,12 @@
 				</material>
 		</gazebo>
 
-		<joint name="right_lift_joint" type="prismatic">
+		<joint name="right_lift_joint" type="continuous">
 			<origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
 			<parent link="right_lift_bottom" />
 			<child link="right_lift_top" />
 			<dynamics damping="1.0" friction="1.0"/>
-			<limit lower="0.0" upper="0.5" effort="1000000" velocity="1.0"/>
+			<limit lower="-0.01" upper="0.5" effort="1000000" velocity="1.0"/>
 			<axis xyz="0 0 1" />
 			<gazebo>
 				<plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin"/>

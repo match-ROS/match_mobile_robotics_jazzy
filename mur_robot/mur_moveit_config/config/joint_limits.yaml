@@ -1,16 +1,35 @@
-# Joints limits
+# These limits are used by MoveIt and augment/override the definitions in ur_description.
 #
-# Sources:
-#
-#  - Universal Robots e-Series, User Manual, UR10e, Version 5.8
-#    https://s3-eu-west-1.amazonaws.com/ur-support-site/69139/99405_UR10e_User_Manual_en_Global.pdf
-#  - Support > Articles > UR articles > Max. joint torques
-#    https://www.universal-robots.com/articles/ur-articles/max-joint-torques
-#    retrieved: 2020-06-16, last modified: 2020-06-09
+# While the robot does not inherently have any limits on joint accelerations (only on torques),
+# MoveIt needs them for time parametrization. They were chosen conservatively to work in most use
+# cases. For specific applications, higher values might lead to better execution performance.
+
 joint_limits:
+  left_lift_joint:
+    has_acceleration_limits: true
+    max_acceleration: 5.0
+    has_effort_limits: true
+    has_position_limits: true
+    has_velocity_limits: true
+    max_effort: 100.0
+    max_position: 0.5
+    max_velocity: 0.5
+    min_position: 0.0
+
+  right_lift_joint:
+    has_acceleration_limits: true
+    max_acceleration: 5.0
+    has_effort_limits: true
+    has_position_limits: true
+    has_velocity_limits: true
+    max_effort: 100.0
+    max_position: 0.5
+    max_velocity: 0.5
+    min_position: 0.0
+
   shoulder_pan_joint:
-    # acceleration limits are not publicly available
-    has_acceleration_limits: false
+    has_acceleration_limits: true
+    max_acceleration: 5.0
     has_effort_limits: true
     has_position_limits: true
     has_velocity_limits: true
@@ -19,8 +38,8 @@ joint_limits:
     max_velocity: 2.09439510239
     min_position: -3.14159265359
   shoulder_lift_joint:
-    # acceleration limits are not publicly available
-    has_acceleration_limits: false
+    has_acceleration_limits: true
+    max_acceleration: 5.0
     has_effort_limits: true
     has_position_limits: true
     has_velocity_limits: true
@@ -29,8 +48,8 @@ joint_limits:
     max_velocity: 2.09439510239
     min_position: -3.14159265359
   elbow_joint:
-    # acceleration limits are not publicly available
-    has_acceleration_limits: false
+    has_acceleration_limits: true
+    max_acceleration: 5.0
     has_effort_limits: true
     has_position_limits: true
     has_velocity_limits: true
@@ -49,8 +68,8 @@ joint_limits:
     max_velocity: 1.57079632679 
     min_position: -1.57079632679 
   wrist_1_joint:
-    # acceleration limits are not publicly available
-    has_acceleration_limits: false
+    has_acceleration_limits: true
+    max_acceleration: 5.0
     has_effort_limits: true
     has_position_limits: true
     has_velocity_limits: true
@@ -59,8 +78,8 @@ joint_limits:
     max_velocity: 1.57079632679 
     min_position: -3.14159265359
   wrist_2_joint:
-    # acceleration limits are not publicly available
-    has_acceleration_limits: false
+    has_acceleration_limits: true
+    max_acceleration: 5.0
     has_effort_limits: true
     has_position_limits: true
     has_velocity_limits: true
@@ -69,8 +88,8 @@ joint_limits:
     max_velocity: 1.57079632679 
     min_position: -3.14159265359
   wrist_3_joint:
-    # acceleration limits are not publicly available
-    has_acceleration_limits: false
+    has_acceleration_limits: true
+    max_acceleration: 5.0
     has_effort_limits: true
     has_position_limits: true
     has_velocity_limits: true
@@ -78,4 +97,41 @@ joint_limits:
     max_position: 3.14159265359
     max_velocity: 1.57079632679 
     min_position: -3.14159265359
-    
+
+  UR10_l/shoulder_pan_joint:
+    has_acceleration_limits: true
+    max_acceleration: 5.0
+  UR10_l/shoulder_lift_joint:
+    has_acceleration_limits: true
+    max_acceleration: 5.0
+  UR10_l/elbow_joint:
+    has_acceleration_limits: true
+    max_acceleration: 5.0
+  UR10_l/wrist_1_joint:
+    has_acceleration_limits: true
+    max_acceleration: 5.0
+  UR10_l/wrist_2_joint:
+    has_acceleration_limits: true
+    max_acceleration: 5.0
+  UR10_l/wrist_3_joint:
+    has_acceleration_limits: true
+    max_acceleration: 5.0
+
+  UR10_r/shoulder_pan_joint:
+    has_acceleration_limits: true
+    max_acceleration: 5.0
+  UR10_r/shoulder_lift_joint:
+    has_acceleration_limits: true
+    max_acceleration: 5.0
+  UR10_r/elbow_joint:
+    has_acceleration_limits: true
+    max_acceleration: 5.0
+  UR10_r/wrist_1_joint:
+    has_acceleration_limits: true
+    max_acceleration: 5.0
+  UR10_r/wrist_2_joint:
+    has_acceleration_limits: true
+    max_acceleration: 5.0
+  UR10_r/wrist_3_joint:
+    has_acceleration_limits: true
+    max_acceleration: 5.0
