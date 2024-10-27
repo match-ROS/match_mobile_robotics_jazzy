@@ -8,7 +8,6 @@
 	<!-- MiR600 base -->
 	<xacro:include filename="$(find mir_description)/urdf/mir_600/mir_600.urdf.xacro" />
 	<xacro:include filename="$(find mir_description)/urdf/mir_600/mir_600.gazebo.xacro" />
-	<xacro:include filename="$(find fws_robot_description)/gazebo/mir_robot.gazebo.xacro" />
 	<xacro:include filename="$(find mir_description)/urdf/general/sick_s300.gazebo.xacro" />
 
 	<!-- Include plugin xacros -->
