@@ -20,8 +20,8 @@ def generate_launch_description():
     
     mir_gazebo_path = os.path.join(get_package_share_directory('mir_gazebo'))
     
-    mir_description_path = os.path.join(
-        get_package_share_directory('mir_description'))
+    mur_description_path = os.path.join(
+        get_package_share_directory('mur_desciption'))
    
     gazebo_resource_path = SetEnvironmentVariable(
         name='GZ_SIM_RESOURCE_PATH',
@@ -48,7 +48,7 @@ def generate_launch_description():
                 ]
              )
     
-    xacro_file = os.path.join(mir_description_path, 'urdf', 'mur_620.gazebo.xacro')
+    xacro_file = os.path.join(mur_description_path, 'urdf', 'mur_620.gazebo.xacro')
 
     doc = xacro.process_file(xacro_file, mappings={'use_sim' : 'true'})
 

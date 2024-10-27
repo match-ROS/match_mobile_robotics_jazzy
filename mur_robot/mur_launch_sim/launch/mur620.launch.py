@@ -46,8 +46,8 @@ def launch_setup(context, *args, **kwargs):
 
 
 def generate_launch_description():
-    mir_gazebo_dir = get_package_share_directory('mir_gazebo')
-    mur_base_launch_path = os.path.join(mir_gazebo_dir, 'launch', 'mur_base.launch.py')
+    mir_launch_dir = get_package_share_directory('mur_launch_sim')
+    mur_base_launch_path = os.path.join(mir_launch_dir, 'launch', 'mur_base.launch.py')
 
     #################### UR section ####################
 
