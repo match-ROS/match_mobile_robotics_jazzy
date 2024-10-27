@@ -1,0 +1,46 @@
+moveit_cpp:
+  planning_pipelines: ["ompl"]
+  planning_pipeline_configs:
+    ompl:
+      planner_configs: ["RRTConnect", "RRTstar"]
+      progress_display: false
+      longest_valid_segment_fraction: 0.01
+  robot_description: /robot_description
+  robot_description_semantic: /robot_description_semantic
+
+  # Trajectory execution configuration
+  trajectory_execution:
+    allowed_start_tolerance: 0.01
+    allowed_goal_tolerance: 0.05
+    allowed_execution_duration_scaling: 1.2
+    allowed_goal_position_tolerance: 0.05
+    allowed_goal_velocity_tolerance: 0.1
+    controller_manager: moveit_simple_controller_manager/MoveItSimpleControllerManager
+
+planning_pipelines:
+    pipeline_names: ["ompl", "pilz_industrial_motion_planner", "chomp", "ompl_rrt_star"]
+
+  # Controller-specific settings
+  # controllers:
+  #   - name: arm_controller
+  #     type: FollowJointTrajectory
+  #     joints:
+  #       - joint1
+  #       - joint2
+  #       - joint3
+  #       - joint4
+  #       - joint5
+  #       - joint6
+  #       - joint7
+  #     gains: 
+  #       position: 0.1
+  #       velocity: 0.1
+  #       acceleration: 0.05
+
+  # Octomap configuration (if you have a 3D sensor)
+  # occupancy_map_monitor:
+  #   sensor_plugin: occupancy_map_monitor/PointCloudOctomapUpdater
+  #   resolution: 0.1
+  #   max_range: 10.0
+  #   point_cloud_topic: /camera/depth/points
+  #   observation_persistence: 0.0

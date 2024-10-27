@@ -2,13 +2,44 @@
 import rclpy
 from rclpy.node import Node
 from moveit.planning import MoveItPy
+from moveit_configs_utils import MoveItConfigsBuilder
+from ament_index_python.packages import get_package_share_directory
+import os
+
+
 
 class MoveToHomeNode(Node):
     def __init__(self):
         super().__init__('move_to_home_node')
 
         # Initialize MoveItPy with the node's name
-        self.moveit = MoveItPy(node_name=self.get_name())
+        #moveit_config = self.get_parameters().get("moveit_config").get_parameter_value().string_value
+
+        # Declare parameters before accessing them
+        self.declare_parameter('robot_description', '')
+        self.declare_parameter('robot_description_semantic', '')
+        self.declare_parameter('moveit_cpp', '')
+        moveit_config_builder = MoveItConfigsBuilder("mur620", package_name="mur_moveit_config")
+        moveit_config_builder.robot_description_semantic(
+            file_path=os.path.join(
+                get_package_share_directory("mur_moveit_config"),
+                "srdf",
+                "mur620.srdf.xacro"
+            ),
+            mappings={"model_name": "mur620"}  # Pass the required model_name argument here
+        )
+
+        moveit_config_builder.moveit_cpp(file_path=os.path.join(
+            get_package_share_directory("mur_moveit_config"),
+            "config",
+            "moveit_cpp.yaml"
+        ))
+
+        moveit_config_dict = moveit_config_builder.to_moveit_configs().to_dict()
+
+        # moveit_config_builder.moveit_cpp(file_path=get_package_share_directory("mur_moveit_config") + "/config/moveit_cpp.yaml") 
+        # moveit_config_dict = moveit_config_builder.to_moveit_configs().to_dict()
+        self.moveit = MoveItPy(node_name=self.get_name(), config_dict=moveit_config_dict)
 
         # Create move group for each arm
         self.arm_left_group = self.moveit.get_planning_component("UR_arm_l")

@@ -9,6 +9,9 @@ from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 from launch.actions import RegisterEventHandler, SetEnvironmentVariable, OpaqueFunction, TimerAction
 from launch.event_handlers import OnProcessExit
+from moveit_configs_utils import MoveItConfigsBuilder
+from pathlib import Path
+
 
 
 def launch_setup(context, *args, **kwargs):
@@ -180,6 +183,34 @@ def generate_launch_description():
         output='screen'
     )
 
+    # robot_description_file_path = os.path.join(get_package_share_directory("mur_desciption"), "urdf", "mur_620.gazebo.xacro")
+    moveit_config = (
+        MoveItConfigsBuilder(robot_name="mur620", package_name="mur_moveit_config")
+        .robot_description_semantic(Path("srdf") / "mur620.srdf.xacro", {"prefix": "mur620","model_name": "mur620"})
+        .moveit_cpp(file_path="config/moveit_cpp.yaml")
+        .trajectory_execution(file_path="config/moveit_controllers.yaml")
+        .to_moveit_configs()
+    )
+
+    moveit_move_to_home_node = Node(
+            package='mur_launch_sim',
+            executable='moveit_move_to_home.py',
+            name='moveit_move_to_home_node',
+            output='screen',
+                    parameters=[
+            moveit_config.robot_description,
+            moveit_config.robot_description_semantic,
+            moveit_config.robot_description_kinematics,
+            moveit_config.planning_pipelines,
+            moveit_config.joint_limits,
+            moveit_config.trajectory_execution,
+            moveit_config.moveit_cpp,
+            {
+                "use_sim_time": True,
+            },
+        ],
+        )
+
 
     return LaunchDescription([
         IncludeLaunchDescription(
@@ -191,6 +222,13 @@ def generate_launch_description():
         load_forward_velocity_controller_r,
         load_joint_trajectory_controller_l,
         load_joint_trajectory_controller_r,
+        # wait until all controllers are loaded
+        RegisterEventHandler(
+            event_handler=OnProcessExit(
+                target_action=load_joint_trajectory_controller_r,
+                on_exit=[moveit_move_to_home_node],
+            )
+        ),
         *declared_arguments,
         OpaqueFunction(function=launch_setup)
 
