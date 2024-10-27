@@ -18,7 +18,7 @@ moveit_cpp:
     controller_manager: moveit_simple_controller_manager/MoveItSimpleControllerManager
 
 planning_pipelines:
-    pipeline_names: ["ompl", "pilz_industrial_motion_planner", "chomp", "ompl_rrt_star"]
+    pipeline_names: ["ompl", "pilz_industrial_motion_planner", "chomp"]
 
   # Controller-specific settings
   # controllers:
