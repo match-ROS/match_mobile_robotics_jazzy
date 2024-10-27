@@ -26,7 +26,13 @@ endif()
 
 ament_package()
 
+install(PROGRAMS
+  scripts/moveit_move_to_home.py  # Replace with the path to your Python node
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 install(DIRECTORY
   launch config scripts
   DESTINATION share/${PROJECT_NAME}
 )
+
