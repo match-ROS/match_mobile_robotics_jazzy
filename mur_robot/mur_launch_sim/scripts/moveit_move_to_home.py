@@ -26,7 +26,7 @@ class MoveToHomeNode(Node):
                 "srdf",
                 "mur620.srdf.xacro"
             ),
-            mappings={"model_name": "mur620"}  # Pass the required model_name argument here
+            mappings={"model_name": "mur620", "prefix": "UR10"}  # Pass the required model_name argument here
         )
 
         moveit_config_builder.moveit_cpp(file_path=os.path.join(
