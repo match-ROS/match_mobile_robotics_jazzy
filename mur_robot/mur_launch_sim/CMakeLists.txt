@@ -32,7 +32,7 @@ install(PROGRAMS
 )
 
 install(DIRECTORY
-  launch config scripts
+  launch scripts
   DESTINATION share/${PROJECT_NAME}
 )
 

@@ -23,13 +23,15 @@ sudo apt upgrade
 
 sudo apt install ros-jazzy-desktop -y
 
- sudo snap install code --classic
- 
- sudo apt install terminator -y
- 
- 
- # Depend
- 
- sudo apt install ros-jazzy-gz-ros2-control
- sudo apt install ros-jazzy-ros2-control
- sudo apt install ros-jazzy-ros2-controllers
+sudo snap install code --classic
+
+sudo apt install terminator -y
+
+
+# Depend
+
+sudo apt install ros-jazzy-gz-ros2-control
+sudo apt install ros-jazzy-ros2-control
+sudo apt install ros-jazzy-ros2-controllers
+sudo apt install ros-jazzy-moveit-py
+sudo apt install ros-jazzy-srdfdom
