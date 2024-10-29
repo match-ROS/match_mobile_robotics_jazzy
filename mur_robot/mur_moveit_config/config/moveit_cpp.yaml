@@ -20,6 +20,23 @@ moveit_cpp:
 planning_pipelines:
     pipeline_names: ["ompl", "pilz_industrial_motion_planner", "chomp"]
 
+# planning_pipelines:
+#   - name: "ompl"  # or another pipeline like "chomp" if you’re using CHOMP
+#     parameter_ns: "ompl"
+#     planners:
+#       default_planner_config: "RRTConnectkConfigDefault"  # Make sure this matches your chosen planner
+#       configs:
+#         - "RRTConnectkConfigDefault"
+
+
+plan_request_params:
+  planner_id: "RRTConnectkConfigDefault"  # or another planner, as available in your setup
+  planning_pipeline: "ompl"               # OMPL is a common choice, replace if needed
+  planning_time: 5.0                      # Adjust as per your requirements
+  planning_attempts: 3
+  max_velocity_scaling_factor: 1.0
+  max_acceleration_scaling_factor: 1.0
+
   # Controller-specific settings
   # controllers:
   #   - name: arm_controller
