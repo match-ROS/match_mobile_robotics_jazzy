@@ -37,6 +37,14 @@ plan_request_params:
   max_velocity_scaling_factor: 1.0
   max_acceleration_scaling_factor: 1.0
 
+move_group:
+  planning_scene_monitor_options:
+    robot_description: robot_description
+    joint_state_topic: /joint_states
+    state_monitor_timeout: 5.0  # Timeout in seconds
+    use_latest_common_time: true  # Ignore timestamps and use the latest joint state
+    #allow_external_joint_states: true
+
   # Controller-specific settings
   # controllers:
   #   - name: arm_controller

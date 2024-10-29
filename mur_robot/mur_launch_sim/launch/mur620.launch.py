@@ -142,11 +142,6 @@ def generate_launch_description():
         )
     )
 
-    load_joint_state_broadcaster = ExecuteProcess(
-        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
-             'joint_state_broadcaster'],
-        output='screen'
-    )
     load_forward_position_controller_l = ExecuteProcess(
         cmd=['ros2', 'control', 'load_controller', '--set-state', 'inactive',
              'forward_position_controller_l'],
@@ -205,9 +200,7 @@ def generate_launch_description():
             moveit_config.joint_limits,
             moveit_config.trajectory_execution,
             moveit_config.moveit_cpp,
-            {
-                "use_sim_time": True,
-            },
+            {'use_sim_time': True},
         ],
         )
 

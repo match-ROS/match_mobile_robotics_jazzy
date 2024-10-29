@@ -90,7 +90,7 @@ def declare_arguments():
             ),
             DeclareLaunchArgument(
                 "use_sim_time",
-                default_value="false",
+                default_value="True",
                 description="Using or not time from simulation",
             ),
             DeclareLaunchArgument(
@@ -139,7 +139,7 @@ def generate_launch_description():
             moveit_config.to_dict(),
             warehouse_ros_config,
             {
-                "use_sim_time": use_sim_time,
+                "use_sim_time": True,
                 "publish_robot_description_semantic": publish_robot_description_semantic,
             },
         ],

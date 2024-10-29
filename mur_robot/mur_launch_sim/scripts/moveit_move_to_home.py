@@ -10,7 +10,7 @@ import os
 
 class MoveToHomeNode(Node):
     def __init__(self):
-        super().__init__('move_to_home_node')
+        super().__init__('moveit_move_to_home_node')
 
         # Initialize MoveItPy with the node's name
         self.declare_parameter('robot_description', '')
