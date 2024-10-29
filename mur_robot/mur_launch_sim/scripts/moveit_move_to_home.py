@@ -53,7 +53,7 @@ class MoveToHomeNode(Node):
         if self.arm_left_group.set_goal_state("Home_custom"):
             plan_left = self.arm_left_group.plan()
             if plan_left.error_code.val == 1:  # In ROS, error_code.val == 1 indicates success
-                self.moveit.execute()
+                self.moveit.execute(plan_left.trajectory,controllers=[])
                 self.get_logger().info("UR_arm_l moved to Home_custom successfully!")
             else:
                 self.get_logger().error(f"Planning failed for UR_arm_l with error code: {plan_left.error_code.val}")
@@ -65,7 +65,7 @@ class MoveToHomeNode(Node):
         if self.arm_right_group.set_goal_state("Home_custom"):
             plan_right = self.arm_right_group.plan()
             if plan_right.error_code.val == 1:
-                self.moveit.execute()
+                self.moveit.execute(plan_right.trajectory,controllers=[])
                 self.get_logger().info("UR_arm_r moved to Home_custom successfully!")
             else:
                 self.get_logger().error(f"Planning failed for UR_arm_r with error code: {plan_right.error_code.val}")
