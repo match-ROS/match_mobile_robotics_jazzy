@@ -11,6 +11,7 @@ from launch.actions import RegisterEventHandler, SetEnvironmentVariable, OpaqueF
 from launch.event_handlers import OnProcessExit
 from moveit_configs_utils import MoveItConfigsBuilder
 from pathlib import Path
+from launch_ros.actions import SetParameter
 
 
 
@@ -51,6 +52,7 @@ def launch_setup(context, *args, **kwargs):
 def generate_launch_description():
     mir_launch_dir = get_package_share_directory('mur_launch_sim')
     mur_base_launch_path = os.path.join(mir_launch_dir, 'launch', 'mur_base.launch.py')
+    SetParameter(name='use_sim_time', value=True),  # Set globally for all nodes
 
     #################### UR section ####################
 

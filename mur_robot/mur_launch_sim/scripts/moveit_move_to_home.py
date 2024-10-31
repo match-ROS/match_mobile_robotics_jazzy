@@ -5,6 +5,8 @@ from moveit.planning import MoveItPy
 from moveit_configs_utils import MoveItConfigsBuilder
 from ament_index_python.packages import get_package_share_directory
 import os
+import time
+import subprocess, sys
 
 
 
@@ -33,19 +35,18 @@ class MoveToHomeNode(Node):
         ))
         moveit_config_dict = moveit_config_builder.to_moveit_configs().to_dict()
 
-        self.moveit = MoveItPy(node_name=self.get_name(), config_dict=moveit_config_dict)
+        self.moveit = MoveItPy(node_name="Tobias_cool_movit_planner", config_dict=moveit_config_dict)
+       
+        time.sleep(1)  # Wait for the MoveItPy node to initialize
+        # Set the use_sim_time parameter to true
+        command = "ros2 param set /Tobias_cool_movit_planner use_sim_time true"
+
+        # this is a hack to run the command in bash - ideally we should use ROS2 API to set the parameter (but I don't know how)
+        subprocess.run(command, shell = True, executable="/bin/bash")
 
         # Create move group for each arm
         self.arm_left_group = self.moveit.get_planning_component("UR_arm_l")
         self.arm_right_group = self.moveit.get_planning_component("UR_arm_r")
-
-
-        # Log available methods for arm_left_group
-        self.get_logger().info("Available methods for arm_left_group:")
-        for method in dir(self.arm_left_group):
-            self.get_logger().info(f"{method}")
-
-        self.get_logger().info("MoveToHomeNode initialized and ready.")
 
     def move_to_home(self):
         # Move the left arm to the "Home_custom" named target
