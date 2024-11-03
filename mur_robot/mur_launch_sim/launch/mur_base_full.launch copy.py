@@ -173,13 +173,13 @@ def generate_launch_description():
         ),
         gazebo_resource_path,
         arguments,
-        #gazebo,
+        gazebo,
         node_robot_state_publisher,
         gz_robot_spawner,
         ros_gz_bridge,
-        #rviz,
-        #rqt_robot_steering,
-        #repub_twist,
+        rviz,
+        rqt_robot_steering,
+        repub_twist,
         # *declared_arguments,
         # OpaqueFunction(function=launch_setup)
     ])
