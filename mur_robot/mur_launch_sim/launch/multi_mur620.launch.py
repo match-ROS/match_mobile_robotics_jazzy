@@ -1,13 +1,11 @@
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, GroupAction
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, GroupAction, RegisterEventHandler, SetEnvironmentVariable, TimerAction
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import PushRosNamespace
 from launch_ros.substitutions import FindPackageShare
 import os
 from ament_index_python.packages import get_package_share_directory
-from launch.actions import RegisterEventHandler, SetEnvironmentVariable, OpaqueFunction, TimerAction
-from launch.event_handlers import OnProcessExit
 
 
 def generate_launch_description():
@@ -26,10 +24,8 @@ def generate_launch_description():
 
     gazebo_resource_path = SetEnvironmentVariable(
         name='GZ_SIM_RESOURCE_PATH',
-        value=[
-            os.path.join(mir_gazebo_path, 'worlds')
-            ]
-        )
+        value=os.path.join(mir_gazebo_path, 'worlds')
+    )
 
     # Get the path to the existing launch file
     launch_file_path = os.path.join(
@@ -44,7 +40,7 @@ def generate_launch_description():
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(launch_file_path),
             launch_arguments={
-                "tf_prefix": LaunchConfiguration("tf_prefix1"),
+                #"tf_prefix": LaunchConfiguration("tf_prefix1"),
                 # add other specific arguments as needed
             }.items(),
         ),
@@ -56,46 +52,31 @@ def generate_launch_description():
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(launch_file_path),
             launch_arguments={
-                "tf_prefix": LaunchConfiguration("tf_prefix2"),
+                #"tf_prefix": LaunchConfiguration("tf_prefix2"),
                 # add other specific arguments as needed
             }.items(),
         ),
     ])
 
-    print("world: ", LaunchConfiguration('world'))
-
+    # Launch Gazebo first
     gazebo = IncludeLaunchDescription(
-            PythonLaunchDescriptionSource([os.path.join(
-                get_package_share_directory('ros_gz_sim'), 'launch'), '/gz_sim.launch.py']),
-            launch_arguments=[
-                ('gz_args', [LaunchConfiguration('world'),
-                                '.world',
-                                ' -v 4',
-                                ' -r']
-                )
-            ]
-            )
+        PythonLaunchDescriptionSource([
+            os.path.join(get_package_share_directory('ros_gz_sim'), 'launch', 'gz_sim.launch.py')]),
+        launch_arguments=[
+            ('gz_args', [
+                LaunchConfiguration('world'),
+                '.world',
+                ' -v 4',
+                ' -r'
+            ])
+        ]
+    )
 
-    #return LaunchDescription(declared_arguments + [robot1, robot2, gazebo])
-    return LaunchDescription(declared_arguments + [gazebo_resource_path,
-                                                   gazebo,
-                                                   # wait until all controllers are loaded
-                                                    RegisterEventHandler(
-                                                         event_handler=OnProcessExit(
-                                                              target_action=gazebo,
-                                                              on_exit=[robot1, robot2],
-                                                         )
-                                                    )])
+    # TimerAction to delay launching of robots by 5 seconds
+    start_robots = TimerAction(
+        period=5.0,
+        actions=[robot1, robot2]
+    )
 
-    return LaunchDescription([
-        gazebo_resource_path,
-        gazebo,
-        # wait until all controllers are loaded
-        # RegisterEventHandler(
-        #     event_handler=OnProcessExit(
-        #         target_action=gazebo,
-        #         on_exit=[robot1, robot2],
-        #     )
-        # ),
-        *declared_arguments,
-    ])
+    # Define the launch description
+    return LaunchDescription(declared_arguments + [gazebo_resource_path, gazebo, start_robots])

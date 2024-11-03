@@ -43,7 +43,7 @@ def launch_setup(context, *args, **kwargs):
     )
 
     nodes_to_launch = [
-        #ur_moveit_launch,
+        ur_moveit_launch,
     ]
 
     return nodes_to_launch
