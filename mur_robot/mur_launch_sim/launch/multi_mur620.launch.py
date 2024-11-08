@@ -13,7 +13,7 @@ def generate_launch_description():
     declared_arguments = [
         DeclareLaunchArgument("robot1_ns", default_value="robot1", description="Namespace for robot 1"),
         DeclareLaunchArgument("robot2_ns", default_value="robot2", description="Namespace for robot 2"),
-        DeclareLaunchArgument("tf_prefix1", default_value="robot1_", description="TF prefix for robot 1"),
+        DeclareLaunchArgument("tf_prefix1", default_value="", description="TF prefix for robot 1"),
         DeclareLaunchArgument("tf_prefix2", default_value="robot2_", description="TF prefix for robot 2"),
         DeclareLaunchArgument("world", default_value="maze", description="Gz sim World"),
     ]
@@ -31,7 +31,7 @@ def generate_launch_description():
     launch_file_path = os.path.join(
         FindPackageShare("mur_launch_sim").find("mur_launch_sim"),
         "launch",
-        "mur620.launch.py",
+        "mur620_slim.launch.py",
     )
 
     # Group action for robot 1 with namespace and tf_prefix
@@ -75,7 +75,7 @@ def generate_launch_description():
     # TimerAction to delay launching of robots by 5 seconds
     start_robots = TimerAction(
         period=5.0,
-        actions=[robot1, robot2]
+        actions=[robot1]
     )
 
     # Define the launch description
