@@ -17,6 +17,14 @@ from launch.conditions import IfCondition, UnlessCondition
 def generate_launch_description():
     # Launch Arguments
     use_sim_time = LaunchConfiguration('use_sim_time', default=True)
+    tf_prefix = LaunchConfiguration('tf_prefix', default='mur620a')
+    robot_ns = LaunchConfiguration('robot_ns', default='robot')
+    x_spawn = LaunchConfiguration('x_spawn', default='0.0')
+    y_spawn = LaunchConfiguration('y_spawn', default='0.0')
+    z_spawn = LaunchConfiguration('z_spawn', default='0.07')
+    roll_spawn = LaunchConfiguration('roll_spawn', default='0.0')
+    pitch_spawn = LaunchConfiguration('pitch_spawn', default='0.0')
+    yaw_spawn = LaunchConfiguration('yaw_spawn', default='0.0')
     
     mir_gazebo_path = os.path.join(get_package_share_directory('mir_gazebo'))
     
@@ -50,30 +58,47 @@ def generate_launch_description():
     
     xacro_file = os.path.join(mur_description_path, 'urdf', 'mur_620.gazebo.xacro')
 
-    doc = xacro.process_file(xacro_file, mappings={'use_sim' : 'true'})
+    doc = xacro.process_file(xacro_file, mappings={'use_sim' : 'true', 'tf_prefix' : "mur620a", 'robot_namespace' : "robot"})
 
     robot_desc = doc.toprettyxml(indent='  ')
     params = {'robot_description': robot_desc}
     
     node_robot_state_publisher = Node(
+        namespace=robot_ns,
         package='robot_state_publisher',
         executable='robot_state_publisher',
         output='screen',
         parameters=[params, {'use_sim_time': use_sim_time}]
     )
 
+    # gz_robot_spawner = Node(
+    #     package='ros_gz_sim',
+    #     executable='create',
+    #     output='screen',
+    #     arguments=['-string', robot_desc,
+    #                '-x', '0.0',
+    #                '-y', '0.0',
+    #                '-z', '0.07',
+    #                '-R', '0.0',
+    #                '-P', '0.0',
+    #                '-Y', '0.0',
+    #                '-name', 'mur_620',
+    #                '-allow_renaming', 'false'],
+    # )
+
     gz_robot_spawner = Node(
         package='ros_gz_sim',
         executable='create',
+        namespace=robot_ns,
         output='screen',
         arguments=['-string', robot_desc,
-                   '-x', '0.0',
-                   '-y', '0.0',
-                   '-z', '0.07',
-                   '-R', '0.0',
-                   '-P', '0.0',
-                   '-Y', '0.0',
-                   '-name', 'mur_620',
+                   '-x', x_spawn,
+                   '-y', y_spawn,
+                   '-z', z_spawn,
+                   '-R', roll_spawn,
+                   '-P', pitch_spawn,
+                   '-Y', yaw_spawn,
+                   '-name', [tf_prefix, 'mur_620'],
                    '-allow_renaming', 'false'],
     )
 
@@ -110,6 +135,7 @@ def generate_launch_description():
 
     #launch rqt_controller_manager
     rqt_controller_manager = Node(
+        namespace=robot_ns,
         package='rqt_controller_manager',
         executable='rqt_controller_manager',
         output='screen'
@@ -117,6 +143,7 @@ def generate_launch_description():
 
     # launch repub_twist.py
     repub_twist = Node(
+        namespace=robot_ns,
         package='mir_gazebo',
         executable='repub_twist.py',
         output='screen'
@@ -124,9 +151,10 @@ def generate_launch_description():
 
     # Bridge
     ros_gz_bridge = Node(
+        namespace=robot_ns,
         package='ros_gz_bridge',
         executable='parameter_bridge',
-        arguments=['/b_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan','/f_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan'],
+        arguments=['b_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan','f_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan'],
         output='screen'
     )
 
