@@ -122,6 +122,13 @@ def generate_launch_description():
         output='screen'
     )
 
+    # publish fake joint states
+    fake_mir_joint_publisher = Node(
+        package='mir_driver',
+        executable='fake_mir_joint_publisher.py',
+        output='screen'
+    )
+
     # Bridge
     ros_gz_bridge = Node(
         package='ros_gz_bridge',
@@ -184,6 +191,7 @@ def generate_launch_description():
         rviz,
         rqt_robot_steering,
         repub_twist,
+        fake_mir_joint_publisher,
         # *declared_arguments,
         # OpaqueFunction(function=launch_setup)
     ])
