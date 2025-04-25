@@ -18,19 +18,6 @@ from launch_ros.actions import SetParameter
 def launch_setup(context, *args, **kwargs):
     # Initialize Arguments
     ur_type = LaunchConfiguration("ur_type")
-    safety_limits = LaunchConfiguration("safety_limits")
-    safety_pos_margin = LaunchConfiguration("safety_pos_margin")
-    safety_k_position = LaunchConfiguration("safety_k_position")
-    # General arguments
-    controllers_file = LaunchConfiguration("controllers_file")
-    tf_prefix = LaunchConfiguration("tf_prefix")
-    activate_joint_controller = LaunchConfiguration("activate_joint_controller")
-    initial_joint_controller = LaunchConfiguration("initial_joint_controller")
-    description_file = LaunchConfiguration("description_file")
-    launch_rviz = LaunchConfiguration("launch_rviz")
-    rviz_config_file = LaunchConfiguration("rviz_config_file")
-    gazebo_gui = LaunchConfiguration("gazebo_gui")
-    world_file = LaunchConfiguration("world_file")
     moveit_launch_file = LaunchConfiguration("moveit_launch_file")
 
     ur_moveit_launch = IncludeLaunchDescription(
