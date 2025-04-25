@@ -126,9 +126,13 @@ def generate_launch_description():
     ros_gz_bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
-        arguments=['/b_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan','/f_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan'],
+        arguments=[
+            '/b_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan',
+            '/f_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan',
+            '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock'  # <--- Das ist neu!
+        ],
         output='screen'
-    )
+)
 
     rviz_config_file = os.path.join(mir_gazebo_path, 'rviz', 'mir600.rviz')
 
