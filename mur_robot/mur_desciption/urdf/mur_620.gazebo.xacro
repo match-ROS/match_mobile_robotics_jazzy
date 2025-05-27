@@ -152,5 +152,28 @@
 	<!-- <xacro:mir_robot_gazebo/> -->
 	<!-- <xacro:sick_s300_gazebo link="front_laser_link" robot_namespace="" topic="scan" tf_prefix=""/> -->
 	<!-- <xacro:mir_robot_gazebo/> -->
+        <!-- Force-torque sensor for UR10_l/tool0 -->
+        <gazebo reference="UR10_l/tool0">
+			<sensor name="ft_sensor_l" type="force_torque">
+		 	<pose>0 0 0 0 0 0</pose> <!-- Optional: Position relativ zur Montagefläche -->
+			<update_rate>500.0</update_rate>
+			<force_torque>
+				<frame>child</frame> <!-- Alternativ: parent -->
+			</force_torque>
+			<topic>ft_sensor_l</topic>
+			</sensor>
+        </gazebo>
+
+        <!-- Force-torque sensor for UR10_r/tool0 -->
+        <gazebo reference="UR10_r/tool0">
+			<sensor name="ft_sensor_r" type="force_torque">
+			<pose>0 0 0 0 0 0</pose> <!-- Optional: Position relativ zur Montagefläche -->
+			<update_rate>500.0</update_rate>
+			<force_torque>
+				<frame>child</frame> <!-- Alternativ: parent -->
+			</force_torque>
+			<topic>ft_sensor_r</topic>
+			</sensor>
+        </gazebo>
 
 </robot>
