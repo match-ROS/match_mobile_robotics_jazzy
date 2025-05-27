@@ -71,36 +71,36 @@ def generate_launch_description():
         parameters=[params, {'use_sim_time': use_sim_time}]
     )
 
-    # gz_robot_spawner = Node(
-    #     package='ros_gz_sim',
-    #     executable='create',
-    #     output='screen',
-    #     arguments=['-string', robot_desc,
-    #                '-x', '0.0',
-    #                '-y', '0.0',
-    #                '-z', '0.07',
-    #                '-R', '0.0',
-    #                '-P', '0.0',
-    #                '-Y', '0.0',
-    #                '-name', 'mur_620',
-    #                '-allow_renaming', 'false'],
-    # )
-
     gz_robot_spawner = Node(
         package='ros_gz_sim',
         executable='create',
-        namespace=robot_ns,
         output='screen',
         arguments=['-string', robot_desc,
-                   '-x', x_spawn,
-                   '-y', y_spawn,
-                   '-z', z_spawn,
-                   '-R', roll_spawn,
-                   '-P', pitch_spawn,
-                   '-Y', yaw_spawn,
-                   '-name', [tf_prefix, 'mur_620'],
+                   '-x', '0.0',
+                   '-y', '0.0',
+                   '-z', '0.07',
+                   '-R', '0.0',
+                   '-P', '0.0',
+                   '-Y', '0.0',
+                   '-name', 'mur_620',
                    '-allow_renaming', 'false'],
     )
+
+    # gz_robot_spawner = Node(
+    #     package='ros_gz_sim',
+    #     executable='create',
+    #     #namespace=robot_ns,
+    #     output='screen',
+    #     arguments=['-string', robot_desc,
+    #                '-x', x_spawn,
+    #                '-y', y_spawn,
+    #                '-z', z_spawn,
+    #                '-R', roll_spawn,
+    #                '-P', pitch_spawn,
+    #                '-Y', yaw_spawn,
+    #                '-name', [tf_prefix, 'mur_620'],
+    #                '-allow_renaming', 'false'],
+    # )
 
     load_joint_state_broadcaster = ExecuteProcess(
         cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
