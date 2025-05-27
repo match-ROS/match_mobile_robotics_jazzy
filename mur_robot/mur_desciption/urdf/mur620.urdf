@@ -587,18 +587,6 @@
       <!-- this is not the publish rate -->
       <visualize>true</visualize>
       <topic>__default_topic__</topic>
-      <plugin filename="libgazebo_ros_imu_sensor.so" name="imu_plugin">
-        <robotNamespace>/</robotNamespace>
-        <topicName>imu_data</topicName>
-        <bodyName>imu_link</bodyName>
-        <updateRateHZ>50.0</updateRateHZ>
-        <!-- this is the publish rate -->
-        <gaussianNoise>2.8900000000000004e-08</gaussianNoise>
-        <xyzOffset>0 0 0</xyzOffset>
-        <rpyOffset>0 0 0</rpyOffset>
-        <frameName>UR10_l//imu_frame</frameName>
-        <!-- from real MiR -->
-      </plugin>
       <pose>0 0 0 0 0 0</pose>
     </sensor>
   </gazebo>

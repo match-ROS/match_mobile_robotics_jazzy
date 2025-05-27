@@ -90,15 +90,15 @@ speed_scaling_state_broadcaster:
 
 force_torque_sensor_broadcaster:
   ros__parameters:
-    sensor_name: tcp_fts_sensor
+    sensor_name: force_torque_sensor_broadcaster/tcp_fts_sensor
     state_interface_names:
-      - force.x
-      - force.y
-      - force.z
-      - torque.x
-      - torque.y
-      - torque.z
-    frame_id: tool0
+      - force_torque_sensor_broadcaster/tcp_fts_sensor/force.x
+      - force_torque_sensor_broadcaster/tcp_fts_sensor/force.y
+      - force_torque_sensor_broadcaster/tcp_fts_sensor/force.z
+      - force_torque_sensor_broadcaster/tcp_fts_sensor/torque.x
+      - force_torque_sensor_broadcaster/tcp_fts_sensor/torque.y
+      - force_torque_sensor_broadcaster/tcp_fts_sensor/torque.z
+    frame_id: UR10_l/tool0
     topic_name: ft_data
 
 forward_velocity_controller_l:

@@ -62,7 +62,7 @@ def generate_launch_description():
         parameters=[params, {'use_sim_time': use_sim_time}]
     )
 
-    gz_robot_spawner = Node(
+    gz_robot_spawner_a = Node(
         package='ros_gz_sim',
         executable='create',
         output='screen',
@@ -73,7 +73,22 @@ def generate_launch_description():
                    '-R', '0.0',
                    '-P', '0.0',
                    '-Y', '0.0',
-                   '-name', 'mur_620',
+                   '-name', 'mur_620a',
+                   '-allow_renaming', 'false'],
+    )
+
+    gz_robot_spawner_b = Node(
+        package='ros_gz_sim',
+        executable='create',
+        output='screen',
+        arguments=['-string', robot_desc,
+                   '-x', '0.0',
+                   '-y', '0.0',
+                   '-z', '0.07',
+                   '-R', '0.0',
+                   '-P', '0.0',
+                   '-Y', '0.0',
+                   '-name', 'mur_620b',
                    '-allow_renaming', 'false'],
     )
 
@@ -136,7 +151,9 @@ def generate_launch_description():
         arguments=[
             '/b_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan',
             '/f_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan',
-            '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock'  # <--- Das ist neu!
+            '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',  
+            '/model/UR10_l/link/tool0/ft_sensor_l@geometry_msgs/msg/WrenchStamped[gz.msgs.Wrench',
+            '/ft_sensor_r@geometry_msgs/msg/WrenchStamped[gz.msgs.Wrench'
         ],
         output='screen'
 )
@@ -154,7 +171,7 @@ def generate_launch_description():
     return LaunchDescription([
         RegisterEventHandler(
             event_handler=OnProcessExit(
-                target_action=gz_robot_spawner,
+                target_action=gz_robot_spawner_a,
                 on_exit=[load_joint_state_broadcaster],
             )
         ),
@@ -186,7 +203,8 @@ def generate_launch_description():
         arguments,
         gazebo,
         node_robot_state_publisher,
-        gz_robot_spawner,
+        #gz_robot_spawner_a,
+        gz_robot_spawner_b,
         ros_gz_bridge,
         rviz,
         rqt_robot_steering,
