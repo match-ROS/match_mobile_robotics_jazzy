@@ -50,7 +50,12 @@ def generate_launch_description():
     
     xacro_file = os.path.join(mur_description_path, 'urdf', 'mur_620.gazebo.xacro')
 
-    doc = xacro.process_file(xacro_file, mappings={'use_sim' : 'true'})
+    doc = xacro.process_file(xacro_file, mappings={
+    'use_sim': 'true',
+    'tf_prefix': 'mur620a',
+    'robot_namespace': 'mur620a'
+    })
+
 
     robot_desc = doc.toprettyxml(indent='  ')
     params = {'robot_description': robot_desc}
@@ -59,13 +64,14 @@ def generate_launch_description():
         package='robot_state_publisher',
         executable='robot_state_publisher',
         output='screen',
-        parameters=[params, {'use_sim_time': use_sim_time}]
+        parameters=[params, {'use_sim_time': use_sim_time, 'frame_prefix': 'mur620a/'}]
     )
 
     gz_robot_spawner = Node(
         package='ros_gz_sim',
         executable='create',
         output='screen',
+        name='gz_robot_spawner',
         arguments=['-string', robot_desc,
                    '-x', '0.0',
                    '-y', '0.0',
@@ -73,7 +79,7 @@ def generate_launch_description():
                    '-R', '0.0',
                    '-P', '0.0',
                    '-Y', '0.0',
-                   '-name', 'mur_620',
+                   '-name', 'mur_620a',
                    '-allow_renaming', 'false'],
     )
 
