@@ -115,6 +115,8 @@ def launch_setup(context, *args, **kwargs):
     nodes = []
     nodes += spawn_robot('mur620a', 0.0, 0.0)
     nodes += spawn_robot('mur620b', 1.5, 0.0)
+    nodes += spawn_robot('mur620c', 3.5, 0.0)
+    nodes += spawn_robot('mur620d', 5.5, 0.0)
 
     return [gazebo, clock_bridge,lidar_bridge] + nodes
 
