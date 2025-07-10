@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <sdf version="1.6">
-  <world name="maze_world">
+  <world name="maze">
     <include>
       <uri>model://ground_plane</uri>
     </include>
@@ -27,6 +27,13 @@
         <falloff>0</falloff>
       </spot>
     </light>
+
+    <!-- <plugin
+      filename="gz-sim-sensors-system"
+      name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin> -->
+
 
   </world>
 </sdf>

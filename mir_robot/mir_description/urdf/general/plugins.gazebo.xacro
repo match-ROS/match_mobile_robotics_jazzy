@@ -15,13 +15,18 @@
 		</gazebo>
 	</xacro:macro>
 
+
 	<xacro:macro name="gazebo_sim_sensors" params="robot_namespace">
 		<gazebo>
-			<plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
-				<render_engine>ogre2</render_engine>
-			</plugin>
+			<xacro:if value="${robot_namespace == 'mur620a'}">
+				<plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+					<render_engine>ogre2</render_engine>
+					<robot_namespace>${robot_namespace}</robot_namespace>
+				</plugin>
+			</xacro:if>
 		</gazebo>
 	</xacro:macro>
+
 
 
 	<!-- This controller is deprecated and forbidden in Noetic -->

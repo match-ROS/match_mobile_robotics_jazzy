@@ -35,6 +35,17 @@ def launch_setup(context, *args, **kwargs):
         output='screen'
     )
 
+    lidar_bridge = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        name='lidar_bridge',
+        arguments=['/mur620a/scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan'],
+        remappings=[
+            ('/mur620a/scan', '/mur620a/scan')  # optional
+        ],
+        output='screen'
+    )
+
     def spawn_robot(robot_name, x, y):
         # Generiere URDF
         doc = xacro.process_file(xacro_path, mappings={
@@ -105,7 +116,7 @@ def launch_setup(context, *args, **kwargs):
     nodes += spawn_robot('mur620a', 0.0, 0.0)
     nodes += spawn_robot('mur620b', 1.5, 0.0)
 
-    return [gazebo, clock_bridge] + nodes
+    return [gazebo, clock_bridge,lidar_bridge] + nodes
 
 def generate_launch_description():
     return LaunchDescription([
