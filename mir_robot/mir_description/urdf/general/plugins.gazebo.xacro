@@ -21,7 +21,7 @@
 			<xacro:if value="${robot_namespace == 'mur620a'}">
 				<plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
 					<render_engine>ogre2</render_engine>
-					<robot_namespace>${robot_namespace}</robot_namespace>
+					<namespace>${robot_namespace}</namespace>
 				</plugin>
 			</xacro:if>
 		</gazebo>
