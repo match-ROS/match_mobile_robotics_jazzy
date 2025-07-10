@@ -23,6 +23,7 @@ def launch_setup(context, *args, **kwargs):
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(gz_sim_launch),
         launch_arguments={'gz_args': f'{world}.world -v 4 -r'}.items()
+        #launch_arguments={'gz_args': f'{world}.world -r -s'}.items()
     )
 
     # Bridge für /clock
@@ -101,8 +102,8 @@ def launch_setup(context, *args, **kwargs):
 
     # Roboter erzeugen
     nodes = []
-    #nodes += spawn_robot('mur620a', 0.0, 0.0)
-    nodes += spawn_robot('', 1.5, 0.0)
+    nodes += spawn_robot('mur620a', 0.0, 0.0)
+    nodes += spawn_robot('mur620b', 1.5, 0.0)
 
     return [gazebo, clock_bridge] + nodes
 
