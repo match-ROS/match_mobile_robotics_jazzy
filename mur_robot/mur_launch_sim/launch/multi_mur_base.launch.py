@@ -9,6 +9,7 @@ from launch.event_handlers import OnProcessExit
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+from launch.actions import TimerAction
 
 def launch_setup(context, *args, **kwargs):
     use_sim_time = LaunchConfiguration('use_sim_time').perform(context)
@@ -36,26 +37,38 @@ def launch_setup(context, *args, **kwargs):
         })
         robot_desc = doc.toxml()
 
-        # rsp_node = Node(
-        #     package='robot_state_publisher',
-        #     executable='robot_state_publisher',
-        #     name=f'{robot_name}_rsp',
-        #     namespace=robot_name,
-        #     parameters=[
-        #         {'robot_description': robot_desc},
-        #         {'use_sim_time': use_sim_time_value == 'true', 'frame_prefix': f'{robot_name}/'}
-        #     ],
-        #     output='screen'
-        # )
+        # ➕ robot_state_publisher mit remapping des Topics
         rsp_node = Node(
             package='robot_state_publisher',
             executable='robot_state_publisher',
             name=f'{robot_name}_rsp',
-            # kein `namespace=robot_name`!
-            parameters=[{'robot_description': robot_desc}, {'use_sim_time': use_sim_time_value == 'true'}],
+            namespace=robot_name,
+            parameters=[
+                {'robot_description': robot_desc},
+                {'use_sim_time': use_sim_time_value == 'true'}
+            ],
+            remappings=[
+                ('/robot_description', f'/{robot_name}/robot_description')
+            ],
             output='screen'
         )
 
+        # ➕ ros2_control_node im gleichen Namespace
+        control_node = Node(
+            package='controller_manager',
+            executable='ros2_control_node',
+            namespace=robot_name,
+            parameters=[
+                {'robot_description': robot_desc},
+                {'use_sim_time': use_sim_time_value == 'true'}
+            ],
+            remappings=[
+                ('/robot_description', f'/{robot_name}/robot_description')
+            ],
+            output='screen'
+        )
+
+        # ➕ Spawn mit ros_gz
         spawn_node = ExecuteProcess(
             cmd=[
                 'ros2', 'run', 'ros_gz_sim', 'create',
@@ -67,13 +80,28 @@ def launch_setup(context, *args, **kwargs):
             emulate_tty=True
         )
 
-        return [spawn_node, rsp_node]
+        delayed_control_node = TimerAction(
+            period=3.0,
+            actions=[control_node]
+        )
+
+        return [spawn_node, rsp_node, delayed_control_node]
+
 
     nodes = []
     nodes += spawn_robot('mur620a', 0.0, 0.0)
-    nodes += spawn_robot('mur620b', 1.5, 0.0)
+    #nodes += spawn_robot('mur620b', 1.5, 0.0)
 
-    return [gazebo] + nodes
+    clock_bridge = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        name='clock_bridge',
+        arguments=['/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock'],
+        output='screen'
+    )
+
+
+    return [gazebo,clock_bridge] + nodes
 
 def generate_launch_description():
     return LaunchDescription([
