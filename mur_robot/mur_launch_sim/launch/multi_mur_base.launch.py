@@ -12,6 +12,7 @@ from launch_ros.actions import Node
 
 def launch_setup(context, *args, **kwargs):
     use_sim_time = LaunchConfiguration('use_sim_time').perform(context)
+    use_sim_time_value = LaunchConfiguration('use_sim_time').perform(context)
     world = LaunchConfiguration('world').perform(context)
 
     mur_description_path = get_package_share_directory('mur_desciption')
@@ -35,15 +36,23 @@ def launch_setup(context, *args, **kwargs):
         })
         robot_desc = doc.toxml()
 
+        # rsp_node = Node(
+        #     package='robot_state_publisher',
+        #     executable='robot_state_publisher',
+        #     name=f'{robot_name}_rsp',
+        #     namespace=robot_name,
+        #     parameters=[
+        #         {'robot_description': robot_desc},
+        #         {'use_sim_time': use_sim_time_value == 'true', 'frame_prefix': f'{robot_name}/'}
+        #     ],
+        #     output='screen'
+        # )
         rsp_node = Node(
             package='robot_state_publisher',
             executable='robot_state_publisher',
             name=f'{robot_name}_rsp',
-            namespace=robot_name,
-            parameters=[
-                {'robot_description': robot_desc},
-                {'use_sim_time': use_sim_time, 'frame_prefix': f'{robot_name}/'}
-            ],
+            # kein `namespace=robot_name`!
+            parameters=[{'robot_description': robot_desc}, {'use_sim_time': use_sim_time_value == 'true'}],
             output='screen'
         )
 
