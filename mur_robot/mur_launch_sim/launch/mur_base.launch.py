@@ -111,7 +111,10 @@ def generate_launch_description():
     rqt_robot_steering = Node(
         package='rqt_robot_steering',
         executable='rqt_robot_steering',
-        output='screen'
+        output='screen',
+            remappings=[
+                ('/cmd_vel', '/mobile_base_controller/cmd_vel')
+            ]
     )
 
     #launch rqt_controller_manager
@@ -142,7 +145,9 @@ def generate_launch_description():
         arguments=[
             '/b_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan',
             '/f_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan',
-            '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock'  # <--- Das ist neu!
+            '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',  # <--- Das ist neu!
+            '/model/UR10_l/link/tool0/ft_sensor_l@geometry_msgs/msg/WrenchStamped[gz.msgs.Wrench',
+            '/ft_sensor_r@geometry_msgs/msg/WrenchStamped[gz.msgs.Wrench'
         ],
         output='screen'
 )
@@ -197,7 +202,7 @@ def generate_launch_description():
         rviz,
         rqt_robot_steering,
         repub_twist,
-        # fake_mir_joint_publisher,
+        #fake_mir_joint_publisher,
         # *declared_arguments,
         # OpaqueFunction(function=launch_setup)
     ])

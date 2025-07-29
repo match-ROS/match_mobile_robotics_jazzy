@@ -126,7 +126,12 @@ def generate_launch_description():
     ros_gz_bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
-        arguments=['/b_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan','/f_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan'],
+        arguments=['/b_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan',
+            '/f_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan',
+            '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',  # <--- Das ist neu!
+            '/model/UR10_l/link/tool0/ft_sensor_l@geometry_msgs/msg/WrenchStamped[gz.msgs.Wrench',
+            '/ft_sensor_r@geometry_msgs/msg/WrenchStamped[gz.msgs.Wrench'
+        ],
         output='screen'
     )
 
