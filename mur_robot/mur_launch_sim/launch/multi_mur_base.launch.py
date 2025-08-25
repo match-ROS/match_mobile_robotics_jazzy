@@ -63,7 +63,8 @@ def launch_setup(context, *args, **kwargs):
             namespace=robot_name,
             parameters=[
                 {'robot_description': robot_desc},
-                {'use_sim_time': use_sim_time == 'true'}
+                {'use_sim_time': use_sim_time == 'true'},
+                {'frame_prefix': f'{robot_name}/'} 
             ],
             output='screen'
         )
