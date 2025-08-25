@@ -29,7 +29,7 @@ def generate_launch_description():
     mir_gazebo_path = os.path.join(get_package_share_directory('mir_gazebo'))
     
     mur_description_path = os.path.join(
-        get_package_share_directory('mur_desciption'))
+        get_package_share_directory('mur_description'))
    
     gazebo_resource_path = SetEnvironmentVariable(
         name='GZ_SIM_RESOURCE_PATH',
