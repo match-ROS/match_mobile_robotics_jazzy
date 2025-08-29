@@ -62,6 +62,7 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
 
     mur_description_path = get_package_share_directory('mur_description')
     xacro_file = os.path.join(mur_description_path, 'urdf', 'mur_620.gazebo.xacro')
+    controllers_yaml = os.path.join(mur_description_path, 'config', 'mur_controllers.yaml')
     doc = xacro.process_file(xacro_file, mappings={
         'use_sim': 'true',
         'tf_prefix': robot_name,
@@ -123,7 +124,9 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
             parameters=[
                 {'robot_description': robot_desc},
                 {'use_sim_time': use_sim_time},
+                {'publish_frequency': 0.0},  # suppress periodic republishes (supported in newer versions)
             ],
+            remappings=[('/tf', 'unused_tf'), ('/tf_static', 'unused_tf_static')],  # optional to avoid duplicates
             output='screen',
         )
     )
@@ -136,10 +139,10 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
             namespace=robot_name,
             name='controller_manager',
             parameters=[
-                {'robot_description': robot_desc},
+                controllers_yaml,  # loads controller definitions
+                {'robot_description': robot_desc},  # ensure param present early
                 {'use_sim_time': use_sim_time},
             ],
-            remappings=[('/robot_description', f'/{robot_name}/robot_description')],
             output='screen',
         )
     )
