@@ -6,9 +6,9 @@
 
     <!-- LiDAR Sensor Configuration for ROS 2 -->
     <gazebo reference="${link}">
-      <sensor name="${link}" type="gpu_lidar">
+      <sensor name="${robot_namespace}_${link}" type="gpu_lidar">
         <gz_frame_id>${link}</gz_frame_id> <!-- Use the provided link for frame ID -->
-        <topic>${topic}</topic> <!-- Use the provided topic for the scan -->
+        <topic>${topic}</topic>  <!-- Use the provided topic for the scan -->
         <update_rate>12.5</update_rate> <!-- Retained the original update rate -->
         <lidar>
           <scan>
@@ -21,7 +21,7 @@
             <vertical>
               <samples>1</samples> <!-- Single vertical sample (no vertical scan in the original) -->
               <resolution>0.1</resolution> <!-- Set a small resolution for vertical scan -->
-              <min_angle>0.0</min_angle> <!-- No vertical range in original -->
+              <min_angle>0.0</min_angle> <!-- No vertical range in original --> 
               <max_angle>0.0</max_angle> <!-- No vertical range in original -->
             </vertical>
           </scan>

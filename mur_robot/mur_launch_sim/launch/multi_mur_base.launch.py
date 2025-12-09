@@ -8,6 +8,8 @@ from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, SetE
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+from launch.actions import RegisterEventHandler
+from launch.event_handlers import OnProcessStart
 
 def launch_setup(context, *args, **kwargs):
     use_sim_time = LaunchConfiguration('use_sim_time').perform(context)
@@ -35,16 +37,7 @@ def launch_setup(context, *args, **kwargs):
         output='screen'
     )
 
-    lidar_bridge = Node(
-        package='ros_gz_bridge',
-        executable='parameter_bridge',
-        name='lidar_bridge',
-        arguments=['/mur620a/scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan'],
-        remappings=[
-            ('/mur620a/scan', '/mur620a/scan')  # optional
-        ],
-        output='screen'
-    )
+    
 
     def spawn_robot(robot_name, x, y):
         # Generiere URDF
@@ -79,6 +72,29 @@ def launch_setup(context, *args, **kwargs):
             ],
             output='screen'
         )
+        front_lidar_bridge = Node(
+            package='ros_gz_bridge',
+            executable='parameter_bridge',
+            name=f'{robot_name}_front_lidar_bridge',
+            namespace=robot_name,
+            arguments=[f'/{robot_name}/f_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan'],
+            # remappings=[
+            #     ('/mur620/f_scan', f'/{robot_name}/f_scan')  # optional
+            # ],
+            output='screen'
+        )
+        back_lidar_bridge = Node(
+            package='ros_gz_bridge',
+            executable='parameter_bridge',
+            name=f'{robot_name}_back_lidar_bridge',
+            namespace=robot_name,
+            arguments=[f'/{robot_name}/b_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan'],
+            # remappings=[
+            #     ('/mur620/b_scan', f'/{robot_name}/b_scan')  # optional
+            # ],
+            output='screen'
+        )
+
 
         # Controller Manager im Namespace mit Remap
         control_node = Node(
@@ -109,7 +125,7 @@ def launch_setup(context, *args, **kwargs):
             output='screen'
         )
 
-        return [spawn_node, rsp_node, global_rsp_node, control_node]
+        return [spawn_node, rsp_node, global_rsp_node, control_node, front_lidar_bridge, back_lidar_bridge]
 
     # Roboter erzeugen
     nodes = []
@@ -118,7 +134,7 @@ def launch_setup(context, *args, **kwargs):
     nodes += spawn_robot('mur620c', 3.5, 0.0)
     nodes += spawn_robot('mur620d', 5.5, 0.0)
 
-    return [gazebo, clock_bridge,lidar_bridge] + nodes
+    return [gazebo, clock_bridge] + nodes
 
 def generate_launch_description():
     return LaunchDescription([

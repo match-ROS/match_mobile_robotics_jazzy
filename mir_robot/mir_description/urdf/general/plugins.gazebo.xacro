@@ -25,6 +25,20 @@
 				</plugin>
 			</xacro:if>
 		</gazebo>
+		
+		<xacro:sick_s300_gazebo
+			link="front_laser_link"
+			topic="${robot_namespace}/f_scan"
+			robot_namespace="${robot_namespace}"
+			tf_prefix=""
+		/>
+		<xacro:sick_s300_gazebo
+			link="back_laser_link"
+			topic="${robot_namespace}/b_scan"
+			robot_namespace="${robot_namespace}"
+			tf_prefix=""
+		/>
+
 	</xacro:macro>
 
 
