@@ -16,7 +16,7 @@ def launch_setup(context, *args, **kwargs):
     world = LaunchConfiguration('world').perform(context)
 
     # Pfade
-    mur_description_path = get_package_share_directory('mur_desciption')
+    mur_description_path = get_package_share_directory('mur_description')
     mir_gazebo_path = get_package_share_directory('mir_gazebo')
     gz_sim_launch = os.path.join(get_package_share_directory('ros_gz_sim'), 'launch', 'gz_sim.launch.py')
     xacro_path = os.path.join(mur_description_path, 'urdf', 'mur_620.gazebo.xacro')
@@ -56,7 +56,8 @@ def launch_setup(context, *args, **kwargs):
             namespace=robot_name,
             parameters=[
                 {'robot_description': robot_desc},
-                {'use_sim_time': use_sim_time == 'true'}
+                {'use_sim_time': use_sim_time == 'true'},
+                {'frame_prefix': f'{robot_name}/'} 
             ],
             output='screen'
         )

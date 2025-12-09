@@ -1,82 +1,37 @@
+"""Multi-robot mur620 launch (robot-only, no Gazebo world).
+
+Spawns four mur620 robots (a-d) into an ALREADY running Gazebo instance. It
+does not start a world. For a ready-to-run example including Gazebo, use
+`example_multi_mur620.launch.py`.
+"""
+
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, GroupAction, RegisterEventHandler, SetEnvironmentVariable, TimerAction
+from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration
-from launch_ros.actions import PushRosNamespace
-from launch_ros.substitutions import FindPackageShare
 import os
 from ament_index_python.packages import get_package_share_directory
 
 
 def generate_launch_description():
-    # Define namespace arguments for both robots
-    declared_arguments = [
-        DeclareLaunchArgument("robot1_ns", default_value="robot1", description="Namespace for robot 1"),
-        DeclareLaunchArgument("robot2_ns", default_value="robot2", description="Namespace for robot 2"),
-        DeclareLaunchArgument("tf_prefix1", default_value="", description="TF prefix for robot 1"),
-        DeclareLaunchArgument("tf_prefix2", default_value="robot2_", description="TF prefix for robot 2"),
-        DeclareLaunchArgument("world", default_value="maze", description="Gz sim World"),
+    mur_launch_sim_path = get_package_share_directory('mur_launch_sim')
+    mur_base_launch = os.path.join(mur_launch_sim_path, 'launch', 'mur_base.launch.py')
+
+    def robot_inc(name, x):
+        return IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(mur_base_launch),
+            launch_arguments={
+                'robot_name': name,
+                'x': str(x), 'y': '0.0', 'z': '0.07', 'Y': '0.0',
+                'include_gz': 'false',  # world handled elsewhere
+                'lidar_bridge': 'true',
+            }.items()
+        )
+
+    robots = [
+        robot_inc('mur620a', 0.0),
+        robot_inc('mur620b', 1.5),
+        robot_inc('mur620c', 3.5),
+        robot_inc('mur620d', 5.5),
     ]
 
-    use_sim_time = LaunchConfiguration('use_sim_time', default=True)
-
-    mir_gazebo_path = os.path.join(get_package_share_directory('mir_gazebo'))
-
-    gazebo_resource_path = SetEnvironmentVariable(
-        name='GZ_SIM_RESOURCE_PATH',
-        value=os.path.join(mir_gazebo_path, 'worlds')
-    )
-
-    # Get the path to the existing launch file
-    launch_file_path = os.path.join(
-        FindPackageShare("mur_launch_sim").find("mur_launch_sim"),
-        "launch",
-        "mur620_slim.launch.py",
-    )
-
-    # Group action for robot 1 with namespace and tf_prefix
-    robot1 = GroupAction([
-        PushRosNamespace(LaunchConfiguration("robot1_ns")),
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(launch_file_path),
-            launch_arguments={
-                #"tf_prefix": LaunchConfiguration("tf_prefix1"),
-                # add other specific arguments as needed
-            }.items(),
-        ),
-    ])
-
-    # Group action for robot 2 with different namespace and tf_prefix
-    robot2 = GroupAction([
-        PushRosNamespace(LaunchConfiguration("robot2_ns")),
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(launch_file_path),
-            launch_arguments={
-                #"tf_prefix": LaunchConfiguration("tf_prefix2"),
-                # add other specific arguments as needed
-            }.items(),
-        ),
-    ])
-
-    # Launch Gazebo first
-    gazebo = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([
-            os.path.join(get_package_share_directory('ros_gz_sim'), 'launch', 'gz_sim.launch.py')]),
-        launch_arguments=[
-            ('gz_args', [
-                LaunchConfiguration('world'),
-                '.world',
-                ' -v 4',
-                ' -r'
-            ])
-        ]
-    )
-
-    # TimerAction to delay launching of robots by 5 seconds
-    start_robots = TimerAction(
-        period=5.0,
-        actions=[robot1]
-    )
-
-    # Define the launch description
-    return LaunchDescription(declared_arguments + [gazebo_resource_path, gazebo, start_robots])
+    return LaunchDescription(robots)

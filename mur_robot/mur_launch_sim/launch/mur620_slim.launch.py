@@ -92,7 +92,7 @@ def generate_launch_description():
         output='screen'
     )
 
-    # robot_description_file_path = os.path.join(get_package_share_directory("mur_desciption"), "urdf", "mur_620.gazebo.xacro")
+    # robot_description_file_path = os.path.join(get_package_share_directory("mur_description"), "urdf", "mur_620.gazebo.xacro")
     moveit_config = (
         MoveItConfigsBuilder(robot_name="mur620", package_name="mur_moveit_config")
         .robot_description_semantic(Path("srdf") / "mur620.srdf.xacro", {"prefix": "mur620","model_name": "mur620"})
