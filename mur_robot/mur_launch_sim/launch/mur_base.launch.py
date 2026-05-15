@@ -24,6 +24,7 @@ Arguments:
 
 import os
 import tempfile
+from copy import deepcopy
 
 import xacro
 import yaml
@@ -66,18 +67,31 @@ def make_controller_config(robot_name, source_yaml):
     mobile_params['odom_frame_id'] = f'{robot_name}/odom'
     mobile_params['base_frame_id'] = f'{robot_name}/base_footprint'
 
+    namespaced_config = deepcopy(config)
+    namespaced_config[f'/{robot_name}/controller_manager'] = deepcopy(
+        config['controller_manager']
+    )
+
+    for controller_name in config['controller_manager']['ros__parameters']:
+        if controller_name == 'update_rate':
+            continue
+        if controller_name in config:
+            namespaced_config[f'/{robot_name}/{controller_name}'] = deepcopy(
+                config[controller_name]
+            )
+
     out_dir = os.path.join(tempfile.gettempdir(), 'mur_launch_sim')
     os.makedirs(out_dir, exist_ok=True)
     safe_robot_name = robot_name.replace('/', '_')
     out_file = os.path.join(out_dir, f'{safe_robot_name}_mur_controllers.yaml')
 
     with open(out_file, 'w', encoding='utf-8') as config_file:
-        yaml.safe_dump(config, config_file, sort_keys=False)
+        yaml.safe_dump(namespaced_config, config_file, sort_keys=False)
 
     return out_file
 
 
-def controller_spawner(robot_name, controller_name):
+def controller_spawner(robot_name, controller_name, controllers_yaml):
     return Node(
         package='controller_manager',
         executable='spawner',
@@ -85,6 +99,7 @@ def controller_spawner(robot_name, controller_name):
             controller_name,
             '--controller-manager', f'/{robot_name}/controller_manager',
             '--controller-manager-timeout', '60',
+            '--param-file', controllers_yaml,
         ],
         output='screen',
     )
@@ -219,10 +234,18 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
                 OnProcessExit(
                     target_action=spawn_entity,
                     on_exit=[
-                        controller_spawner(robot_name, 'joint_state_broadcaster'),
-                        controller_spawner(robot_name, 'mobile_base_controller'),
-                        controller_spawner(robot_name, 'lift_controller_l'),
-                        controller_spawner(robot_name, 'lift_controller_r'),
+                        controller_spawner(
+                            robot_name, 'joint_state_broadcaster', controllers_yaml
+                        ),
+                        controller_spawner(
+                            robot_name, 'mobile_base_controller', controllers_yaml
+                        ),
+                        controller_spawner(
+                            robot_name, 'lift_controller_l', controllers_yaml
+                        ),
+                        controller_spawner(
+                            robot_name, 'lift_controller_r', controllers_yaml
+                        ),
                     ],
                 )
             )
