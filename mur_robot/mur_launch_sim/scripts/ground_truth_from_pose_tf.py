@@ -52,10 +52,14 @@ class GroundTruthFromPoseTf(Node):
 
         self.target_names = {
             self.robot_name,
+            f'{self.robot_name}/base_link',
             f'{self.robot_name}/base_footprint',
+            f'{self.robot_name}::base_link',
             f'{self.robot_name}::base_footprint',
+            'base_link',
             'base_footprint',
         }
+        self.logged_available_names = False
         self.previous_stamp = None
         self.previous_transform = None
 
@@ -75,6 +79,7 @@ class GroundTruthFromPoseTf(Node):
     def pose_callback(self, msg: TFMessage):
         transform = self.find_robot_transform(msg)
         if transform is None:
+            self.log_available_names_once(msg)
             return
 
         pose_msg = self.make_pose(transform)
@@ -88,10 +93,51 @@ class GroundTruthFromPoseTf(Node):
 
     def find_robot_transform(self, msg: TFMessage):
         for transform in msg.transforms:
-            name = transform.child_frame_id.strip('/')
-            if name in self.target_names:
+            if self.is_target_transform(transform):
                 return transform
         return None
+
+    def is_target_transform(self, transform: TransformStamped) -> bool:
+        names = [
+            transform.child_frame_id.strip('/'),
+            transform.header.frame_id.strip('/'),
+        ]
+        for name in names:
+            if not name:
+                continue
+            if name in self.target_names:
+                return True
+            if name == self.robot_name:
+                return True
+            if name.endswith(f'{self.robot_name}/base_footprint'):
+                return True
+            if name.endswith(f'{self.robot_name}/base_link'):
+                return True
+            if name.endswith(f'{self.robot_name}::base_footprint'):
+                return True
+            if name.endswith(f'{self.robot_name}::base_link'):
+                return True
+        return False
+
+    def log_available_names_once(self, msg: TFMessage):
+        if self.logged_available_names:
+            return
+        self.logged_available_names = True
+        names = []
+        for transform in msg.transforms:
+            child_name = transform.child_frame_id.strip('/')
+            parent_name = transform.header.frame_id.strip('/')
+            if child_name:
+                names.append(f'child={child_name}')
+            if parent_name:
+                names.append(f'parent={parent_name}')
+        preview = ', '.join(names[:40])
+        if len(names) > 40:
+            preview += ', ...'
+        self.get_logger().warning(
+            f'No ground truth match for {sorted(self.target_names)}. '
+            f'Available Gazebo pose names: {preview}'
+        )
 
     def make_pose(self, transform: TransformStamped) -> PoseStamped:
         pose_msg = PoseStamped()

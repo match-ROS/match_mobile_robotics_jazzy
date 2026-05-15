@@ -7,14 +7,32 @@ source_setup() {
   set -u
 }
 
+section() {
+  printf '\n== %s ==\n' "$1"
+}
+
+run() {
+  printf '\n$ %s\n' "$*"
+  "$@" || true
+}
+
 set -u
 
 WS="${WS:-/home/rosmatch/colcon_ws}"
 ROBOT_NAME="${ROBOT_NAME:-mur620a}"
+WORLD="${WORLD:-maze}"
+REPO="${REPO:-${WS}/src/match_mobile_robotics_jazzy}"
+LOG_DIR="${LOG_DIR:-${REPO}/logs}"
+STAMP="$(date +%Y%m%d_%H%M%S)"
+LOG_FILE="${LOG_FILE:-${LOG_DIR}/check_${ROBOT_NAME}_${STAMP}.log}"
 
-section() {
-  printf '\n== %s ==\n' "$1"
-}
+mkdir -p "$LOG_DIR"
+exec > >(tee "$LOG_FILE") 2>&1
+
+echo "Writing diagnostic log to: $LOG_FILE"
+echo "Workspace: $WS"
+echo "Robot: $ROBOT_NAME"
+echo "World: $WORLD"
 
 cd "$WS"
 source_setup /opt/ros/jazzy/setup.bash
@@ -23,59 +41,48 @@ if [[ -f install/setup.bash ]]; then
 fi
 
 section "Processes"
-pgrep -af "mur_base.launch.py|gz sim|controller_manager|robot_state_publisher|nav2_|laserscan_multi_merger|parameter_bridge" || true
-PIDS="$(pgrep -f "mur_base.launch.py|gz sim|controller_manager|robot_state_publisher|nav2_|laserscan_multi_merger|parameter_bridge" | tr '\n' ',' | sed 's/,$//')"
-if [[ -n "${PIDS}" ]]; then
-  ps -o pid,ppid,stat,etime,cmd -p "${PIDS}" || true
-fi
+pgrep -af "mur_base.launch.py|gz sim|ground_truth|amcl|map_server|laserscan_multi_merger|parameter_bridge" || true
 
-section "Topics"
-ros2 topic list | grep -E '(^/tf$|^/tf_static$|scan|odom|map|cmd_vel|joint_states|ground_truth)' || true
-
-section "Scan Publishers"
-ros2 topic info "/${ROBOT_NAME}/f_scan" -v || true
-ros2 topic info "/${ROBOT_NAME}/b_scan" -v || true
-ros2 topic info "/${ROBOT_NAME}/f_scan_raw" -v || true
-ros2 topic info "/${ROBOT_NAME}/b_scan_raw" -v || true
-ros2 topic info "/${ROBOT_NAME}/scan" -v || true
-
-section "Nodes"
-ros2 node list | sort || true
+section "Core Topics"
+ros2 topic list | grep -E '(^/tf$|^/tf_static$|/map$|scan$|ground_truth|/world/.*/pose/info|mobile_base_controller/odom)' || true
 
 section "Controllers"
-ros2 control list_controllers -c "/${ROBOT_NAME}/controller_manager" || true
+run ros2 control list_controllers -c "/${ROBOT_NAME}/controller_manager"
 
-section "Diff Drive Params"
-for param in odom_frame_id base_frame_id tf_frame_prefix_enable tf_frame_prefix; do
-  ros2 param get "/${ROBOT_NAME}/mobile_base_controller" "$param" || true
-done
+section "Localization TF"
+run timeout 8 ros2 run tf2_ros tf2_echo "${ROBOT_NAME}/odom" "${ROBOT_NAME}/base_footprint"
+run timeout 8 ros2 run tf2_ros tf2_echo map "${ROBOT_NAME}/odom"
 
-section "Localization"
-ros2 lifecycle get /map_server || true
-ros2 lifecycle get /amcl || true
-ros2 param get /amcl global_frame_id || true
-ros2 param get /amcl odom_frame_id || true
-ros2 param get /amcl base_frame_id || true
-ros2 param get /amcl scan_topic || true
+section "Scan Sanity"
+echo "-- merged scan header"
+timeout 8 ros2 topic echo "/${ROBOT_NAME}/scan" --once --field header --qos-reliability best_effort || true
 
-section "Ground Truth"
-ros2 topic info "/${ROBOT_NAME}/ground_truth/pose" -v || true
-ros2 topic info "/${ROBOT_NAME}/ground_truth/odom" -v || true
-timeout 5 ros2 topic echo "/${ROBOT_NAME}/ground_truth/pose" --once || true
-timeout 5 ros2 topic echo "/${ROBOT_NAME}/ground_truth/odom" --once --field pose.pose || true
+section "Ground Truth Topics"
+run ros2 topic info "/world/${WORLD}/pose/info"
+run ros2 topic info "/${ROBOT_NAME}/ground_truth/pose"
+run ros2 topic info "/${ROBOT_NAME}/ground_truth/odom"
 
-section "Merged Scan Header"
-echo "-- /${ROBOT_NAME}/f_scan_raw"
-timeout 5 ros2 topic echo "/${ROBOT_NAME}/f_scan_raw" --once --field header --qos-reliability reliable || true
-echo "-- /${ROBOT_NAME}/b_scan_raw"
-timeout 5 ros2 topic echo "/${ROBOT_NAME}/b_scan_raw" --once --field header --qos-reliability reliable || true
-echo "-- /${ROBOT_NAME}/f_scan"
-timeout 5 ros2 topic echo "/${ROBOT_NAME}/f_scan" --once --field header --qos-reliability best_effort || true
-echo "-- /${ROBOT_NAME}/b_scan"
-timeout 5 ros2 topic echo "/${ROBOT_NAME}/b_scan" --once --field header --qos-reliability best_effort || true
-echo "-- /${ROBOT_NAME}/scan"
-timeout 10 ros2 topic echo "/${ROBOT_NAME}/scan" --once --field header --qos-reliability best_effort || true
+echo "-- Gazebo pose names, first 80"
+timeout 8 ros2 topic echo "/world/${WORLD}/pose/info" --once \
+  | awk '/child_frame_id:/ {print; count++; if (count >= 80) exit}' || true
 
-section "TF Checks"
-timeout 5 ros2 run tf2_ros tf2_echo "${ROBOT_NAME}/odom" "${ROBOT_NAME}/base_footprint" || true
-timeout 5 ros2 run tf2_ros tf2_echo map "${ROBOT_NAME}/odom" || true
+echo "-- /${ROBOT_NAME}/ground_truth/pose sample"
+timeout 8 ros2 topic echo "/${ROBOT_NAME}/ground_truth/pose" --once || true
+
+echo "-- /${ROBOT_NAME}/ground_truth/odom pose sample"
+timeout 8 ros2 topic echo "/${ROBOT_NAME}/ground_truth/odom" --once --field pose.pose || true
+
+section "Recent Ground Truth Logs"
+find /home/rosmatch/.ros/log -maxdepth 2 -type f \
+  \( -name '*ground_truth*.log' -o -name 'python3_*.log' \) \
+  -mmin -30 -printf '%T@ %p\n' \
+  | sort -nr \
+  | head -5 \
+  | cut -d' ' -f2- \
+  | while read -r logfile; do
+      echo "---- $logfile"
+      tail -80 "$logfile" || true
+    done
+
+section "Done"
+echo "Diagnostic log written to: $LOG_FILE"

@@ -255,7 +255,6 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
 
     if ground_truth:
         gz_pose_topic = f'/world/{world}/pose/info'
-        ros_pose_topic = f'/{robot_name}/ground_truth/world_pose_tf'
         nodes.extend([
             Node(
                 package='ros_gz_bridge',
@@ -264,9 +263,6 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
                 arguments=[
                     f'{gz_pose_topic}@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
                 ],
-                remappings=[
-                    (gz_pose_topic, ros_pose_topic),
-                ],
                 output='screen',
             ),
             Node(
@@ -274,7 +270,7 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
                 executable='ground_truth_from_pose_tf.py',
                 name=f'{robot_name}_ground_truth',
                 parameters=[{
-                    'input_topic': ros_pose_topic,
+                    'input_topic': gz_pose_topic,
                     'robot_name': robot_name,
                     'output_frame_id': 'map',
                     'child_frame_id': f'{robot_name}/base_footprint',
