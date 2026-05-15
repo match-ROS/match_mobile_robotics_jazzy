@@ -77,7 +77,10 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
         nodes.append(
             SetEnvironmentVariable(
                 name='GZ_SIM_RESOURCE_PATH',
-                value=os.path.join(mir_gazebo_path, 'worlds'),
+                value=os.pathsep.join([
+                    os.path.join(mir_gazebo_path, 'worlds'),
+                    os.path.join(mir_gazebo_path, 'worlds', 'include'),
+                ]),
             )
         )
         nodes.append(
@@ -181,5 +184,4 @@ def generate_launch_description():
     ld = LaunchDescription(declare_args())
     ld.add_action(OpaqueFunction(function=launch_setup))
     return ld
-
 

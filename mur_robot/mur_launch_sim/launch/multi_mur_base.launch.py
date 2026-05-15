@@ -143,7 +143,10 @@ def generate_launch_description():
         DeclareLaunchArgument('world', default_value='maze'),
         SetEnvironmentVariable(
             name='GZ_SIM_RESOURCE_PATH',
-            value=os.path.join(get_package_share_directory('mir_gazebo'), 'worlds')
+            value=os.pathsep.join([
+                os.path.join(get_package_share_directory('mir_gazebo'), 'worlds'),
+                os.path.join(get_package_share_directory('mir_gazebo'), 'worlds', 'include'),
+            ])
         ),
         OpaqueFunction(function=launch_setup)
     ])
