@@ -7,7 +7,7 @@
     <!-- LiDAR Sensor Configuration for ROS 2 -->
     <gazebo reference="${link}">
       <sensor name="${robot_namespace}_${link}" type="gpu_lidar">
-        <gz_frame_id>${link}</gz_frame_id> <!-- Use the provided link for frame ID -->
+        <gz_frame_id>${tf_prefix}${link}</gz_frame_id> <!-- Match the ROS TF frame used by robot_state_publisher. -->
         <topic>${topic}</topic>  <!-- Use the provided topic for the scan -->
         <update_rate>12.5</update_rate> <!-- Retained the original update rate -->
         <lidar>
