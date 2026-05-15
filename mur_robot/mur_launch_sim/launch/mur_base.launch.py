@@ -173,14 +173,6 @@ def make_localization_config(robot_name, map_yaml, use_sim_time, x, y, yaw):
 
 
 def controller_spawner(robot_name, controller_name, controllers_yaml):
-    controller_ros_args = []
-    if controller_name == 'mobile_base_controller':
-        controller_ros_args = [
-            '--controller-ros-args',
-            '-r', f'~/cmd_vel:=/{robot_name}/cmd_vel',
-            '-r', f'~/odom:=/{robot_name}/odom',
-        ]
-
     return Node(
         package='controller_manager',
         executable='spawner',
@@ -189,7 +181,7 @@ def controller_spawner(robot_name, controller_name, controllers_yaml):
             '--controller-manager', f'/{robot_name}/controller_manager',
             '--controller-manager-timeout', '60',
             '--param-file', controllers_yaml,
-        ] + controller_ros_args,
+        ],
         output='screen',
     )
 
@@ -362,14 +354,13 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
             Node(
                 package='ira_laser_tools',
                 executable='laserscan_multi_merger',
-                name='laser_scan_merger',
-                namespace=robot_name,
+                name=f'{robot_name}_laser_scan_merger',
                 parameters=[
                     {
-                        'laserscan_topics': 'b_scan f_scan',
+                        'laserscan_topics': f'/{robot_name}/b_scan /{robot_name}/f_scan',
                         'destination_frame': f'{robot_name}/base_footprint',
-                        'scan_destination_topic': 'scan',
-                        'cloud_destination_topic': 'scan_cloud',
+                        'scan_destination_topic': f'/{robot_name}/scan',
+                        'cloud_destination_topic': f'/{robot_name}/scan_cloud',
                         'min_height': -0.25,
                         'max_completion_time': 0.05,
                         'max_merge_time_diff': 0.005,

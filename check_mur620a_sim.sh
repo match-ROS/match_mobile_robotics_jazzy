@@ -47,6 +47,9 @@ ros2 param get /amcl odom_frame_id || true
 ros2 param get /amcl base_frame_id || true
 ros2 param get /amcl scan_topic || true
 
+section "Merged Scan Header"
+timeout 5 ros2 topic echo "/${ROBOT_NAME}/scan" --once --field header || true
+
 section "TF Checks"
 timeout 5 ros2 run tf2_ros tf2_echo "${ROBOT_NAME}/odom" "${ROBOT_NAME}/base_footprint" || true
 timeout 5 ros2 run tf2_ros tf2_echo map "${ROBOT_NAME}/odom" || true

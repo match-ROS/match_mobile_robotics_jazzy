@@ -19,6 +19,8 @@ stop_old_sim() {
   local patterns=(
     "ros2 launch mur_launch_sim mur_base.launch.py"
     "gz sim"
+    "gz sim server"
+    "gz sim gui"
     "ros_gz_sim/create"
     "parameter_bridge"
     "robot_state_publisher"
