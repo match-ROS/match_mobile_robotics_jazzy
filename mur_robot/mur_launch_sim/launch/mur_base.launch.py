@@ -22,6 +22,7 @@ Arguments:
   load_controllers (bool)  Spawn Gazebo ros2_control controllers (default true)
   laser_merger (bool)      Merge front/back scans to /<robot_name>/scan (default true)
   localization (bool)      Start map_server and AMCL (default false)
+  navigation (bool)        Start Nav2 planner/controller/BT navigator (default false)
   ground_truth (bool)      Publish Gazebo model pose as ground truth topics (default true)
 """
 
@@ -61,6 +62,7 @@ def declare_args():
         DeclareLaunchArgument('load_controllers', default_value='true'),
         DeclareLaunchArgument('laser_merger', default_value='true'),
         DeclareLaunchArgument('localization', default_value='false'),
+        DeclareLaunchArgument('navigation', default_value='false'),
         DeclareLaunchArgument('ground_truth', default_value='true'),
         DeclareLaunchArgument(
             'map',
@@ -178,6 +180,263 @@ def make_localization_config(robot_name, map_yaml, use_sim_time, x, y, yaw):
     return out_file
 
 
+def make_navigation_config(robot_name, use_sim_time):
+    base_frame = f'{robot_name}/base_footprint'
+    odom_frame = f'{robot_name}/odom'
+    scan_topic = f'/{robot_name}/scan'
+    odom_topic = f'/{robot_name}/mobile_base_controller/odom'
+
+    footprint = '[[0.45, 0.36], [0.45, -0.36], [-0.45, -0.36], [-0.45, 0.36]]'
+    config = {
+        'bt_navigator': {
+            'ros__parameters': {
+                'use_sim_time': use_sim_time,
+                'global_frame': 'map',
+                'robot_base_frame': base_frame,
+                'odom_topic': odom_topic,
+                'bt_loop_duration': 10,
+                'default_server_timeout': 20,
+                'wait_for_service_timeout': 1000,
+                'navigators': ['navigate_to_pose', 'navigate_through_poses'],
+                'navigate_to_pose': {
+                    'plugin': 'nav2_bt_navigator::NavigateToPoseNavigator',
+                },
+                'navigate_through_poses': {
+                    'plugin': 'nav2_bt_navigator::NavigateThroughPosesNavigator',
+                },
+                'error_code_names': [
+                    'compute_path_error_code',
+                    'follow_path_error_code',
+                ],
+            }
+        },
+        'bt_navigator_navigate_to_pose_rclcpp_node': {
+            'ros__parameters': {
+                'use_sim_time': use_sim_time,
+            }
+        },
+        'bt_navigator_navigate_through_poses_rclcpp_node': {
+            'ros__parameters': {
+                'use_sim_time': use_sim_time,
+            }
+        },
+        'controller_server': {
+            'ros__parameters': {
+                'use_sim_time': use_sim_time,
+                'controller_frequency': 20.0,
+                'costmap_update_timeout': 0.3,
+                'min_x_velocity_threshold': 0.001,
+                'min_y_velocity_threshold': 0.001,
+                'min_theta_velocity_threshold': 0.001,
+                'failure_tolerance': 0.3,
+                'progress_checker_plugins': ['progress_checker'],
+                'goal_checker_plugins': ['general_goal_checker'],
+                'controller_plugins': ['FollowPath'],
+                'progress_checker': {
+                    'plugin': 'nav2_controller::SimpleProgressChecker',
+                    'required_movement_radius': 0.5,
+                    'movement_time_allowance': 10.0,
+                },
+                'general_goal_checker': {
+                    'plugin': 'nav2_controller::SimpleGoalChecker',
+                    'stateful': True,
+                    'xy_goal_tolerance': 0.25,
+                    'yaw_goal_tolerance': 0.25,
+                },
+                'FollowPath': {
+                    'plugin': 'dwb_core::DWBLocalPlanner',
+                    'debug_trajectory_details': False,
+                    'min_vel_x': 0.0,
+                    'min_vel_y': 0.0,
+                    'max_vel_x': 0.4,
+                    'max_vel_y': 0.0,
+                    'max_vel_theta': 1.0,
+                    'min_speed_xy': 0.0,
+                    'max_speed_xy': 0.4,
+                    'min_speed_theta': 0.0,
+                    'acc_lim_x': 1.0,
+                    'acc_lim_y': 0.0,
+                    'acc_lim_theta': 1.5,
+                    'decel_lim_x': -1.0,
+                    'decel_lim_y': 0.0,
+                    'decel_lim_theta': -1.5,
+                    'vx_samples': 20,
+                    'vy_samples': 1,
+                    'vtheta_samples': 20,
+                    'sim_time': 1.7,
+                    'linear_granularity': 0.05,
+                    'angular_granularity': 0.025,
+                    'transform_tolerance': 0.2,
+                    'xy_goal_tolerance': 0.25,
+                    'trans_stopped_velocity': 0.25,
+                    'short_circuit_trajectory_evaluation': True,
+                    'stateful': True,
+                    'critics': [
+                        'RotateToGoal',
+                        'Oscillation',
+                        'BaseObstacle',
+                        'GoalAlign',
+                        'PathAlign',
+                        'PathDist',
+                        'GoalDist',
+                    ],
+                    'BaseObstacle.scale': 0.02,
+                    'PathAlign.scale': 32.0,
+                    'PathAlign.forward_point_distance': 0.4,
+                    'GoalAlign.scale': 24.0,
+                    'GoalAlign.forward_point_distance': 0.4,
+                    'PathDist.scale': 32.0,
+                    'GoalDist.scale': 24.0,
+                    'RotateToGoal.scale': 24.0,
+                    'RotateToGoal.slowing_factor': 5.0,
+                    'RotateToGoal.lookahead_time': -1.0,
+                },
+            }
+        },
+        'local_costmap': {
+            'local_costmap': {
+                'ros__parameters': {
+                    'use_sim_time': use_sim_time,
+                    'update_frequency': 5.0,
+                    'publish_frequency': 2.0,
+                    'global_frame': odom_frame,
+                    'robot_base_frame': base_frame,
+                    'rolling_window': True,
+                    'width': 4,
+                    'height': 4,
+                    'resolution': 0.05,
+                    'footprint': footprint,
+                    'footprint_padding': 0.02,
+                    'plugins': ['obstacle_layer', 'inflation_layer'],
+                    'obstacle_layer': {
+                        'plugin': 'nav2_costmap_2d::ObstacleLayer',
+                        'enabled': True,
+                        'observation_sources': 'scan',
+                        'scan': {
+                            'topic': scan_topic,
+                            'max_obstacle_height': 2.0,
+                            'clearing': True,
+                            'marking': True,
+                            'data_type': 'LaserScan',
+                            'raytrace_max_range': 8.0,
+                            'raytrace_min_range': 0.0,
+                            'obstacle_max_range': 6.0,
+                            'obstacle_min_range': 0.0,
+                        },
+                    },
+                    'inflation_layer': {
+                        'plugin': 'nav2_costmap_2d::InflationLayer',
+                        'cost_scaling_factor': 3.0,
+                        'inflation_radius': 0.65,
+                    },
+                    'always_send_full_costmap': True,
+                }
+            }
+        },
+        'global_costmap': {
+            'global_costmap': {
+                'ros__parameters': {
+                    'use_sim_time': use_sim_time,
+                    'update_frequency': 1.0,
+                    'publish_frequency': 1.0,
+                    'global_frame': 'map',
+                    'robot_base_frame': base_frame,
+                    'footprint': footprint,
+                    'footprint_padding': 0.02,
+                    'resolution': 0.05,
+                    'track_unknown_space': True,
+                    'plugins': ['static_layer', 'obstacle_layer', 'inflation_layer'],
+                    'static_layer': {
+                        'plugin': 'nav2_costmap_2d::StaticLayer',
+                        'map_subscribe_transient_local': True,
+                    },
+                    'obstacle_layer': {
+                        'plugin': 'nav2_costmap_2d::ObstacleLayer',
+                        'enabled': True,
+                        'observation_sources': 'scan',
+                        'scan': {
+                            'topic': scan_topic,
+                            'max_obstacle_height': 2.0,
+                            'clearing': True,
+                            'marking': True,
+                            'data_type': 'LaserScan',
+                            'raytrace_max_range': 8.0,
+                            'raytrace_min_range': 0.0,
+                            'obstacle_max_range': 6.0,
+                            'obstacle_min_range': 0.0,
+                        },
+                    },
+                    'inflation_layer': {
+                        'plugin': 'nav2_costmap_2d::InflationLayer',
+                        'cost_scaling_factor': 3.0,
+                        'inflation_radius': 0.65,
+                    },
+                    'always_send_full_costmap': True,
+                }
+            }
+        },
+        'planner_server': {
+            'ros__parameters': {
+                'use_sim_time': use_sim_time,
+                'expected_planner_frequency': 20.0,
+                'planner_plugins': ['GridBased'],
+                'costmap_update_timeout': 1.0,
+                'GridBased': {
+                    'plugin': 'nav2_navfn_planner::NavfnPlanner',
+                    'tolerance': 0.5,
+                    'use_astar': False,
+                    'allow_unknown': True,
+                },
+            }
+        },
+        'behavior_server': {
+            'ros__parameters': {
+                'use_sim_time': use_sim_time,
+                'local_costmap_topic': 'local_costmap/costmap_raw',
+                'global_costmap_topic': 'global_costmap/costmap_raw',
+                'local_footprint_topic': 'local_costmap/published_footprint',
+                'global_footprint_topic': 'global_costmap/published_footprint',
+                'cycle_frequency': 10.0,
+                'behavior_plugins': ['spin', 'backup', 'drive_on_heading', 'wait'],
+                'spin': {'plugin': 'nav2_behaviors::Spin'},
+                'backup': {'plugin': 'nav2_behaviors::BackUp'},
+                'drive_on_heading': {'plugin': 'nav2_behaviors::DriveOnHeading'},
+                'wait': {'plugin': 'nav2_behaviors::Wait'},
+                'local_frame': odom_frame,
+                'global_frame': 'map',
+                'robot_base_frame': base_frame,
+                'transform_tolerance': 0.1,
+                'simulate_ahead_time': 2.0,
+                'max_rotational_vel': 1.0,
+                'min_rotational_vel': 0.4,
+                'rotational_acc_lim': 1.5,
+            }
+        },
+        'lifecycle_manager_navigation': {
+            'ros__parameters': {
+                'use_sim_time': use_sim_time,
+                'autostart': True,
+                'node_names': [
+                    'controller_server',
+                    'planner_server',
+                    'behavior_server',
+                    'bt_navigator',
+                ],
+            }
+        },
+    }
+
+    out_dir = os.path.join(tempfile.gettempdir(), 'mur_launch_sim')
+    os.makedirs(out_dir, exist_ok=True)
+    safe_robot_name = robot_name.replace('/', '_')
+    out_file = os.path.join(out_dir, f'{safe_robot_name}_navigation.yaml')
+
+    with open(out_file, 'w', encoding='utf-8') as config_file:
+        yaml.safe_dump(config, config_file, sort_keys=False)
+
+    return out_file
+
+
 def controller_spawner(robot_name, controller_name, controllers_yaml):
     return Node(
         package='controller_manager',
@@ -208,6 +467,7 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
     load_controllers = LaunchConfiguration('load_controllers').perform(context) == 'true'
     laser_merger = LaunchConfiguration('laser_merger').perform(context) == 'true'
     localization = LaunchConfiguration('localization').perform(context) == 'true'
+    navigation = LaunchConfiguration('navigation').perform(context) == 'true'
     ground_truth = LaunchConfiguration('ground_truth').perform(context) == 'true'
     map_yaml = LaunchConfiguration('map').perform(context)
 
@@ -469,6 +729,55 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
                 executable='lifecycle_manager',
                 name='lifecycle_manager_localization',
                 parameters=[localization_yaml],
+                output='screen',
+            ),
+        ])
+
+    if navigation:
+        navigation_yaml = make_navigation_config(robot_name, use_sim_time)
+        cmd_vel_topic = f'/{robot_name}/mobile_base_controller/cmd_vel'
+        remappings = [
+            ('/tf', 'tf'),
+            ('/tf_static', 'tf_static'),
+        ]
+        nodes.extend([
+            Node(
+                package='nav2_controller',
+                executable='controller_server',
+                name='controller_server',
+                parameters=[navigation_yaml],
+                remappings=remappings + [('cmd_vel', cmd_vel_topic)],
+                output='screen',
+            ),
+            Node(
+                package='nav2_planner',
+                executable='planner_server',
+                name='planner_server',
+                parameters=[navigation_yaml],
+                remappings=remappings,
+                output='screen',
+            ),
+            Node(
+                package='nav2_behaviors',
+                executable='behavior_server',
+                name='behavior_server',
+                parameters=[navigation_yaml],
+                remappings=remappings + [('cmd_vel', cmd_vel_topic)],
+                output='screen',
+            ),
+            Node(
+                package='nav2_bt_navigator',
+                executable='bt_navigator',
+                name='bt_navigator',
+                parameters=[navigation_yaml],
+                remappings=remappings,
+                output='screen',
+            ),
+            Node(
+                package='nav2_lifecycle_manager',
+                executable='lifecycle_manager',
+                name='lifecycle_manager_navigation',
+                parameters=[navigation_yaml],
                 output='screen',
             ),
         ])

@@ -41,7 +41,7 @@ if [[ -f install/setup.bash ]]; then
 fi
 
 section "Processes"
-pgrep -af "mur_base.launch.py|gz sim|ground_truth|amcl|map_server" || true
+pgrep -af "mur_base.launch.py|gz sim|ground_truth|amcl|map_server|controller_server|planner_server|behavior_server|bt_navigator" || true
 
 section "Core Topics"
 ros2 topic list | grep -E '(^/tf$|^/tf_static$|/map$|ground_truth|/f_scan$|/b_scan$|/scan$|/scan_merged_raw$|mobile_base_controller/odom)' || true
@@ -75,6 +75,14 @@ timeout 8 ros2 topic echo "/${ROBOT_NAME}/ground_truth/odom" --once --field pose
 echo "-- Gazebo pose names, first 40"
 timeout 5 gz topic -e -t "/world/${WORLD}/pose/info" -n 1 \
   | awk '/name:/ {print; count++; if (count >= 40) exit}' || true
+
+section "Navigation"
+run ros2 lifecycle get /controller_server
+run ros2 lifecycle get /planner_server
+run ros2 lifecycle get /behavior_server
+run ros2 lifecycle get /bt_navigator
+run ros2 action list
+run ros2 topic info "/${ROBOT_NAME}/mobile_base_controller/cmd_vel" --verbose
 
 section "Recent Ground Truth Logs"
 find /home/rosmatch/.ros/log -maxdepth 2 -type f \

@@ -33,6 +33,10 @@ stop_old_sim() {
     "controller_manager/spawner"
     "nav2_map_server"
     "nav2_amcl"
+    "nav2_controller"
+    "nav2_planner"
+    "nav2_behaviors"
+    "nav2_bt_navigator"
     "nav2_lifecycle_manager"
     "laserscan_multi_merger"
   )
@@ -72,6 +76,7 @@ source_setup install/setup.bash
 
 rm -f "/tmp/mur_launch_sim/${ROBOT_NAME}_mur_controllers.yaml"
 rm -f "/tmp/mur_launch_sim/${ROBOT_NAME}_localization.yaml"
+rm -f "/tmp/mur_launch_sim/${ROBOT_NAME}_navigation.yaml"
 
 exec ros2 launch mur_launch_sim mur_base.launch.py \
   robot_name:="${ROBOT_NAME}" \
@@ -83,4 +88,5 @@ exec ros2 launch mur_launch_sim mur_base.launch.py \
   load_controllers:=true \
   laser_merger:=true \
   localization:=true \
+  navigation:=true \
   ground_truth:=true
