@@ -15,6 +15,10 @@ WORLD="${WORLD:-maze}"
 BUILD_TYPE="${BUILD_TYPE:-RelWithDebInfo}"
 CLEAN_START="${CLEAN_START:-true}"
 CLEAN_START_FORCE_KILL="${CLEAN_START_FORCE_KILL:-true}"
+ROBOT_X="${ROBOT_X:-0.0}"
+ROBOT_Y="${ROBOT_Y:-0.0}"
+ROBOT_Z="${ROBOT_Z:-0.07}"
+ROBOT_YAW="${ROBOT_YAW:-0.0}"
 
 stop_old_sim() {
   local patterns=(
@@ -72,6 +76,10 @@ rm -f "/tmp/mur_launch_sim/${ROBOT_NAME}_localization.yaml"
 exec ros2 launch mur_launch_sim mur_base.launch.py \
   robot_name:="${ROBOT_NAME}" \
   world:="${WORLD}" \
+  x:="${ROBOT_X}" \
+  y:="${ROBOT_Y}" \
+  z:="${ROBOT_Z}" \
+  Y:="${ROBOT_YAW}" \
   load_controllers:=true \
   laser_merger:=true \
   localization:=true \

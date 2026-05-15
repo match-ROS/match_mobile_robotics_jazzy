@@ -30,7 +30,7 @@ class LaserScanFrameRepublisher(Node):
         output_qos = QoSProfile(
             history=HistoryPolicy.KEEP_LAST,
             depth=10,
-            reliability=ReliabilityPolicy.BEST_EFFORT,
+            reliability=ReliabilityPolicy.RELIABLE,
         )
 
         self.publisher = self.create_publisher(LaserScan, output_topic, output_qos)
