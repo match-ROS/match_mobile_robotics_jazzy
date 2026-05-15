@@ -13,10 +13,14 @@
   <exec_depend>controller_manager</exec_depend>
   <exec_depend>launch</exec_depend>
   <exec_depend>launch_ros</exec_depend>
+  <exec_depend>ira_laser_tools</exec_depend>
   <exec_depend>mir_gazebo</exec_depend>
   <exec_depend>moveit_configs_utils</exec_depend>
   <exec_depend>mur_description</exec_depend>
   <exec_depend>mur_moveit_config</exec_depend>
+  <exec_depend>nav2_amcl</exec_depend>
+  <exec_depend>nav2_lifecycle_manager</exec_depend>
+  <exec_depend>nav2_map_server</exec_depend>
   <exec_depend>robot_state_publisher</exec_depend>
   <exec_depend>ros2controlcli</exec_depend>
   <exec_depend>ros_gz_bridge</exec_depend>

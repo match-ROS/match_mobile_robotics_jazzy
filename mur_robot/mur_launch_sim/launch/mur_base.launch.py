@@ -20,6 +20,8 @@ Arguments:
   lidar_bridge (bool)      Whether to bridge the robot's /scan topic (default true)
   start_controller_manager (bool) Start standalone ros2_control_node (default false)
   load_controllers (bool)  Spawn Gazebo ros2_control controllers (default true)
+  laser_merger (bool)      Merge front/back scans to /<robot_name>/scan (default true)
+  localization (bool)      Start map_server and AMCL (default false)
 """
 
 import os
@@ -56,6 +58,16 @@ def declare_args():
         DeclareLaunchArgument('lidar_bridge', default_value='true'),
         DeclareLaunchArgument('start_controller_manager', default_value='false'),
         DeclareLaunchArgument('load_controllers', default_value='true'),
+        DeclareLaunchArgument('laser_merger', default_value='true'),
+        DeclareLaunchArgument('localization', default_value='false'),
+        DeclareLaunchArgument(
+            'map',
+            default_value=os.path.join(
+                get_package_share_directory('mir_gazebo'),
+                'maps',
+                'maze.yaml',
+            ),
+        ),
     ]
 
 
@@ -64,9 +76,9 @@ def make_controller_config(robot_name, source_yaml):
         config = yaml.safe_load(config_file)
 
     mobile_params = config['mobile_base_controller']['ros__parameters']
-    mobile_params['odom_frame_id'] = 'odom'
-    mobile_params['base_frame_id'] = 'base_footprint'
-    mobile_params['tf_frame_prefix_enable'] = True
+    mobile_params['odom_frame_id'] = f'{robot_name}/odom'
+    mobile_params['base_frame_id'] = f'{robot_name}/base_footprint'
+    mobile_params['tf_frame_prefix_enable'] = False
     mobile_params['tf_frame_prefix'] = ''
 
     namespaced_config = deepcopy(config)
@@ -103,12 +115,70 @@ def make_controller_config(robot_name, source_yaml):
     return out_file
 
 
+def make_localization_config(robot_name, map_yaml, use_sim_time, x, y, yaw):
+    config = {
+        'map_server': {
+            'ros__parameters': {
+                'use_sim_time': use_sim_time,
+                'yaml_filename': map_yaml,
+            }
+        },
+        'amcl': {
+            'ros__parameters': {
+                'use_sim_time': use_sim_time,
+                'alpha1': 0.2,
+                'alpha2': 0.1,
+                'alpha3': 0.1,
+                'alpha4': 0.2,
+                'alpha5': 0.2,
+                'base_frame_id': f'{robot_name}/base_footprint',
+                'global_frame_id': 'map',
+                'odom_frame_id': f'{robot_name}/odom',
+                'scan_topic': f'/{robot_name}/scan',
+                'robot_model_type': 'nav2_amcl::DifferentialMotionModel',
+                'laser_model_type': 'likelihood_field',
+                'laser_likelihood_max_dist': 2.0,
+                'max_beams': 60,
+                'max_particles': 5000,
+                'min_particles': 500,
+                'set_initial_pose': True,
+                'initial_pose': {
+                    'x': float(x),
+                    'y': float(y),
+                    'z': 0.0,
+                    'yaw': float(yaw),
+                },
+                'tf_broadcast': True,
+                'transform_tolerance': 0.2,
+            }
+        },
+        'lifecycle_manager_localization': {
+            'ros__parameters': {
+                'use_sim_time': use_sim_time,
+                'autostart': True,
+                'node_names': ['map_server', 'amcl'],
+            }
+        },
+    }
+
+    out_dir = os.path.join(tempfile.gettempdir(), 'mur_launch_sim')
+    os.makedirs(out_dir, exist_ok=True)
+    safe_robot_name = robot_name.replace('/', '_')
+    out_file = os.path.join(out_dir, f'{safe_robot_name}_localization.yaml')
+
+    with open(out_file, 'w', encoding='utf-8') as config_file:
+        yaml.safe_dump(config, config_file, sort_keys=False)
+
+    return out_file
+
+
 def controller_spawner(robot_name, controller_name, controllers_yaml):
     controller_ros_args = []
     if controller_name == 'mobile_base_controller':
         controller_ros_args = [
             '--controller-ros-args',
-            f'-r ~/cmd_vel:=/{robot_name}/cmd_vel -r ~/odom:=/{robot_name}/odom',
+            '-r', f'~/cmd_vel:=/{robot_name}/cmd_vel',
+            '-r', f'~/odom:=/{robot_name}/odom',
         ]
 
     return Node(
@@ -138,6 +208,9 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
         LaunchConfiguration('start_controller_manager').perform(context) == 'true'
     )
     load_controllers = LaunchConfiguration('load_controllers').perform(context) == 'true'
+    laser_merger = LaunchConfiguration('laser_merger').perform(context) == 'true'
+    localization = LaunchConfiguration('localization').perform(context) == 'true'
+    map_yaml = LaunchConfiguration('map').perform(context)
 
     mur_description_path = get_package_share_directory('mur_description')
     mir_description_path = get_package_share_directory('mir_description')
@@ -283,6 +356,58 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
                 output='screen',
             )
         )
+
+    if laser_merger:
+        nodes.append(
+            Node(
+                package='ira_laser_tools',
+                executable='laserscan_multi_merger',
+                name='laser_scan_merger',
+                namespace=robot_name,
+                parameters=[
+                    {
+                        'laserscan_topics': 'b_scan f_scan',
+                        'destination_frame': f'{robot_name}/base_footprint',
+                        'scan_destination_topic': 'scan',
+                        'cloud_destination_topic': 'scan_cloud',
+                        'min_height': -0.25,
+                        'max_completion_time': 0.05,
+                        'max_merge_time_diff': 0.005,
+                        'use_sim_time': use_sim_time,
+                        'best_effort': False,
+                    }
+                ],
+                output='screen',
+            )
+        )
+
+    if localization:
+        localization_yaml = make_localization_config(
+            robot_name, map_yaml, use_sim_time, x, y, Y
+        )
+        nodes.extend([
+            Node(
+                package='nav2_map_server',
+                executable='map_server',
+                name='map_server',
+                parameters=[localization_yaml],
+                output='screen',
+            ),
+            Node(
+                package='nav2_amcl',
+                executable='amcl',
+                name='amcl',
+                parameters=[localization_yaml],
+                output='screen',
+            ),
+            Node(
+                package='nav2_lifecycle_manager',
+                executable='lifecycle_manager',
+                name='lifecycle_manager_localization',
+                parameters=[localization_yaml],
+                output='screen',
+            ),
+        ])
 
     return nodes
 
