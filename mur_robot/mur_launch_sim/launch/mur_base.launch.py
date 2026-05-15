@@ -345,9 +345,39 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
                     f'/{robot_name}/f_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan',
                     f'/{robot_name}/b_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan',
                 ],
+                remappings=[
+                    (f'/{robot_name}/f_scan', f'/{robot_name}/f_scan_raw'),
+                    (f'/{robot_name}/b_scan', f'/{robot_name}/b_scan_raw'),
+                ],
                 output='screen',
             )
         )
+        nodes.extend([
+            Node(
+                package='mur_launch_sim',
+                executable='laserscan_frame_republisher.py',
+                name=f'{robot_name}_front_scan_frame',
+                parameters=[{
+                    'input_topic': f'/{robot_name}/f_scan_raw',
+                    'output_topic': f'/{robot_name}/f_scan',
+                    'frame_id': f'{robot_name}/front_laser_link',
+                    'use_sim_time': use_sim_time,
+                }],
+                output='screen',
+            ),
+            Node(
+                package='mur_launch_sim',
+                executable='laserscan_frame_republisher.py',
+                name=f'{robot_name}_back_scan_frame',
+                parameters=[{
+                    'input_topic': f'/{robot_name}/b_scan_raw',
+                    'output_topic': f'/{robot_name}/b_scan',
+                    'frame_id': f'{robot_name}/back_laser_link',
+                    'use_sim_time': use_sim_time,
+                }],
+                output='screen',
+            ),
+        ])
 
     if laser_merger:
         nodes.append(

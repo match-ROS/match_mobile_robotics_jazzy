@@ -24,9 +24,20 @@ fi
 
 section "Processes"
 pgrep -af "mur_base.launch.py|gz sim|controller_manager|robot_state_publisher|nav2_|laserscan_multi_merger|parameter_bridge" || true
+PIDS="$(pgrep -f "mur_base.launch.py|gz sim|controller_manager|robot_state_publisher|nav2_|laserscan_multi_merger|parameter_bridge" | tr '\n' ',' | sed 's/,$//')"
+if [[ -n "${PIDS}" ]]; then
+  ps -o pid,ppid,stat,etime,cmd -p "${PIDS}" || true
+fi
 
 section "Topics"
 ros2 topic list | grep -E '(^/tf$|^/tf_static$|scan|odom|map|cmd_vel|joint_states)' || true
+
+section "Scan Publishers"
+ros2 topic info "/${ROBOT_NAME}/f_scan" -v || true
+ros2 topic info "/${ROBOT_NAME}/b_scan" -v || true
+ros2 topic info "/${ROBOT_NAME}/f_scan_raw" -v || true
+ros2 topic info "/${ROBOT_NAME}/b_scan_raw" -v || true
+ros2 topic info "/${ROBOT_NAME}/scan" -v || true
 
 section "Nodes"
 ros2 node list | sort || true
@@ -48,9 +59,16 @@ ros2 param get /amcl base_frame_id || true
 ros2 param get /amcl scan_topic || true
 
 section "Merged Scan Header"
-timeout 5 ros2 topic echo "/${ROBOT_NAME}/f_scan" --once --field header || true
-timeout 5 ros2 topic echo "/${ROBOT_NAME}/b_scan" --once --field header || true
-timeout 5 ros2 topic echo "/${ROBOT_NAME}/scan" --once --field header || true
+echo "-- /${ROBOT_NAME}/f_scan_raw"
+timeout 5 ros2 topic echo "/${ROBOT_NAME}/f_scan_raw" --once --field header --qos-reliability reliable || true
+echo "-- /${ROBOT_NAME}/b_scan_raw"
+timeout 5 ros2 topic echo "/${ROBOT_NAME}/b_scan_raw" --once --field header --qos-reliability reliable || true
+echo "-- /${ROBOT_NAME}/f_scan"
+timeout 5 ros2 topic echo "/${ROBOT_NAME}/f_scan" --once --field header --qos-reliability best_effort || true
+echo "-- /${ROBOT_NAME}/b_scan"
+timeout 5 ros2 topic echo "/${ROBOT_NAME}/b_scan" --once --field header --qos-reliability best_effort || true
+echo "-- /${ROBOT_NAME}/scan"
+timeout 10 ros2 topic echo "/${ROBOT_NAME}/scan" --once --field header --qos-reliability best_effort || true
 
 section "TF Checks"
 timeout 5 ros2 run tf2_ros tf2_echo "${ROBOT_NAME}/odom" "${ROBOT_NAME}/base_footprint" || true

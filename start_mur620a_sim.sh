@@ -14,6 +14,7 @@ ROBOT_NAME="${ROBOT_NAME:-mur620a}"
 WORLD="${WORLD:-maze}"
 BUILD_TYPE="${BUILD_TYPE:-RelWithDebInfo}"
 CLEAN_START="${CLEAN_START:-true}"
+CLEAN_START_FORCE_KILL="${CLEAN_START_FORCE_KILL:-true}"
 
 stop_old_sim() {
   local patterns=(
@@ -21,6 +22,7 @@ stop_old_sim() {
     "gz sim"
     "gz sim server"
     "gz sim gui"
+    "ruby .*gz sim"
     "ros_gz_sim/create"
     "parameter_bridge"
     "robot_state_publisher"
@@ -33,9 +35,16 @@ stop_old_sim() {
 
   echo "[start_mur620a_sim] Stopping old ROS/Gazebo simulation processes..."
   for pattern in "${patterns[@]}"; do
-    pkill -f "$pattern" 2>/dev/null || true
+    pkill -TERM -f "$pattern" 2>/dev/null || true
   done
   sleep 2
+
+  if [[ "${CLEAN_START_FORCE_KILL}" == "true" ]]; then
+    for pattern in "${patterns[@]}"; do
+      pkill -KILL -f "$pattern" 2>/dev/null || true
+    done
+    sleep 1
+  fi
 }
 
 cd "$WS"
