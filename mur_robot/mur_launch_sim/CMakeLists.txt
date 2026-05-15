@@ -27,6 +27,7 @@ endif()
 ament_package()
 
 install(PROGRAMS
+  scripts/ground_truth_from_pose_tf.py
   scripts/laserscan_frame_republisher.py
   scripts/moveit_move_to_home.py  # Replace with the path to your Python node
   DESTINATION lib/${PROJECT_NAME}

@@ -22,6 +22,7 @@ Arguments:
   load_controllers (bool)  Spawn Gazebo ros2_control controllers (default true)
   laser_merger (bool)      Merge front/back scans to /<robot_name>/scan (default true)
   localization (bool)      Start map_server and AMCL (default false)
+  ground_truth (bool)      Publish Gazebo model pose as ground truth topics (default true)
 """
 
 import os
@@ -60,6 +61,7 @@ def declare_args():
         DeclareLaunchArgument('load_controllers', default_value='true'),
         DeclareLaunchArgument('laser_merger', default_value='true'),
         DeclareLaunchArgument('localization', default_value='false'),
+        DeclareLaunchArgument('ground_truth', default_value='true'),
         DeclareLaunchArgument(
             'map',
             default_value=os.path.join(
@@ -202,6 +204,7 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
     load_controllers = LaunchConfiguration('load_controllers').perform(context) == 'true'
     laser_merger = LaunchConfiguration('laser_merger').perform(context) == 'true'
     localization = LaunchConfiguration('localization').perform(context) == 'true'
+    ground_truth = LaunchConfiguration('ground_truth').perform(context) == 'true'
     map_yaml = LaunchConfiguration('map').perform(context)
 
     mur_description_path = get_package_share_directory('mur_description')
@@ -249,6 +252,39 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
                 output='screen',
             )
         )
+
+    if ground_truth:
+        gz_pose_topic = f'/world/{world}/pose/info'
+        ros_pose_topic = f'/{robot_name}/ground_truth/world_pose_tf'
+        nodes.extend([
+            Node(
+                package='ros_gz_bridge',
+                executable='parameter_bridge',
+                name=f'{robot_name}_ground_truth_bridge',
+                arguments=[
+                    f'{gz_pose_topic}@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
+                ],
+                remappings=[
+                    (gz_pose_topic, ros_pose_topic),
+                ],
+                output='screen',
+            ),
+            Node(
+                package='mur_launch_sim',
+                executable='ground_truth_from_pose_tf.py',
+                name=f'{robot_name}_ground_truth',
+                parameters=[{
+                    'input_topic': ros_pose_topic,
+                    'robot_name': robot_name,
+                    'output_frame_id': 'map',
+                    'child_frame_id': f'{robot_name}/base_footprint',
+                    'pose_topic': f'/{robot_name}/ground_truth/pose',
+                    'odom_topic': f'/{robot_name}/ground_truth/odom',
+                    'use_sim_time': use_sim_time,
+                }],
+                output='screen',
+            ),
+        ])
 
     # state publisher (namespaced)
     nodes.append(

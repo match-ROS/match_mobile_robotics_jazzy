@@ -30,7 +30,7 @@ if [[ -n "${PIDS}" ]]; then
 fi
 
 section "Topics"
-ros2 topic list | grep -E '(^/tf$|^/tf_static$|scan|odom|map|cmd_vel|joint_states)' || true
+ros2 topic list | grep -E '(^/tf$|^/tf_static$|scan|odom|map|cmd_vel|joint_states|ground_truth)' || true
 
 section "Scan Publishers"
 ros2 topic info "/${ROBOT_NAME}/f_scan" -v || true
@@ -57,6 +57,12 @@ ros2 param get /amcl global_frame_id || true
 ros2 param get /amcl odom_frame_id || true
 ros2 param get /amcl base_frame_id || true
 ros2 param get /amcl scan_topic || true
+
+section "Ground Truth"
+ros2 topic info "/${ROBOT_NAME}/ground_truth/pose" -v || true
+ros2 topic info "/${ROBOT_NAME}/ground_truth/odom" -v || true
+timeout 5 ros2 topic echo "/${ROBOT_NAME}/ground_truth/pose" --once || true
+timeout 5 ros2 topic echo "/${ROBOT_NAME}/ground_truth/odom" --once --field pose.pose || true
 
 section "Merged Scan Header"
 echo "-- /${ROBOT_NAME}/f_scan_raw"

@@ -74,4 +74,5 @@ exec ros2 launch mur_launch_sim mur_base.launch.py \
   world:="${WORLD}" \
   load_controllers:=true \
   laser_merger:=true \
-  localization:=true
+  localization:=true \
+  ground_truth:=true
