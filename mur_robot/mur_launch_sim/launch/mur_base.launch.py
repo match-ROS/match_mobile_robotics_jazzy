@@ -72,13 +72,23 @@ def make_controller_config(robot_name, source_yaml):
         config['controller_manager']
     )
 
-    for controller_name in config['controller_manager']['ros__parameters']:
+    controller_manager_params = config['controller_manager']['ros__parameters']
+    for controller_name, controller_config in controller_manager_params.items():
         if controller_name == 'update_rate':
             continue
-        if controller_name in config:
-            namespaced_config[f'/{robot_name}/{controller_name}'] = deepcopy(
-                config[controller_name]
-            )
+
+        controller_params = deepcopy(
+            config.get(controller_name, {'ros__parameters': {}})
+        )
+        controller_params.setdefault('ros__parameters', {})
+        controller_params['ros__parameters'].setdefault(
+            'type', controller_config['type']
+        )
+
+        namespaced_config[controller_name] = deepcopy(controller_params)
+        namespaced_config[f'/{robot_name}/{controller_name}'] = deepcopy(
+            controller_params
+        )
 
     out_dir = os.path.join(tempfile.gettempdir(), 'mur_launch_sim')
     os.makedirs(out_dir, exist_ok=True)
