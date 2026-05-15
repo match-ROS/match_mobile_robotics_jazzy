@@ -1,0 +1,253 @@
+Writing diagnostic log to: /home/rosmatch/colcon_ws/src/match_mobile_robotics_jazzy/logs/check_mur620a_20260515_164540.log
+Workspace: /home/rosmatch/colcon_ws
+Robot: mur620a
+World: maze
+
+== Processes ==
+3336168 /usr/bin/python3 /opt/ros/jazzy/bin/ros2 launch mur_launch_sim mur_base.launch.py robot_name:=mur620a world:=maze load_controllers:=true laser_merger:=true localization:=true ground_truth:=true
+3338494 /bin/sh -c ruby /opt/ros/jazzy/opt/gz_tools_vendor/bin/gz sim maze.world -v 4 -r --force-version 8
+3338496 /home/rosmatch/colcon_ws/install/mur_launch_sim/lib/mur_launch_sim/gz_ground_truth_publisher --ros-args -r __node:=mur620a_ground_truth --params-file /tmp/launch_params_r66xi4vs
+3338497 gz sim maze.world -v 4 -r
+3338507 /opt/ros/jazzy/lib/nav2_map_server/map_server --ros-args -r __node:=map_server --params-file /tmp/mur_launch_sim/mur620a_localization.yaml
+3338508 /opt/ros/jazzy/lib/nav2_amcl/amcl --ros-args -r __node:=amcl --params-file /tmp/mur_launch_sim/mur620a_localization.yaml
+3338710 gz sim server
+3338712 gz sim gui
+
+== Core Topics ==
+/map
+/mur620a/ground_truth/odom
+/mur620a/ground_truth/pose
+/mur620a/mobile_base_controller/odom
+/tf
+/tf_static
+
+== Map ==
+
+$ ros2 lifecycle get /map_server
+active [3]
+
+$ ros2 topic info /map --verbose
+Type: nav_msgs/msg/OccupancyGrid
+
+Publisher count: 1
+
+Node name: map_server
+Node namespace: /
+Topic type: nav_msgs/msg/OccupancyGrid
+Topic type hash: RIHS01_8d348150c12913a31ee0ec170fbf25089e4745d17035792a1ba94d6f0bc0cfc7
+Endpoint type: PUBLISHER
+GID: 01.0f.f6.e2.0b.f1.09.8a.00.00.00.00.00.00.22.03
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: TRANSIENT_LOCAL
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Subscription count: 2
+
+Node name: amcl
+Node namespace: /
+Topic type: nav_msgs/msg/OccupancyGrid
+Topic type hash: RIHS01_8d348150c12913a31ee0ec170fbf25089e4745d17035792a1ba94d6f0bc0cfc7
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.0c.f1.53.b1.00.00.00.00.00.00.27.04
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: TRANSIENT_LOCAL
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: rviz
+Node namespace: /
+Topic type: nav_msgs/msg/OccupancyGrid
+Topic type hash: RIHS01_8d348150c12913a31ee0ec170fbf25089e4745d17035792a1ba94d6f0bc0cfc7
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.91.85.b3.de.00.00.00.00.00.00.35.04
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+-- /map sample with transient local QoS
+-- map -> odom
+[INFO] [1778856353.059392609] [tf2_echo]: Waiting for transform map ->  mur620a/odom: Invalid frame ID "map" passed to canTransform argument target_frame - frame does not exist
+At time 16.680000000
+- Translation: [-0.000, -0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000 -0.000  0.000 -0.000
+  0.000  1.000  0.000 -0.000
+  0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 17.720000000
+- Translation: [-0.000, -0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000 -0.000  0.000 -0.000
+  0.000  1.000  0.000 -0.000
+  0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 18.680000000
+- Translation: [-0.000, -0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000 -0.000  0.000 -0.000
+  0.000  1.000  0.000 -0.000
+  0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 19.640000000
+- Translation: [-0.000, -0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000 -0.000  0.000 -0.000
+  0.000  1.000  0.000 -0.000
+  0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 20.600000000
+- Translation: [-0.000, -0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000 -0.000  0.000 -0.000
+  0.000  1.000  0.000 -0.000
+  0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 21.720000000
+- Translation: [-0.000, -0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000 -0.000  0.000 -0.000
+  0.000  1.000  0.000 -0.000
+  0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 22.680000000
+- Translation: [-0.000, -0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000 -0.000  0.000 -0.000
+  0.000  1.000  0.000 -0.000
+  0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+[INFO] [1778856360.897357817] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+
+== Ground Truth Topics ==
+
+$ ros2 topic info /mur620a/ground_truth/pose
+Type: geometry_msgs/msg/PoseStamped
+Publisher count: 1
+Subscription count: 0
+
+$ ros2 topic info /mur620a/ground_truth/odom
+Type: nav_msgs/msg/Odometry
+Publisher count: 1
+Subscription count: 0
+-- /mur620a/ground_truth/pose sample
+header:
+  stamp:
+    sec: 27
+    nanosec: 438000000
+  frame_id: map
+pose:
+  position:
+    x: 1.7026623982161364e-16
+    y: -3.378518055461064e-19
+    z: -8.465288410295033e-07
+  orientation:
+    x: 7.947414465896344e-13
+    y: 6.636343362106292e-10
+    z: -8.480915279389563e-18
+    w: 1.0
+---
+-- /mur620a/ground_truth/odom pose sample
+A message was lost!!!
+	total count change:6
+	total count: 6---
+position:
+  x: 1.7026623982161364e-16
+  y: -3.378518055461064e-19
+  z: -8.465288410295033e-07
+orientation:
+  x: 7.947414465896344e-13
+  y: 6.636343362106292e-10
+  z: -8.480915279389563e-18
+  w: 1.0
+---
+-- Gazebo pose names, first 40
+  name: "ground_plane"
+  name: "maze"
+  name: "mur620a"
+  name: "link"
+  name: "Wall_0"
+  name: "Wall_1"
+  name: "Wall_2"
+  name: "Wall_24"
+  name: "Wall_25"
+  name: "Wall_27"
+  name: "Wall_28"
+  name: "Wall_3"
+  name: "Wall_30"
+  name: "Wall_31"
+  name: "Wall_5"
+  name: "Wall_6"
+  name: "Wall_8"
+  name: "base_footprint"
+  name: "bl_caster_rotation_link"
+  name: "bl_caster_wheel_link"
+  name: "br_caster_rotation_link"
+  name: "br_caster_wheel_link"
+  name: "fl_caster_rotation_link"
+  name: "fl_caster_wheel_link"
+  name: "fr_caster_rotation_link"
+  name: "fr_caster_wheel_link"
+  name: "left_wheel_link"
+  name: "right_wheel_link"
+  name: "left_lift_top"
+  name: "UR10_l/shoulder_link"
+  name: "UR10_l/upper_arm_link"
+  name: "UR10_l/forearm_link"
+  name: "UR10_l/wrist_1_link"
+  name: "UR10_l/wrist_2_link"
+  name: "UR10_l/wrist_3_link"
+  name: "right_lift_top"
+  name: "UR10_r/shoulder_link"
+  name: "UR10_r/upper_arm_link"
+  name: "UR10_r/forearm_link"
+  name: "UR10_r/wrist_1_link"
+
+== Recent Ground Truth Logs ==
+---- /home/rosmatch/.ros/log/python3_3350141_1778856365421.log
+---- /home/rosmatch/.ros/log/python3_3349041_1778856361837.log
+---- /home/rosmatch/.ros/log/python3_3343693_1778856345041.log
+---- /home/rosmatch/.ros/log/python3_3342682_1778856341745.log
+---- /home/rosmatch/.ros/log/python3_3339012_1778856331670.log
+[INFO] [1778856338.754664654] [spawner_joint_state_broadcaster]: waiting for service /mur620a/controller_manager/list_controllers to become available...
+[INFO] [1778856339.305568805] [spawner_joint_state_broadcaster]: Setting controller param "params_file" to "['/tmp/mur_launch_sim/mur620a_mur_controllers.yaml']" for joint_state_broadcaster
+[INFO] [1778856339.328135176] [spawner_joint_state_broadcaster]: Setting controller param "type" to "joint_state_broadcaster/JointStateBroadcaster" for joint_state_broadcaster
+[INFO] [1778856339.371798885] [spawner_joint_state_broadcaster]: Loaded joint_state_broadcaster
+[INFO] [1778856339.412164551] [spawner_joint_state_broadcaster]: Configured and activated joint_state_broadcaster
+
+== Done ==
+Diagnostic log written to: /home/rosmatch/colcon_ws/src/match_mobile_robotics_jazzy/logs/check_mur620a_20260515_164540.log

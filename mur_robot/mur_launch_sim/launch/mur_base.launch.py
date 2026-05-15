@@ -123,6 +123,8 @@ def make_localization_config(robot_name, map_yaml, use_sim_time, x, y, yaw):
             'ros__parameters': {
                 'use_sim_time': use_sim_time,
                 'yaml_filename': map_yaml,
+                'frame_id': 'map',
+                'topic_name': 'map',
             }
         },
         'amcl': {
@@ -135,6 +137,8 @@ def make_localization_config(robot_name, map_yaml, use_sim_time, x, y, yaw):
                 'alpha5': 0.2,
                 'base_frame_id': f'{robot_name}/base_footprint',
                 'global_frame_id': 'map',
+                'map_topic': 'map',
+                'map_subscribe_transient_local': True,
                 'odom_frame_id': f'{robot_name}/odom',
                 'scan_topic': f'/{robot_name}/scan',
                 'robot_model_type': 'nav2_amcl::DifferentialMotionModel',
@@ -255,22 +259,13 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
 
     if ground_truth:
         gz_pose_topic = f'/world/{world}/pose/info'
-        nodes.extend([
-            Node(
-                package='ros_gz_bridge',
-                executable='parameter_bridge',
-                name=f'{robot_name}_ground_truth_bridge',
-                arguments=[
-                    f'{gz_pose_topic}@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
-                ],
-                output='screen',
-            ),
+        nodes.append(
             Node(
                 package='mur_launch_sim',
-                executable='ground_truth_from_pose_tf.py',
+                executable='gz_ground_truth_publisher',
                 name=f'{robot_name}_ground_truth',
                 parameters=[{
-                    'input_topic': gz_pose_topic,
+                    'gz_pose_topic': gz_pose_topic,
                     'robot_name': robot_name,
                     'output_frame_id': 'map',
                     'child_frame_id': f'{robot_name}/base_footprint',
@@ -280,7 +275,7 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
                 }],
                 output='screen',
             ),
-        ])
+        )
 
     # state publisher (namespaced)
     nodes.append(

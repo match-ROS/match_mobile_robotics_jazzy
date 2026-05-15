@@ -9,9 +9,17 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>gz_msgs_vendor</build_depend>
+  <build_depend>gz_transport_vendor</build_depend>
+  <build_depend>nav_msgs</build_depend>
+  <build_depend>rclcpp</build_depend>
+
   <exec_depend>ament_index_python</exec_depend>
   <exec_depend>controller_manager</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>gz_msgs_vendor</exec_depend>
+  <exec_depend>gz_transport_vendor</exec_depend>
   <exec_depend>launch</exec_depend>
   <exec_depend>launch_ros</exec_depend>
   <exec_depend>ira_laser_tools</exec_depend>
@@ -30,6 +38,7 @@
   <exec_depend>rqt_controller_manager</exec_depend>
   <exec_depend>rqt_robot_steering</exec_depend>
   <exec_depend>rclpy</exec_depend>
+  <exec_depend>rclcpp</exec_depend>
   <exec_depend>rviz2</exec_depend>
   <exec_depend>sensor_msgs</exec_depend>
   <exec_depend>tf2_msgs</exec_depend>

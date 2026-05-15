@@ -7,9 +7,27 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(gz_msgs_vendor REQUIRED)
+find_package(gz_transport_vendor REQUIRED)
+find_package(gz-msgs10 REQUIRED)
+find_package(gz-transport13 REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(rclcpp REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
+
+add_executable(gz_ground_truth_publisher src/gz_ground_truth_publisher.cpp)
+ament_target_dependencies(gz_ground_truth_publisher
+  geometry_msgs
+  nav_msgs
+  rclcpp
+)
+target_link_libraries(gz_ground_truth_publisher
+  gz-msgs10::gz-msgs10
+  gz-transport13::gz-transport13
+)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -23,8 +41,10 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-
-ament_package()
+install(TARGETS
+  gz_ground_truth_publisher
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 install(PROGRAMS
   scripts/ground_truth_from_pose_tf.py
@@ -37,3 +57,5 @@ install(DIRECTORY
   launch scripts
   DESTINATION share/${PROJECT_NAME}
 )
+
+ament_package()

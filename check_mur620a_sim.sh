@@ -41,36 +41,32 @@ if [[ -f install/setup.bash ]]; then
 fi
 
 section "Processes"
-pgrep -af "mur_base.launch.py|gz sim|ground_truth|amcl|map_server|laserscan_multi_merger|parameter_bridge" || true
+pgrep -af "mur_base.launch.py|gz sim|ground_truth|amcl|map_server" || true
 
 section "Core Topics"
-ros2 topic list | grep -E '(^/tf$|^/tf_static$|/map$|scan$|ground_truth|/world/.*/pose/info|mobile_base_controller/odom)' || true
+ros2 topic list | grep -E '(^/tf$|^/tf_static$|/map$|ground_truth|mobile_base_controller/odom)' || true
 
-section "Controllers"
-run ros2 control list_controllers -c "/${ROBOT_NAME}/controller_manager"
-
-section "Localization TF"
-run timeout 8 ros2 run tf2_ros tf2_echo "${ROBOT_NAME}/odom" "${ROBOT_NAME}/base_footprint"
-run timeout 8 ros2 run tf2_ros tf2_echo map "${ROBOT_NAME}/odom"
-
-section "Scan Sanity"
-echo "-- merged scan header"
-timeout 8 ros2 topic echo "/${ROBOT_NAME}/scan" --once --field header --qos-reliability best_effort || true
+section "Map"
+run ros2 lifecycle get /map_server
+run ros2 topic info /map --verbose
+echo "-- /map sample with transient local QoS"
+timeout 8 ros2 topic echo /map --once --field info --qos-durability transient_local || true
+echo "-- map -> odom"
+timeout 8 ros2 run tf2_ros tf2_echo map "${ROBOT_NAME}/odom" || true
 
 section "Ground Truth Topics"
-run ros2 topic info "/world/${WORLD}/pose/info"
 run ros2 topic info "/${ROBOT_NAME}/ground_truth/pose"
 run ros2 topic info "/${ROBOT_NAME}/ground_truth/odom"
-
-echo "-- Gazebo pose names, first 80"
-timeout 8 ros2 topic echo "/world/${WORLD}/pose/info" --once \
-  | awk '/child_frame_id:/ {print; count++; if (count >= 80) exit}' || true
 
 echo "-- /${ROBOT_NAME}/ground_truth/pose sample"
 timeout 8 ros2 topic echo "/${ROBOT_NAME}/ground_truth/pose" --once || true
 
 echo "-- /${ROBOT_NAME}/ground_truth/odom pose sample"
 timeout 8 ros2 topic echo "/${ROBOT_NAME}/ground_truth/odom" --once --field pose.pose || true
+
+echo "-- Gazebo pose names, first 40"
+timeout 5 gz topic -e -t "/world/${WORLD}/pose/info" -n 1 \
+  | awk '/name:/ {print; count++; if (count >= 40) exit}' || true
 
 section "Recent Ground Truth Logs"
 find /home/rosmatch/.ros/log -maxdepth 2 -type f \

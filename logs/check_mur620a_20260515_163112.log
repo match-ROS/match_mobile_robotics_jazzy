@@ -1,0 +1,289 @@
+Writing diagnostic log to: /home/rosmatch/colcon_ws/src/match_mobile_robotics_jazzy/logs/check_mur620a_20260515_163112.log
+Workspace: /home/rosmatch/colcon_ws
+Robot: mur620a
+World: maze
+
+== Processes ==
+2836870 /usr/bin/python3 /opt/ros/jazzy/bin/ros2 topic echo /mur620a/ground_truth/pose
+3041154 /usr/bin/python3 /opt/ros/jazzy/bin/ros2 launch mur_launch_sim mur_base.launch.py robot_name:=mur620a world:=maze load_controllers:=true laser_merger:=true localization:=true ground_truth:=true
+3043469 /bin/sh -c ruby /opt/ros/jazzy/opt/gz_tools_vendor/bin/gz sim maze.world -v 4 -r --force-version 8
+3043470 /opt/ros/jazzy/lib/ros_gz_bridge/parameter_bridge /clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock --ros-args -r __node:=clock_bridge
+3043471 /opt/ros/jazzy/lib/ros_gz_bridge/parameter_bridge /world/maze/pose/info@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V --ros-args -r __node:=mur620a_ground_truth_bridge
+3043472 python3 /home/rosmatch/colcon_ws/install/mur_launch_sim/lib/mur_launch_sim/ground_truth_from_pose_tf.py --ros-args -r __node:=mur620a_ground_truth --params-file /tmp/launch_params_rx__zd5r
+3043473 gz sim maze.world -v 4 -r
+3043477 /opt/ros/jazzy/lib/ros_gz_bridge/parameter_bridge /mur620a/f_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan /mur620a/b_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan --ros-args -r __node:=mur620a_lidar_bridge -r /mur620a/f_scan:=/mur620a/f_scan_raw -r /mur620a/b_scan:=/mur620a/b_scan_raw
+3043480 /home/rosmatch/colcon_ws/install/ira_laser_tools/lib/ira_laser_tools/laserscan_multi_merger --ros-args -r __node:=mur620a_laser_scan_merger --params-file /tmp/launch_params_g98rrz6e
+3043481 /opt/ros/jazzy/lib/nav2_map_server/map_server --ros-args -r __node:=map_server --params-file /tmp/mur_launch_sim/mur620a_localization.yaml
+3043482 /opt/ros/jazzy/lib/nav2_amcl/amcl --ros-args -r __node:=amcl --params-file /tmp/mur_launch_sim/mur620a_localization.yaml
+3043684 gz sim server
+3043687 gz sim gui
+
+== Core Topics ==
+/map
+/mur620a/b_scan
+/mur620a/f_scan
+/mur620a/ground_truth/odom
+/mur620a/ground_truth/pose
+/mur620a/mobile_base_controller/odom
+/mur620a/scan
+/tf
+/tf_static
+/world/maze/pose/info
+
+== Controllers ==
+
+$ ros2 control list_controllers -c /mur620a/controller_manager
+[INFO] [1778855473.641095981] [_ros2cli_3085034]: waiting for service /mur620a/controller_manager/list_controllers to become available...
+lift_controller_l       position_controllers/JointGroupPositionController  active
+joint_state_broadcaster joint_state_broadcaster/JointStateBroadcaster      active
+lift_controller_r       position_controllers/JointGroupPositionController  active
+mobile_base_controller  diff_drive_controller/DiffDriveController          active
+
+== Localization TF ==
+
+$ timeout 8 ros2 run tf2_ros tf2_echo mur620a/odom mur620a/base_footprint
+[INFO] [1778855474.962528892] [tf2_echo]: Waiting for transform mur620a/odom ->  mur620a/base_footprint: Invalid frame ID "mur620a/odom" passed to canTransform argument target_frame - frame does not exist
+At time 120.850000000
+- Translation: [0.000, 0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000 -0.000  0.000  0.000
+  0.000  1.000  0.000  0.000
+  0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 121.830000000
+- Translation: [0.000, 0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000 -0.000  0.000  0.000
+  0.000  1.000  0.000  0.000
+  0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 122.820000000
+- Translation: [0.000, 0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000 -0.000  0.000  0.000
+  0.000  1.000  0.000  0.000
+  0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 123.790000000
+- Translation: [0.000, 0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000 -0.000  0.000  0.000
+  0.000  1.000  0.000  0.000
+  0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 124.810000000
+- Translation: [0.000, 0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000 -0.000  0.000  0.000
+  0.000  1.000  0.000  0.000
+  0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 125.780000000
+- Translation: [0.000, 0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000 -0.000  0.000  0.000
+  0.000  1.000  0.000  0.000
+  0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 126.780000000
+- Translation: [0.000, 0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000 -0.000  0.000  0.000
+  0.000  1.000  0.000  0.000
+  0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+[INFO] [1778855482.794735828] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+
+$ timeout 8 ros2 run tf2_ros tf2_echo map mur620a/odom
+[INFO] [1778855482.968216519] [tf2_echo]: Waiting for transform map ->  mur620a/odom: Invalid frame ID "map" passed to canTransform argument target_frame - frame does not exist
+[INFO] [1778855484.955508358] [tf2_echo]: Waiting for transform map ->  mur620a/odom: Invalid frame ID "map" passed to canTransform argument target_frame - frame does not exist
+At time 130.760000000
+- Translation: [0.000, -0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, -0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, 0.000, -0.000]
+- Rotation: in RPY (degree) [0.000, 0.000, -0.000]
+- Matrix:
+  1.000  0.000  0.000  0.000
+ -0.000  1.000 -0.000 -0.000
+ -0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 131.720000000
+- Translation: [0.000, -0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, -0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, 0.000, -0.000]
+- Rotation: in RPY (degree) [0.000, 0.000, -0.000]
+- Matrix:
+  1.000  0.000  0.000  0.000
+ -0.000  1.000 -0.000 -0.000
+ -0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 132.680000000
+- Translation: [0.000, -0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, -0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, 0.000, -0.000]
+- Rotation: in RPY (degree) [0.000, 0.000, -0.000]
+- Matrix:
+  1.000  0.000  0.000  0.000
+ -0.000  1.000 -0.000 -0.000
+ -0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 133.800000000
+- Translation: [0.000, -0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, -0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, 0.000, -0.000]
+- Rotation: in RPY (degree) [0.000, 0.000, -0.000]
+- Matrix:
+  1.000  0.000  0.000  0.000
+ -0.000  1.000 -0.000 -0.000
+ -0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 134.760000000
+- Translation: [0.000, -0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, -0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, 0.000, -0.000]
+- Rotation: in RPY (degree) [0.000, 0.000, -0.000]
+- Matrix:
+  1.000  0.000  0.000  0.000
+ -0.000  1.000 -0.000 -0.000
+ -0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+[INFO] [1778855490.797309194] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+
+== Scan Sanity ==
+-- merged scan header
+stamp:
+  sec: 137
+  nanosec: 120000000
+frame_id: mur620a/base_footprint
+---
+
+== Ground Truth Topics ==
+
+$ ros2 topic info /world/maze/pose/info
+Type: tf2_msgs/msg/TFMessage
+Publisher count: 1
+Subscription count: 1
+
+$ ros2 topic info /mur620a/ground_truth/pose
+Type: geometry_msgs/msg/PoseStamped
+Publisher count: 1
+Subscription count: 1
+
+$ ros2 topic info /mur620a/ground_truth/odom
+Type: nav_msgs/msg/Odometry
+Publisher count: 1
+Subscription count: 0
+-- Gazebo pose names, first 80
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+  child_frame_id: ''
+-- /mur620a/ground_truth/pose sample
+-- /mur620a/ground_truth/odom pose sample
+
+== Recent Ground Truth Logs ==
+---- /home/rosmatch/.ros/log/python3_3096410_1778855509183.log
+---- /home/rosmatch/.ros/log/python3_3095034_1778855504843.log
+---- /home/rosmatch/.ros/log/python3_3093293_1778855499267.log
+---- /home/rosmatch/.ros/log/python3_3092490_1778855496716.log
+---- /home/rosmatch/.ros/log/python3_3091713_1778855494220.log
+
+== Done ==
+Diagnostic log written to: /home/rosmatch/colcon_ws/src/match_mobile_robotics_jazzy/logs/check_mur620a_20260515_163112.log
