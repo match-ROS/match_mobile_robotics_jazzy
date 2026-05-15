@@ -82,7 +82,11 @@ run ros2 lifecycle get /planner_server
 run ros2 lifecycle get /behavior_server
 run ros2 lifecycle get /bt_navigator
 run ros2 action list
+run ros2 param get /controller_server enable_stamped_cmd_vel
+run ros2 param get /behavior_server enable_stamped_cmd_vel
 run ros2 topic info "/${ROBOT_NAME}/mobile_base_controller/cmd_vel" --verbose
+echo "-- /${ROBOT_NAME}/mobile_base_controller/cmd_vel TwistStamped sample"
+timeout 8 ros2 topic echo "/${ROBOT_NAME}/mobile_base_controller/cmd_vel" geometry_msgs/msg/TwistStamped --once || true
 
 section "Recent Ground Truth Logs"
 find /home/rosmatch/.ros/log -maxdepth 2 -type f \

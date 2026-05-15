@@ -225,6 +225,7 @@ def make_navigation_config(robot_name, use_sim_time):
                 'use_sim_time': use_sim_time,
                 'controller_frequency': 20.0,
                 'costmap_update_timeout': 0.3,
+                'enable_stamped_cmd_vel': True,
                 'min_x_velocity_threshold': 0.001,
                 'min_y_velocity_threshold': 0.001,
                 'min_theta_velocity_threshold': 0.001,
@@ -392,6 +393,7 @@ def make_navigation_config(robot_name, use_sim_time):
         'behavior_server': {
             'ros__parameters': {
                 'use_sim_time': use_sim_time,
+                'enable_stamped_cmd_vel': True,
                 'local_costmap_topic': 'local_costmap/costmap_raw',
                 'global_costmap_topic': 'global_costmap/costmap_raw',
                 'local_footprint_topic': 'local_costmap/published_footprint',
