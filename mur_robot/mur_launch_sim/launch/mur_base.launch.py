@@ -416,7 +416,7 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
                     {
                         'laserscan_topics': f'/{robot_name}/b_scan /{robot_name}/f_scan',
                         'destination_frame': f'{robot_name}/base_footprint',
-                        'scan_destination_topic': f'/{robot_name}/scan',
+                        'scan_destination_topic': f'/{robot_name}/scan_merged_raw',
                         'cloud_destination_topic': f'/{robot_name}/scan_cloud',
                         'min_height': -0.25,
                         'max_completion_time': 0.05,
@@ -425,6 +425,22 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
                         'best_effort': False,
                     }
                 ],
+                output='screen',
+            )
+        )
+        nodes.append(
+            Node(
+                package='mur_launch_sim',
+                executable='laserscan_frame_republisher.py',
+                name=f'{robot_name}_merged_scan_frame',
+                parameters=[{
+                    'input_topic': f'/{robot_name}/scan_merged_raw',
+                    'output_topic': f'/{robot_name}/scan',
+                    'frame_id': f'{robot_name}/base_footprint',
+                    'input_reliability': 'best_effort',
+                    'output_reliability': 'reliable',
+                    'use_sim_time': use_sim_time,
+                }],
                 output='screen',
             )
         )

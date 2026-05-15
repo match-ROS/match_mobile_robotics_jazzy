@@ -7,6 +7,12 @@ from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 from sensor_msgs.msg import LaserScan
 
 
+def reliability_from_parameter(value):
+    if str(value).lower() == 'best_effort':
+        return ReliabilityPolicy.BEST_EFFORT
+    return ReliabilityPolicy.RELIABLE
+
+
 class LaserScanFrameRepublisher(Node):
     def __init__(self):
         super().__init__('laserscan_frame_republisher')
@@ -14,10 +20,18 @@ class LaserScanFrameRepublisher(Node):
         self.declare_parameter('input_topic', '')
         self.declare_parameter('output_topic', '')
         self.declare_parameter('frame_id', '')
+        self.declare_parameter('input_reliability', 'reliable')
+        self.declare_parameter('output_reliability', 'reliable')
 
         input_topic = self.get_parameter('input_topic').value
         output_topic = self.get_parameter('output_topic').value
         self.frame_id = self.get_parameter('frame_id').value
+        input_reliability = reliability_from_parameter(
+            self.get_parameter('input_reliability').value
+        )
+        output_reliability = reliability_from_parameter(
+            self.get_parameter('output_reliability').value
+        )
 
         if not input_topic or not output_topic or not self.frame_id:
             raise ValueError('input_topic, output_topic, and frame_id must be set')
@@ -25,12 +39,12 @@ class LaserScanFrameRepublisher(Node):
         input_qos = QoSProfile(
             history=HistoryPolicy.KEEP_LAST,
             depth=10,
-            reliability=ReliabilityPolicy.RELIABLE,
+            reliability=input_reliability,
         )
         output_qos = QoSProfile(
             history=HistoryPolicy.KEEP_LAST,
             depth=10,
-            reliability=ReliabilityPolicy.RELIABLE,
+            reliability=output_reliability,
         )
 
         self.publisher = self.create_publisher(LaserScan, output_topic, output_qos)

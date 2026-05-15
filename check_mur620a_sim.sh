@@ -44,7 +44,7 @@ section "Processes"
 pgrep -af "mur_base.launch.py|gz sim|ground_truth|amcl|map_server" || true
 
 section "Core Topics"
-ros2 topic list | grep -E '(^/tf$|^/tf_static$|/map$|ground_truth|/f_scan$|/b_scan$|/scan$|mobile_base_controller/odom)' || true
+ros2 topic list | grep -E '(^/tf$|^/tf_static$|/map$|ground_truth|/f_scan$|/b_scan$|/scan$|/scan_merged_raw$|mobile_base_controller/odom)' || true
 
 section "Map"
 run ros2 lifecycle get /map_server
@@ -57,6 +57,10 @@ timeout 8 ros2 run tf2_ros tf2_echo map "${ROBOT_NAME}/odom" || true
 section "Scan QoS"
 run ros2 topic info "/${ROBOT_NAME}/f_scan" --verbose
 run ros2 topic info "/${ROBOT_NAME}/b_scan" --verbose
+run ros2 topic info "/${ROBOT_NAME}/scan_merged_raw" --verbose
+run ros2 topic info "/${ROBOT_NAME}/scan" --verbose
+echo "-- /${ROBOT_NAME}/scan sample"
+timeout 8 ros2 topic echo "/${ROBOT_NAME}/scan" --once --field header --qos-reliability reliable || true
 
 section "Ground Truth Topics"
 run ros2 topic info "/${ROBOT_NAME}/ground_truth/pose"
