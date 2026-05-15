@@ -19,18 +19,24 @@ Arguments:
   include_gz (bool)        Whether to start gz sim and /clock bridge (default true)
   lidar_bridge (bool)      Whether to bridge the robot's /scan topic (default true)
   start_controller_manager (bool) Start standalone ros2_control_node (default false)
+  load_controllers (bool)  Spawn Gazebo ros2_control controllers (default true)
 """
 
 import os
+import tempfile
+
 import xacro
+import yaml
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument,
     IncludeLaunchDescription,
+    RegisterEventHandler,
     SetEnvironmentVariable,
     OpaqueFunction,
 )
+from launch.event_handlers import OnProcessExit
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
@@ -48,7 +54,40 @@ def declare_args():
         DeclareLaunchArgument('include_gz', default_value='true'),
         DeclareLaunchArgument('lidar_bridge', default_value='true'),
         DeclareLaunchArgument('start_controller_manager', default_value='false'),
+        DeclareLaunchArgument('load_controllers', default_value='true'),
     ]
+
+
+def make_controller_config(robot_name, source_yaml):
+    with open(source_yaml, 'r', encoding='utf-8') as config_file:
+        config = yaml.safe_load(config_file)
+
+    mobile_params = config['mobile_base_controller']['ros__parameters']
+    mobile_params['odom_frame_id'] = f'{robot_name}/odom'
+    mobile_params['base_frame_id'] = f'{robot_name}/base_footprint'
+
+    out_dir = os.path.join(tempfile.gettempdir(), 'mur_launch_sim')
+    os.makedirs(out_dir, exist_ok=True)
+    safe_robot_name = robot_name.replace('/', '_')
+    out_file = os.path.join(out_dir, f'{safe_robot_name}_mur_controllers.yaml')
+
+    with open(out_file, 'w', encoding='utf-8') as config_file:
+        yaml.safe_dump(config, config_file, sort_keys=False)
+
+    return out_file
+
+
+def controller_spawner(robot_name, controller_name):
+    return Node(
+        package='controller_manager',
+        executable='spawner',
+        arguments=[
+            controller_name,
+            '--controller-manager', f'/{robot_name}/controller_manager',
+            '--controller-manager-timeout', '60',
+        ],
+        output='screen',
+    )
 
 
 def launch_setup(context, *args, **kwargs):  # executed at runtime
@@ -64,15 +103,19 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
     start_controller_manager = (
         LaunchConfiguration('start_controller_manager').perform(context) == 'true'
     )
+    load_controllers = LaunchConfiguration('load_controllers').perform(context) == 'true'
 
     mur_description_path = get_package_share_directory('mur_description')
     mir_description_path = get_package_share_directory('mir_description')
     xacro_file = os.path.join(mur_description_path, 'urdf', 'mur_620.gazebo.xacro')
-    controllers_yaml = os.path.join(mir_description_path, 'config', 'mur_controllers.yaml')
+    base_controllers_yaml = os.path.join(mir_description_path, 'config', 'mur_controllers.yaml')
+    controllers_yaml = make_controller_config(robot_name, base_controllers_yaml)
     doc = xacro.process_file(xacro_file, mappings={
         'use_sim': 'true',
         'tf_prefix': robot_name,
+        'tf_prefix_mir': robot_name,
         'robot_namespace': robot_name,
+        'simulation_controllers': controllers_yaml,
     })
     robot_desc = doc.toxml()
 
@@ -156,21 +199,34 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
             )
         )
 
-    # spawn entity
-    nodes.append(
-        Node(
-            package='ros_gz_sim',
-            executable='create',
-            name=f'{robot_name}_spawn',
-            arguments=[
-                '-string', robot_desc,
-                '-name', robot_name,
-                '-x', x, '-y', y, '-z', z,
-                '-Y', Y,
-            ],
-            output='screen',
-        )
+    spawn_entity = Node(
+        package='ros_gz_sim',
+        executable='create',
+        name=f'{robot_name}_spawn',
+        arguments=[
+            '-string', robot_desc,
+            '-name', robot_name,
+            '-x', x, '-y', y, '-z', z,
+            '-Y', Y,
+        ],
+        output='screen',
     )
+    nodes.append(spawn_entity)
+
+    if load_controllers:
+        nodes.append(
+            RegisterEventHandler(
+                OnProcessExit(
+                    target_action=spawn_entity,
+                    on_exit=[
+                        controller_spawner(robot_name, 'joint_state_broadcaster'),
+                        controller_spawner(robot_name, 'mobile_base_controller'),
+                        controller_spawner(robot_name, 'lift_controller_l'),
+                        controller_spawner(robot_name, 'lift_controller_r'),
+                    ],
+                )
+            )
+        )
 
     if lidar_bridge:
         nodes.append(

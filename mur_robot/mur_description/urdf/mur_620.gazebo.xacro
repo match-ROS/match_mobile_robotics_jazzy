@@ -28,7 +28,7 @@
 	<xacro:arg name="safety_pos_margin" default="0.15"/>
 	<xacro:arg name="safety_k_position" default="20"/>
 
-	<xacro:arg name="simulation_controllers" default="" />
+	<xacro:arg name="simulation_controllers" default="$(find mir_description)/config/mur_controllers.yaml" />
 
 
 	<!-- MiR600 base -->
@@ -49,7 +49,10 @@
 	<!-- Init the MiR600 macro that includes all infos that Gazebo need to function -->
 	<xacro:mir_600_gazebo tf_prefix="$(arg tf_prefix_mir)" robot_namespace="$(arg robot_namespace)"/>
 	<!-- Init the plugins that run the MiR in Gazebo -->
-	<xacro:controller_plugin_gazebo robot_namespace="$(arg robot_namespace)"/>
+	<xacro:controller_plugin_gazebo
+		robot_namespace="$(arg robot_namespace)"
+		controllers_file="$(arg simulation_controllers)"
+	/>
 	<xacro:p3d_base_controller robot_namespace="$(arg robot_namespace)"/>
 	<xacro:gazebo_sim_sensors robot_namespace="$(arg robot_namespace)"/>
 	<xacro:mir_robot_ros2_control/>
