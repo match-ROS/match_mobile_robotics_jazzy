@@ -64,8 +64,10 @@ def make_controller_config(robot_name, source_yaml):
         config = yaml.safe_load(config_file)
 
     mobile_params = config['mobile_base_controller']['ros__parameters']
-    mobile_params['odom_frame_id'] = f'{robot_name}/odom'
-    mobile_params['base_frame_id'] = f'{robot_name}/base_footprint'
+    mobile_params['odom_frame_id'] = 'odom'
+    mobile_params['base_frame_id'] = 'base_footprint'
+    mobile_params['tf_frame_prefix_enable'] = True
+    mobile_params['tf_frame_prefix'] = ''
 
     namespaced_config = deepcopy(config)
     namespaced_config[f'/{robot_name}/controller_manager'] = deepcopy(
@@ -102,6 +104,13 @@ def make_controller_config(robot_name, source_yaml):
 
 
 def controller_spawner(robot_name, controller_name, controllers_yaml):
+    controller_ros_args = []
+    if controller_name == 'mobile_base_controller':
+        controller_ros_args = [
+            '--controller-ros-args',
+            f'-r ~/cmd_vel:=/{robot_name}/cmd_vel -r ~/odom:=/{robot_name}/odom',
+        ]
+
     return Node(
         package='controller_manager',
         executable='spawner',
@@ -110,7 +119,7 @@ def controller_spawner(robot_name, controller_name, controllers_yaml):
             '--controller-manager', f'/{robot_name}/controller_manager',
             '--controller-manager-timeout', '60',
             '--param-file', controllers_yaml,
-        ],
+        ] + controller_ros_args,
         output='screen',
     )
 
