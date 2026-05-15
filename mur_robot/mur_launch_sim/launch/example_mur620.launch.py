@@ -28,7 +28,10 @@ def generate_launch_description():
 
     set_res_path = SetEnvironmentVariable(
         name='GZ_SIM_RESOURCE_PATH',
-        value=os.path.join(mir_gazebo_path, 'worlds'),
+        value=os.pathsep.join([
+            os.path.join(mir_gazebo_path, 'worlds'),
+            os.path.join(mir_gazebo_path, 'worlds', 'include'),
+        ]),
     )
 
     gazebo = IncludeLaunchDescription(

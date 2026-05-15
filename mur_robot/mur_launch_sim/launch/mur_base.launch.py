@@ -18,6 +18,7 @@ Arguments:
   use_sim_time (bool)      Use simulation time (default true)
   include_gz (bool)        Whether to start gz sim and /clock bridge (default true)
   lidar_bridge (bool)      Whether to bridge the robot's /scan topic (default true)
+  start_controller_manager (bool) Start standalone ros2_control_node (default false)
 """
 
 import os
@@ -46,6 +47,7 @@ def declare_args():
         DeclareLaunchArgument('use_sim_time', default_value='true'),
         DeclareLaunchArgument('include_gz', default_value='true'),
         DeclareLaunchArgument('lidar_bridge', default_value='true'),
+        DeclareLaunchArgument('start_controller_manager', default_value='false'),
     ]
 
 
@@ -59,10 +61,14 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
     use_sim_time = LaunchConfiguration('use_sim_time').perform(context) == 'true'
     include_gz = LaunchConfiguration('include_gz').perform(context) == 'true'
     lidar_bridge = LaunchConfiguration('lidar_bridge').perform(context) == 'true'
+    start_controller_manager = (
+        LaunchConfiguration('start_controller_manager').perform(context) == 'true'
+    )
 
     mur_description_path = get_package_share_directory('mur_description')
+    mir_description_path = get_package_share_directory('mir_description')
     xacro_file = os.path.join(mur_description_path, 'urdf', 'mur_620.gazebo.xacro')
-    controllers_yaml = os.path.join(mur_description_path, 'config', 'mur_controllers.yaml')
+    controllers_yaml = os.path.join(mir_description_path, 'config', 'mur_controllers.yaml')
     doc = xacro.process_file(xacro_file, mappings={
         'use_sim': 'true',
         'tf_prefix': robot_name,
@@ -134,21 +140,21 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
         )
     )
 
-    # controller manager (namespaced)
-    nodes.append(
-        Node(
-            package='controller_manager',
-            executable='ros2_control_node',
-            namespace=robot_name,
-            name='controller_manager',
-            parameters=[
-                controllers_yaml,  # loads controller definitions
-                {'robot_description': robot_desc},  # ensure param present early
-                {'use_sim_time': use_sim_time},
-            ],
-            output='screen',
+    if start_controller_manager:
+        nodes.append(
+            Node(
+                package='controller_manager',
+                executable='ros2_control_node',
+                namespace=robot_name,
+                name='controller_manager',
+                parameters=[
+                    controllers_yaml,
+                    {'robot_description': robot_desc},
+                    {'use_sim_time': use_sim_time},
+                ],
+                output='screen',
+            )
         )
-    )
 
     # spawn entity
     nodes.append(
@@ -172,7 +178,10 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
                 package='ros_gz_bridge',
                 executable='parameter_bridge',
                 name=f'{robot_name}_lidar_bridge',
-                arguments=[f'/{robot_name}/scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan'],
+                arguments=[
+                    f'/{robot_name}/f_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan',
+                    f'/{robot_name}/b_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan',
+                ],
                 output='screen',
             )
         )
@@ -184,4 +193,3 @@ def generate_launch_description():
     ld = LaunchDescription(declare_args())
     ld.add_action(OpaqueFunction(function=launch_setup))
     return ld
-
