@@ -62,8 +62,8 @@ def arm_controller_config(controller_namespace):
     else:
         controller_prefix = ""
 
-    left_controller = f"{controller_prefix}/joint_trajectory_controller_l"
-    right_controller = f"{controller_prefix}/joint_trajectory_controller_r"
+    left_controller = f"{controller_prefix}/moveit_joint_trajectory_controller_l"
+    right_controller = f"{controller_prefix}/moveit_joint_trajectory_controller_r"
 
     left_joints = [
         "UR10_l/shoulder_pan_joint",
@@ -250,6 +250,8 @@ def launch_setup(context, *args, **kwargs):
                 "use_sim_time": use_sim_time,
                 "publish_robot_description": publish_robot_description,
                 "publish_robot_description_semantic": publish_robot_description_semantic,
+                "fix_start_state": True,
+                "default_workspace_bounds": 100.0,
             },
         ],
     )

@@ -72,6 +72,7 @@ def generate_launch_description():
         DeclareLaunchArgument('launch_moveit', default_value='true'),
         DeclareLaunchArgument('launch_rviz', default_value='false'),
         DeclareLaunchArgument('launch_servo', default_value='false'),
+        DeclareLaunchArgument('auto_switch_arm_controllers', default_value='true'),
         DeclareLaunchArgument('ur_type', default_value='ur10e'),
     ]
 
@@ -123,6 +124,27 @@ def generate_launch_description():
         output='screen',
     )
 
+    arm_controller_switchers = TimerAction(
+        period=3.0,
+        condition=IfCondition(LaunchConfiguration('auto_switch_arm_controllers')),
+        actions=[
+            Node(
+                package='mur_launch_sim',
+                executable='moveit_trajectory_controller_proxy.py',
+                name=[LaunchConfiguration('robot_name'), '_moveit_controller_proxy_l'],
+                arguments=['--robot-name', LaunchConfiguration('robot_name'), '--arm', 'l'],
+                output='screen',
+            ),
+            Node(
+                package='mur_launch_sim',
+                executable='moveit_trajectory_controller_proxy.py',
+                name=[LaunchConfiguration('robot_name'), '_moveit_controller_proxy_r'],
+                arguments=['--robot-name', LaunchConfiguration('robot_name'), '--arm', 'r'],
+                output='screen',
+            ),
+        ],
+    )
+
     moveit = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(moveit_launch),
         condition=IfCondition(LaunchConfiguration('launch_moveit')),
@@ -136,5 +158,6 @@ def generate_launch_description():
     )
 
     return LaunchDescription(
-        declared_arguments + [robot, arm_controllers, moveit_descriptions, moveit]
+        declared_arguments
+        + [robot, arm_controllers, moveit_descriptions, arm_controller_switchers, moveit]
     )

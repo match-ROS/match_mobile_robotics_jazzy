@@ -25,6 +25,7 @@ LAUNCH_MOVEIT="${LAUNCH_MOVEIT:-true}"
 LAUNCH_RVIZ="${LAUNCH_RVIZ:-true}"
 LAUNCH_SERVO="${LAUNCH_SERVO:-false}"
 LOAD_ARM_CONTROLLERS="${LOAD_ARM_CONTROLLERS:-true}"
+AUTO_SWITCH_ARM_CONTROLLERS="${AUTO_SWITCH_ARM_CONTROLLERS:-true}"
 
 export ROS_DOMAIN_ID
 
@@ -49,6 +50,7 @@ stop_old_sim() {
     "nav2_lifecycle_manager"
     "laserscan_multi_merger"
     "move_group"
+    "moveit_trajectory_controller_proxy"
     "moveit_servo"
     "servo_node"
     "rviz2"
@@ -125,4 +127,5 @@ exec ros2 launch mur_launch_sim mur620.launch.py \
   include_gz:=true \
   launch_moveit:="${LAUNCH_MOVEIT}" \
   launch_rviz:="${LAUNCH_RVIZ}" \
-  launch_servo:="${LAUNCH_SERVO}"
+  launch_servo:="${LAUNCH_SERVO}" \
+  auto_switch_arm_controllers:="${AUTO_SWITCH_ARM_CONTROLLERS}"

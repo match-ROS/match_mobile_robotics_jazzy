@@ -45,7 +45,7 @@ if [[ -f install/setup.bash ]]; then
 fi
 
 section "Processes"
-pgrep -af "mur_base.launch.py|mur620.launch.py|gz sim|ground_truth|amcl|map_server|controller_server|planner_server|behavior_server|bt_navigator|move_group|moveit|rviz2|publish_moveit_descriptions" || true
+pgrep -af "mur_base.launch.py|mur620.launch.py|gz sim|ground_truth|amcl|map_server|controller_server|planner_server|behavior_server|bt_navigator|move_group|moveit|rviz2|publish_moveit_descriptions|moveit_trajectory_controller_proxy" || true
 
 section "Core Topics"
 ros2 topic list --no-daemon | grep -E '(^/tf$|^/tf_static$|/map$|ground_truth|/f_scan$|/b_scan$|/scan$|/scan_merged_raw$|mobile_base_controller/odom|robot_description|planning_scene)' || true
@@ -61,6 +61,8 @@ echo "-- /${ROBOT_NAME}/robot_description_semantic sample"
 timeout 8 ros2 topic echo "/${ROBOT_NAME}/robot_description_semantic" --once --qos-durability transient_local || true
 run ros2 action list
 timeout 8 ros2 control list_controllers -c "/${ROBOT_NAME}/controller_manager" || true
+run ros2 action info "/${ROBOT_NAME}/moveit_joint_trajectory_controller_l/follow_joint_trajectory"
+run ros2 action info "/${ROBOT_NAME}/moveit_joint_trajectory_controller_r/follow_joint_trajectory"
 
 section "Clock"
 run ros2 topic info /clock --verbose
@@ -125,7 +127,7 @@ timeout 8 ros2 topic echo "/${ROBOT_NAME}/mobile_base_controller/cmd_vel" geomet
 
 section "Recent MoveIt Logs"
 find /home/rosmatch/.ros/log -maxdepth 2 -type f \
-  \( -name '*move_group*.log' -o -name '*rviz*.log' -o -name '*moveit*.log' -o -name '*publish_moveit*.log' -o -name 'python3_*.log' \) \
+  \( -name '*move_group*.log' -o -name '*rviz*.log' -o -name '*moveit*.log' -o -name '*publish_moveit*.log' -o -name '*controller_proxy*.log' -o -name 'python3_*.log' \) \
   -mmin -30 -printf '%T@ %p\n' \
   | sort -nr \
   | head -8 \

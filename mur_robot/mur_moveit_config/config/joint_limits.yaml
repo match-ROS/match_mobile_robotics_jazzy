@@ -14,7 +14,10 @@ joint_limits:
     max_effort: 100.0
     max_position: 0.5
     max_velocity: 0.5
-    min_position: 0.0
+    # Gazebo/ros2_control can report tiny negative values around zero
+    # (e.g. -1e-14). Keep a small numerical tolerance while preserving the
+    # physical lower stop at 0 m for planning-scale motions.
+    min_position: -0.001
 
   right_lift_joint:
     has_acceleration_limits: true
@@ -25,7 +28,10 @@ joint_limits:
     max_effort: 100.0
     max_position: 0.5
     max_velocity: 0.5
-    min_position: 0.0
+    # Gazebo/ros2_control can report tiny negative values around zero
+    # (e.g. -1e-14). Keep a small numerical tolerance while preserving the
+    # physical lower stop at 0 m for planning-scale motions.
+    min_position: -0.001
 
   shoulder_pan_joint:
     has_acceleration_limits: true
