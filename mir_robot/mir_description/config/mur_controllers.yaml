@@ -56,8 +56,10 @@ mobile_base_controller:
     base_frame_id: "base_footprint"  # The child frame
     left_wheel_names: ["left_wheel_joint"]
     right_wheel_names: ["right_wheel_joint"]
-    wheel_separation : 0.445208
-    wheel_radius : 0.0625
+    # MiR600 drive wheel geometry. The wheel diameter is 200 mm in the MiR600
+    # specification; the wheel separation follows the URDF joint origins.
+    wheel_separation : 0.66
+    wheel_radius : 0.1
 
     # Publish rate
     publish_rate: 41.2               # this is what the real MiR platform publishes (default: 50)
