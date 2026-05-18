@@ -11,15 +11,18 @@ set -u
 
 WS="${WS:-/home/rosmatch/colcon_ws}"
 ROBOT_NAME="${ROBOT_NAME:-mur620a}"
-WORLD="${WORLD:-maze}"
+WORLD="${WORLD:-scale}"
 MAP="${MAP:-}"
+ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-62}"
 BUILD_TYPE="${BUILD_TYPE:-RelWithDebInfo}"
 CLEAN_START="${CLEAN_START:-true}"
 CLEAN_START_FORCE_KILL="${CLEAN_START_FORCE_KILL:-true}"
-ROBOT_X="${ROBOT_X:-0.0}"
-ROBOT_Y="${ROBOT_Y:-0.0}"
+ROBOT_X="${ROBOT_X:-44.0}"
+ROBOT_Y="${ROBOT_Y:-44.0}"
 ROBOT_Z="${ROBOT_Z:-0.07}"
 ROBOT_YAW="${ROBOT_YAW:-0.0}"
+
+export ROS_DOMAIN_ID
 
 stop_old_sim() {
   local patterns=(
@@ -73,6 +76,8 @@ source_setup /opt/ros/jazzy/setup.bash
 if [[ -f install/setup.bash ]]; then
   source_setup install/setup.bash
 fi
+
+echo "[start_mur620a_sim] ROS_DOMAIN_ID=${ROS_DOMAIN_ID}"
 
 if [[ "${CLEAN_START}" == "true" ]]; then
   stop_old_sim

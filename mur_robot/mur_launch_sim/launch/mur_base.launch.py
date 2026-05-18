@@ -50,9 +50,9 @@ from launch_ros.actions import Node
 def declare_args():
     return [
         DeclareLaunchArgument('robot_name', default_value='mur620a'),
-        DeclareLaunchArgument('world', default_value='maze'),
-        DeclareLaunchArgument('x', default_value='0.0'),
-        DeclareLaunchArgument('y', default_value='0.0'),
+        DeclareLaunchArgument('world', default_value='scale'),
+        DeclareLaunchArgument('x', default_value='44.0'),
+        DeclareLaunchArgument('y', default_value='44.0'),
         DeclareLaunchArgument('z', default_value='0.07'),
         DeclareLaunchArgument('Y', default_value='0.0'),
         DeclareLaunchArgument('use_sim_time', default_value='true'),

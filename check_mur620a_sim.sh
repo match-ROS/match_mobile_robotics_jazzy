@@ -21,10 +21,13 @@ set -u
 WS="${WS:-/home/rosmatch/colcon_ws}"
 ROBOT_NAME="${ROBOT_NAME:-mur620a}"
 WORLD="${WORLD:-maze}"
+ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-62}"
 REPO="${REPO:-${WS}/src/match_mobile_robotics_jazzy}"
 LOG_DIR="${LOG_DIR:-${REPO}/logs}"
 STAMP="$(date +%Y%m%d_%H%M%S)"
 LOG_FILE="${LOG_FILE:-${LOG_DIR}/check_${ROBOT_NAME}_${STAMP}.log}"
+
+export ROS_DOMAIN_ID
 
 mkdir -p "$LOG_DIR"
 exec > >(tee "$LOG_FILE") 2>&1
@@ -33,6 +36,7 @@ echo "Writing diagnostic log to: $LOG_FILE"
 echo "Workspace: $WS"
 echo "Robot: $ROBOT_NAME"
 echo "World: $WORLD"
+echo "ROS_DOMAIN_ID: $ROS_DOMAIN_ID"
 
 cd "$WS"
 source_setup /opt/ros/jazzy/setup.bash
@@ -102,6 +106,8 @@ run ros2 topic info "/${ROBOT_NAME}/mobile_base_controller/odom" --verbose
 run ros2 topic info "/${ROBOT_NAME}/mobile_base_controller/cmd_vel" --verbose
 run ros2 param get "/${ROBOT_NAME}/mobile_base_controller" wheel_separation
 run ros2 param get "/${ROBOT_NAME}/mobile_base_controller" wheel_radius
+run ros2 param get "/${ROBOT_NAME}/mobile_base_controller" linear.x.has_velocity_limits
+run ros2 param get "/${ROBOT_NAME}/mobile_base_controller" angular.z.has_velocity_limits
 echo "-- /${ROBOT_NAME}/mobile_base_controller/cmd_vel TwistStamped sample"
 timeout 8 ros2 topic echo "/${ROBOT_NAME}/mobile_base_controller/cmd_vel" geometry_msgs/msg/TwistStamped --once || true
 
