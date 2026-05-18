@@ -132,11 +132,13 @@ def make_localization_config(robot_name, map_yaml, use_sim_time, x, y, yaw):
         'amcl': {
             'ros__parameters': {
                 'use_sim_time': use_sim_time,
-                'alpha1': 0.2,
-                'alpha2': 0.1,
-                'alpha3': 0.1,
-                'alpha4': 0.2,
-                'alpha5': 0.2,
+                # Caster alignment and wheel slip make the first part of turns
+                # less trustworthy than ideal differential-drive odometry.
+                'alpha1': 0.35,
+                'alpha2': 0.15,
+                'alpha3': 0.12,
+                'alpha4': 0.35,
+                'alpha5': 0.1,
                 'base_frame_id': f'{robot_name}/base_footprint',
                 'global_frame_id': 'map',
                 'map_topic': 'map',
@@ -146,9 +148,12 @@ def make_localization_config(robot_name, map_yaml, use_sim_time, x, y, yaw):
                 'robot_model_type': 'nav2_amcl::DifferentialMotionModel',
                 'laser_model_type': 'likelihood_field',
                 'laser_likelihood_max_dist': 2.0,
-                'max_beams': 60,
+                'max_beams': 120,
                 'max_particles': 5000,
                 'min_particles': 500,
+                'pf_err': 0.05,
+                'pf_z': 0.99,
+                'resample_interval': 1,
                 'set_initial_pose': True,
                 'initial_pose': {
                     'x': float(x),
@@ -157,7 +162,9 @@ def make_localization_config(robot_name, map_yaml, use_sim_time, x, y, yaw):
                     'yaw': float(yaw),
                 },
                 'tf_broadcast': True,
-                'transform_tolerance': 0.2,
+                'transform_tolerance': 0.3,
+                'update_min_a': 0.05,
+                'update_min_d': 0.05,
             }
         },
         'lifecycle_manager_localization': {
@@ -498,6 +505,7 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
                 value=os.pathsep.join([
                     os.path.join(mir_gazebo_path, 'worlds'),
                     os.path.join(mir_gazebo_path, 'worlds', 'include'),
+                    os.path.join(mir_gazebo_path, 'models'),
                 ]),
             )
         )

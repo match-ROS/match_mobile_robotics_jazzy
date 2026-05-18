@@ -46,11 +46,22 @@ pgrep -af "mur_base.launch.py|gz sim|ground_truth|amcl|map_server|controller_ser
 section "Core Topics"
 ros2 topic list | grep -E '(^/tf$|^/tf_static$|/map$|ground_truth|/f_scan$|/b_scan$|/scan$|/scan_merged_raw$|mobile_base_controller/odom)' || true
 
+section "Clock"
+run ros2 topic info /clock --verbose
+echo "-- /clock samples"
+timeout 5 ros2 topic echo /clock --once || true
+sleep 1
+timeout 5 ros2 topic echo /clock --once || true
+
 section "Map"
 run ros2 lifecycle get /map_server
 run ros2 topic info /map --verbose
 echo "-- /map sample with transient local QoS"
 timeout 8 ros2 topic echo /map --once --field info --qos-durability transient_local || true
+run ros2 param get /amcl alpha1
+run ros2 param get /amcl alpha4
+run ros2 param get /amcl update_min_a
+run ros2 param get /amcl update_min_d
 echo "-- map -> odom"
 timeout 8 ros2 run tf2_ros tf2_echo map "${ROBOT_NAME}/odom" || true
 

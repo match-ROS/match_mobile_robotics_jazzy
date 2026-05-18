@@ -12,6 +12,7 @@ set -u
 WS="${WS:-/home/rosmatch/colcon_ws}"
 ROBOT_NAME="${ROBOT_NAME:-mur620a}"
 WORLD="${WORLD:-maze}"
+MAP="${MAP:-}"
 BUILD_TYPE="${BUILD_TYPE:-RelWithDebInfo}"
 CLEAN_START="${CLEAN_START:-true}"
 CLEAN_START_FORCE_KILL="${CLEAN_START_FORCE_KILL:-true}"
@@ -53,17 +54,28 @@ stop_old_sim() {
     done
     sleep 1
   fi
+
+  if command -v ros2 >/dev/null 2>&1; then
+    echo "[start_mur620a_sim] Waiting for old /clock publisher to disappear..."
+    for _ in {1..20}; do
+      if ! ros2 topic info /clock 2>/dev/null | grep -q "Publisher count: [1-9]"; then
+        return
+      fi
+      sleep 0.25
+    done
+    echo "[start_mur620a_sim] Warning: /clock publisher is still visible. Close old Gazebo/ROS sessions if TF time-jump warnings continue."
+  fi
 }
 
 cd "$WS"
 
-if [[ "${CLEAN_START}" == "true" ]]; then
-  stop_old_sim
-fi
-
 source_setup /opt/ros/jazzy/setup.bash
 if [[ -f install/setup.bash ]]; then
   source_setup install/setup.bash
+fi
+
+if [[ "${CLEAN_START}" == "true" ]]; then
+  stop_old_sim
 fi
 
 colcon build \
@@ -78,9 +90,14 @@ rm -f "/tmp/mur_launch_sim/${ROBOT_NAME}_mur_controllers.yaml"
 rm -f "/tmp/mur_launch_sim/${ROBOT_NAME}_localization.yaml"
 rm -f "/tmp/mur_launch_sim/${ROBOT_NAME}_navigation.yaml"
 
+if [[ -z "${MAP}" ]]; then
+  MAP="${WS}/install/mir_gazebo/share/mir_gazebo/maps/${WORLD}.yaml"
+fi
+
 exec ros2 launch mur_launch_sim mur_base.launch.py \
   robot_name:="${ROBOT_NAME}" \
   world:="${WORLD}" \
+  map:="${MAP}" \
   x:="${ROBOT_X}" \
   y:="${ROBOT_Y}" \
   z:="${ROBOT_Z}" \

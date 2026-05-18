@@ -28,7 +28,7 @@ install(PROGRAMS
 )
 
 install(DIRECTORY
-  launch worlds maps rviz scripts
+  launch worlds maps models rviz scripts
   DESTINATION share/${PROJECT_NAME}
 )
 
