@@ -738,6 +738,7 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
     if navigation:
         navigation_yaml = make_navigation_config(robot_name, use_sim_time)
         cmd_vel_topic = f'/{robot_name}/mobile_base_controller/cmd_vel'
+        goal_pose_topic = f'/{robot_name}/goal_pose'
         remappings = [
             ('/tf', 'tf'),
             ('/tf_static', 'tf_static'),
@@ -772,7 +773,7 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
                 executable='bt_navigator',
                 name='bt_navigator',
                 parameters=[navigation_yaml],
-                remappings=remappings,
+                remappings=remappings + [('goal_pose', goal_pose_topic)],
                 output='screen',
             ),
             Node(
