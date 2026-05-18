@@ -21,12 +21,16 @@ ROBOT_X="${ROBOT_X:-44.0}"
 ROBOT_Y="${ROBOT_Y:-44.0}"
 ROBOT_Z="${ROBOT_Z:-0.07}"
 ROBOT_YAW="${ROBOT_YAW:-0.0}"
+LAUNCH_MOVEIT="${LAUNCH_MOVEIT:-true}"
+LAUNCH_SERVO="${LAUNCH_SERVO:-false}"
+LOAD_ARM_CONTROLLERS="${LOAD_ARM_CONTROLLERS:-true}"
 
 export ROS_DOMAIN_ID
 
 stop_old_sim() {
   local patterns=(
     "ros2 launch mur_launch_sim mur_base.launch.py"
+    "ros2 launch mur_launch_sim mur620.launch.py"
     "gz sim"
     "gz sim server"
     "gz sim gui"
@@ -43,6 +47,9 @@ stop_old_sim() {
     "nav2_bt_navigator"
     "nav2_lifecycle_manager"
     "laserscan_multi_merger"
+    "move_group"
+    "moveit_servo"
+    "servo_node"
   )
 
   echo "[start_mur620a_sim] Stopping old ROS/Gazebo simulation processes..."
@@ -85,7 +92,7 @@ fi
 
 colcon build \
   --symlink-install \
-  --packages-select mir_description mur_description mur_launch_sim mir_gazebo match_gazebo \
+  --packages-select mir_description mur_description mur_launch_sim mur_moveit_config mir_gazebo match_gazebo \
   --event-handlers console_direct+ \
   --cmake-args -DCMAKE_BUILD_TYPE="${BUILD_TYPE}"
 
@@ -99,7 +106,7 @@ if [[ -z "${MAP}" ]]; then
   MAP="${WS}/install/mir_gazebo/share/mir_gazebo/maps/${WORLD}.yaml"
 fi
 
-exec ros2 launch mur_launch_sim mur_base.launch.py \
+exec ros2 launch mur_launch_sim mur620.launch.py \
   robot_name:="${ROBOT_NAME}" \
   world:="${WORLD}" \
   map:="${MAP}" \
@@ -108,7 +115,11 @@ exec ros2 launch mur_launch_sim mur_base.launch.py \
   z:="${ROBOT_Z}" \
   Y:="${ROBOT_YAW}" \
   load_controllers:=true \
+  load_arm_controllers:="${LOAD_ARM_CONTROLLERS}" \
   laser_merger:=true \
   localization:=true \
   navigation:=true \
-  ground_truth:=true
+  ground_truth:=true \
+  include_gz:=true \
+  launch_moveit:="${LAUNCH_MOVEIT}" \
+  launch_servo:="${LAUNCH_SERVO}"

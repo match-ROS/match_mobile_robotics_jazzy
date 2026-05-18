@@ -15,11 +15,12 @@ mobile_base_controller:
     type: diff_drive_controller/DiffDriveController
     left_wheel_names: ["left_wheel_joint"]
     right_wheel_names: ["right_wheel_joint"]
-    # Simulation-calibrated diff-drive geometry. The visual/collision geometry
-    # still uses the MiR600 dimensions, but these values matched the existing
-    # Gazebo wheel dynamics before the navigation regression.
-    wheel_separation : 0.445208
-    wheel_radius : 0.0625
+    # Match the MiR600 URDF collision geometry:
+    # mir_600_act_wheel_dy = 0.330 m, mir_600_act_wheel_radius = 0.1 m.
+    # Keeping these physical values makes controller odometry consistent with
+    # Gazebo joint motion during rotations.
+    wheel_separation : 0.66
+    wheel_radius : 0.1
 
     # Publish rate
     publish_rate: 41.2               # this is what the real MiR platform publishes (default: 50)

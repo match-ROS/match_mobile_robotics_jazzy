@@ -34,17 +34,13 @@ import yaml
 from pathlib import Path
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, RegisterEventHandler
+from launch.actions import DeclareLaunchArgument, OpaqueFunction, TimerAction
 from launch.conditions import IfCondition
-from launch.event_handlers import OnProcessExit
 from launch.substitutions import (
     LaunchConfiguration,
-    PathJoinSubstitution,
 )
 
 from launch_ros.actions import Node
-from launch_ros.substitutions import FindPackageShare
-
 from moveit_configs_utils import MoveItConfigsBuilder
 
 from ament_index_python.packages import get_package_share_directory
@@ -59,6 +55,88 @@ def load_yaml(package_name, file_path):
             return yaml.safe_load(file)
     except OSError:  # parent of IOError, OSError *and* WindowsError where available
         return None
+
+
+def arm_controller_config(controller_namespace):
+    if controller_namespace:
+        controller_prefix = f"/{controller_namespace}"
+    else:
+        controller_prefix = ""
+
+    left_controller = f"{controller_prefix}/joint_trajectory_controller_l"
+    right_controller = f"{controller_prefix}/joint_trajectory_controller_r"
+
+    left_joints = [
+        "UR10_l/shoulder_pan_joint",
+        "UR10_l/shoulder_lift_joint",
+        "UR10_l/elbow_joint",
+        "UR10_l/wrist_1_joint",
+        "UR10_l/wrist_2_joint",
+        "UR10_l/wrist_3_joint",
+    ]
+    right_joints = [
+        "UR10_r/shoulder_pan_joint",
+        "UR10_r/shoulder_lift_joint",
+        "UR10_r/elbow_joint",
+        "UR10_r/wrist_1_joint",
+        "UR10_r/wrist_2_joint",
+        "UR10_r/wrist_3_joint",
+    ]
+
+    return {
+        "moveit_controller_manager": (
+            "moveit_simple_controller_manager/MoveItSimpleControllerManager"
+        ),
+        "trajectory_execution": {
+            "allowed_execution_duration_scaling": 1.2,
+            "allowed_goal_duration_margin": 0.5,
+            "allowed_start_tolerance": 0.01,
+            "execution_duration_monitoring": False,
+        },
+        "moveit_simple_controller_manager": {
+            "controller_names": [
+                left_controller,
+                right_controller,
+            ],
+            left_controller: {
+                "action_ns": "follow_joint_trajectory",
+                "type": "FollowJointTrajectory",
+                "default": True,
+                "joints": left_joints,
+            },
+            right_controller: {
+                "action_ns": "follow_joint_trajectory",
+                "type": "FollowJointTrajectory",
+                "default": True,
+                "joints": right_joints,
+            },
+        },
+    }
+
+
+def robot_description_source(robot_name):
+    mur_description_path = get_package_share_directory("mur_description")
+    xacro_file = os.path.join(mur_description_path, "urdf", "mur_620.gazebo.xacro")
+    controllers_yaml = os.path.join(
+        "/tmp",
+        "mur_launch_sim",
+        f"{robot_name.replace('/', '_')}_mur_controllers.yaml",
+    )
+    if not os.path.exists(controllers_yaml):
+        controllers_yaml = os.path.join(
+            get_package_share_directory("mir_description"),
+            "config",
+            "mur_controllers.yaml",
+        )
+
+    mappings = {
+        "use_sim": "true",
+        "tf_prefix": robot_name,
+        "tf_prefix_mir": robot_name,
+        "robot_namespace": robot_name,
+        "simulation_controllers": controllers_yaml,
+    }
+    return xacro_file, mappings
 
 
 def declare_arguments():
@@ -98,20 +176,28 @@ def declare_arguments():
                 default_value="true",
                 description="MoveGroup publishes robot description semantic",
             ),
+            DeclareLaunchArgument(
+                "controller_namespace",
+                default_value="mur620a",
+                description="Namespace where the arm ros2_control controllers run",
+            ),
         ]
     )
 
 
-def generate_launch_description():
+def launch_setup(context, *args, **kwargs):
     #launch_rviz = LaunchConfiguration("launch_rviz")
-    ur_type = LaunchConfiguration("ur_type")
-    warehouse_sqlite_path = LaunchConfiguration("warehouse_sqlite_path")
+    _ur_type = LaunchConfiguration("ur_type").perform(context)
+    warehouse_sqlite_path = LaunchConfiguration("warehouse_sqlite_path").perform(context)
     launch_servo = LaunchConfiguration("launch_servo")
     use_sim_time = LaunchConfiguration("use_sim_time")
     publish_robot_description_semantic = LaunchConfiguration("publish_robot_description_semantic")
+    controller_namespace = LaunchConfiguration("controller_namespace").perform(context)
 
+    robot_xacro_file, robot_xacro_mappings = robot_description_source(controller_namespace)
     moveit_config = (
         MoveItConfigsBuilder(robot_name="mur620", package_name="mur_moveit_config")
+        .robot_description(robot_xacro_file, robot_xacro_mappings)
         .robot_description_semantic(Path("srdf") / "mur620.srdf.xacro", {"prefix": "UR10","model_name": "mur620"})
         .to_moveit_configs()
     )
@@ -121,25 +207,17 @@ def generate_launch_description():
         "warehouse_host": warehouse_sqlite_path,
     }
 
-    ld = LaunchDescription()
-    ld.add_entity(declare_arguments())
-
-    wait_robot_description = Node(
-        package="ur_robot_driver",
-        executable="wait_for_robot_description",
-        output="screen",
-    )
-    ld.add_action(wait_robot_description)
-
     move_group_node = Node(
         package="moveit_ros_move_group",
         executable="move_group",
+        namespace=controller_namespace,
         output="screen",
         parameters=[
             moveit_config.to_dict(),
+            arm_controller_config(controller_namespace),
             warehouse_ros_config,
             {
-                "use_sim_time": True,
+                "use_sim_time": use_sim_time,
                 "publish_robot_description_semantic": publish_robot_description_semantic,
             },
         ],
@@ -151,6 +229,7 @@ def generate_launch_description():
         package="moveit_servo",
         condition=IfCondition(launch_servo),
         executable="servo_node",
+        namespace=controller_namespace,
         parameters=[
             moveit_config.to_dict(),
             servo_params,
@@ -181,13 +260,17 @@ def generate_launch_description():
     #     ],
     # )
 
-    ld.add_action(
-        RegisterEventHandler(
-            OnProcessExit(
-                target_action=wait_robot_description,
-                on_exit=[move_group_node, servo_node],
-            )
+    return [
+        TimerAction(
+            period=2.0,
+            actions=[move_group_node, servo_node],
         ),
-    )
+    ]
+
+
+def generate_launch_description():
+    ld = LaunchDescription()
+    ld.add_entity(declare_arguments())
+    ld.add_action(OpaqueFunction(function=launch_setup))
 
     return ld
