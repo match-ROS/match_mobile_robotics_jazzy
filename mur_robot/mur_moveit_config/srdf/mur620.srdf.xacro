@@ -6,6 +6,12 @@
 <robot name="$(arg model_name)"
         xmlns:xacro="http://www.ros.org/wiki/xacro">
     <xacro:arg name="prefix" default=""/>
+    <xacro:arg name="virtual_joint_parent_frame" default="world"/>
+    <virtual_joint
+        name="fixed_base"
+        type="fixed"
+        parent_frame="$(arg virtual_joint_parent_frame)"
+        child_link="base_footprint"/>
     <!--GROUPS: Representation of a set of joints and links. This can be useful for specifying DOF to plan for, defining arms, end effectors, etc-->
     <!--LINKS: When a link is specified, the parent joint of that link (if it exists) is automatically included-->
     <!--JOINTS: When a joint is specified, the child link of that joint (which will always exist) is automatically included-->

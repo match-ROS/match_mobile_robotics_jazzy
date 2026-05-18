@@ -221,7 +221,14 @@ def launch_setup(context, *args, **kwargs):
     moveit_config = (
         MoveItConfigsBuilder(robot_name="mur620", package_name="mur_moveit_config")
         .robot_description(robot_xacro_file, robot_xacro_mappings)
-        .robot_description_semantic(Path("srdf") / "mur620.srdf.xacro", {"prefix": "UR10","model_name": "mur620"})
+        .robot_description_semantic(
+            Path("srdf") / "mur620.srdf.xacro",
+            {
+                "prefix": "UR10",
+                "model_name": "mur620",
+                "virtual_joint_parent_frame": f"{controller_namespace}/base_footprint",
+            },
+        )
         .to_moveit_configs()
     )
 
@@ -269,8 +276,8 @@ def launch_setup(context, *args, **kwargs):
         condition=IfCondition(launch_rviz),
         executable="rviz2",
         name="rviz2_mur620a_moveit",
-        output="screen",
-        arguments=["-d", rviz_config],
+        output="log",
+        arguments=["-d", rviz_config, "--ros-args", "--log-level", "warn"],
         parameters=[
             moveit_config.to_dict(),
             warehouse_ros_config,

@@ -59,8 +59,8 @@ echo "-- /robot_description_semantic sample"
 timeout 8 ros2 topic echo /robot_description_semantic --once --qos-durability transient_local || true
 echo "-- /${ROBOT_NAME}/robot_description_semantic sample"
 timeout 8 ros2 topic echo "/${ROBOT_NAME}/robot_description_semantic" --once --qos-durability transient_local || true
-run ros2 action list --no-daemon
-run ros2 control list_controllers -c "/${ROBOT_NAME}/controller_manager"
+run ros2 action list
+timeout 8 ros2 control list_controllers -c "/${ROBOT_NAME}/controller_manager" || true
 
 section "Clock"
 run ros2 topic info /clock --verbose

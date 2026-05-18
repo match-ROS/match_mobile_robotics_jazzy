@@ -21,6 +21,7 @@ class MoveItDescriptionPublisher(Node):
         self.declare_parameter('srdf_path', 'srdf/mur620.srdf.xacro')
         self.declare_parameter('srdf_prefix', 'UR10')
         self.declare_parameter('srdf_model_name', 'mur620')
+        self.declare_parameter('virtual_joint_parent_frame', '')
 
         robot_name = self.get_parameter('robot_name').value.strip('/')
         publish_global = self.get_parameter('publish_global_topics').value
@@ -53,9 +54,14 @@ class MoveItDescriptionPublisher(Node):
         package_name = self.get_parameter('srdf_package').value
         relative_path = self.get_parameter('srdf_path').value
         srdf_path = os.path.join(get_package_share_directory(package_name), relative_path)
+        robot_name = self.get_parameter('robot_name').value.strip('/')
+        virtual_joint_parent_frame = self.get_parameter('virtual_joint_parent_frame').value
+        if not virtual_joint_parent_frame and robot_name:
+            virtual_joint_parent_frame = f'{robot_name}/base_footprint'
         mappings = {
             'prefix': self.get_parameter('srdf_prefix').value,
             'model_name': self.get_parameter('srdf_model_name').value,
+            'virtual_joint_parent_frame': virtual_joint_parent_frame,
         }
         return xacro.process_file(srdf_path, mappings=mappings).toxml()
 
