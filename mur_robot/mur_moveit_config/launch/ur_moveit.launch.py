@@ -41,6 +41,7 @@ from launch.substitutions import (
 )
 
 from launch_ros.actions import Node
+from launch_ros.parameter_descriptions import ParameterValue
 from moveit_configs_utils import MoveItConfigsBuilder
 
 from ament_index_python.packages import get_package_share_directory
@@ -172,6 +173,11 @@ def declare_arguments():
                 description="Using or not time from simulation",
             ),
             DeclareLaunchArgument(
+                "publish_robot_description",
+                default_value="true",
+                description="MoveGroup publishes robot description",
+            ),
+            DeclareLaunchArgument(
                 "publish_robot_description_semantic",
                 default_value="true",
                 description="MoveGroup publishes robot description semantic",
@@ -190,8 +196,13 @@ def launch_setup(context, *args, **kwargs):
     _ur_type = LaunchConfiguration("ur_type").perform(context)
     warehouse_sqlite_path = LaunchConfiguration("warehouse_sqlite_path").perform(context)
     launch_servo = LaunchConfiguration("launch_servo")
-    use_sim_time = LaunchConfiguration("use_sim_time")
-    publish_robot_description_semantic = LaunchConfiguration("publish_robot_description_semantic")
+    use_sim_time = ParameterValue(LaunchConfiguration("use_sim_time"), value_type=bool)
+    publish_robot_description = ParameterValue(
+        LaunchConfiguration("publish_robot_description"), value_type=bool
+    )
+    publish_robot_description_semantic = ParameterValue(
+        LaunchConfiguration("publish_robot_description_semantic"), value_type=bool
+    )
     controller_namespace = LaunchConfiguration("controller_namespace").perform(context)
 
     robot_xacro_file, robot_xacro_mappings = robot_description_source(controller_namespace)
@@ -218,6 +229,7 @@ def launch_setup(context, *args, **kwargs):
             warehouse_ros_config,
             {
                 "use_sim_time": use_sim_time,
+                "publish_robot_description": publish_robot_description,
                 "publish_robot_description_semantic": publish_robot_description_semantic,
             },
         ],
@@ -233,6 +245,9 @@ def launch_setup(context, *args, **kwargs):
         parameters=[
             moveit_config.to_dict(),
             servo_params,
+            {
+                "use_sim_time": use_sim_time,
+            },
         ],
         output="screen",
     )

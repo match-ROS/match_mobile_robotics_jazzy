@@ -18,20 +18,24 @@ from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
 
-def controller_spawner(controller_name):
+def controller_spawner(controller_name, *, inactive=False):
     robot_name = LaunchConfiguration('robot_name')
+    arguments = [
+        controller_name,
+        '--controller-manager',
+        ['/', robot_name, '/controller_manager'],
+        '--controller-manager-timeout',
+        '90',
+        '--param-file',
+        ['/tmp/mur_launch_sim/', robot_name, '_mur_controllers.yaml'],
+    ]
+    if inactive:
+        arguments.append('--inactive')
+
     return Node(
         package='controller_manager',
         executable='spawner',
-        arguments=[
-            controller_name,
-            '--controller-manager',
-            ['/', robot_name, '/controller_manager'],
-            '--controller-manager-timeout',
-            '90',
-            '--param-file',
-            ['/tmp/mur_launch_sim/', robot_name, '_mur_controllers.yaml'],
-        ],
+        arguments=arguments,
         output='screen',
     )
 
@@ -99,8 +103,10 @@ def generate_launch_description():
         period=3.0,
         condition=IfCondition(LaunchConfiguration('load_arm_controllers')),
         actions=[
-            controller_spawner('joint_trajectory_controller_l'),
-            controller_spawner('joint_trajectory_controller_r'),
+            controller_spawner('forward_velocity_controller_l'),
+            controller_spawner('forward_velocity_controller_r'),
+            controller_spawner('joint_trajectory_controller_l', inactive=True),
+            controller_spawner('joint_trajectory_controller_r', inactive=True),
         ],
     )
 
