@@ -36,9 +36,7 @@ from pathlib import Path
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, OpaqueFunction, TimerAction
 from launch.conditions import IfCondition
-from launch.substitutions import (
-    LaunchConfiguration,
-)
+from launch.substitutions import LaunchConfiguration
 
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
@@ -141,9 +139,22 @@ def robot_description_source(robot_name):
 
 
 def declare_arguments():
+    default_rviz_config = os.path.join(
+        get_package_share_directory("mur_moveit_config"),
+        "config",
+        "mur620a.rviz",
+    )
+
     return LaunchDescription(
         [
-            #DeclareLaunchArgument("launch_rviz", default_value="true", description="Launch RViz?"),
+            DeclareLaunchArgument(
+                "launch_rviz", default_value="false", description="Launch RViz?"
+            ),
+            DeclareLaunchArgument(
+                "rviz_config",
+                default_value=default_rviz_config,
+                description="RViz config file",
+            ),
             DeclareLaunchArgument(
                 "ur_type",
                 description="Typo/series of used UR robot.",
@@ -192,7 +203,8 @@ def declare_arguments():
 
 
 def launch_setup(context, *args, **kwargs):
-    #launch_rviz = LaunchConfiguration("launch_rviz")
+    launch_rviz = LaunchConfiguration("launch_rviz")
+    rviz_config = LaunchConfiguration("rviz_config")
     _ur_type = LaunchConfiguration("ur_type").perform(context)
     warehouse_sqlite_path = LaunchConfiguration("warehouse_sqlite_path").perform(context)
     launch_servo = LaunchConfiguration("launch_servo")
@@ -252,33 +264,26 @@ def launch_setup(context, *args, **kwargs):
         output="screen",
     )
 
-    # rviz_config_file = PathJoinSubstitution(
-    #     [FindPackageShare("ur_moveit_config"), "config", "moveit.rviz"]
-    # )
-    # rviz_node = Node(
-    #     package="rviz2",
-    #     condition=IfCondition(launch_rviz),
-    #     executable="rviz2",
-    #     name="rviz2_moveit",
-    #     output="log",
-    #     arguments=["-d", rviz_config_file],
-    #     parameters=[
-    #         moveit_config.robot_description,
-    #         moveit_config.robot_description_semantic,
-    #         moveit_config.robot_description_kinematics,
-    #         moveit_config.planning_pipelines,
-    #         moveit_config.joint_limits,
-    #         warehouse_ros_config,
-    #         {
-    #             "use_sim_time": use_sim_time,
-    #         },
-    #     ],
-    # )
+    rviz_node = Node(
+        package="rviz2",
+        condition=IfCondition(launch_rviz),
+        executable="rviz2",
+        name="rviz2_mur620a_moveit",
+        output="screen",
+        arguments=["-d", rviz_config],
+        parameters=[
+            moveit_config.to_dict(),
+            warehouse_ros_config,
+            {
+                "use_sim_time": use_sim_time,
+            },
+        ],
+    )
 
     return [
         TimerAction(
             period=2.0,
-            actions=[move_group_node, servo_node],
+            actions=[move_group_node, servo_node, rviz_node],
         ),
     ]
 

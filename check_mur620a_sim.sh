@@ -45,10 +45,22 @@ if [[ -f install/setup.bash ]]; then
 fi
 
 section "Processes"
-pgrep -af "mur_base.launch.py|gz sim|ground_truth|amcl|map_server|controller_server|planner_server|behavior_server|bt_navigator" || true
+pgrep -af "mur_base.launch.py|mur620.launch.py|gz sim|ground_truth|amcl|map_server|controller_server|planner_server|behavior_server|bt_navigator|move_group|moveit|rviz2|publish_moveit_descriptions" || true
 
 section "Core Topics"
-ros2 topic list | grep -E '(^/tf$|^/tf_static$|/map$|ground_truth|/f_scan$|/b_scan$|/scan$|/scan_merged_raw$|mobile_base_controller/odom)' || true
+ros2 topic list --no-daemon | grep -E '(^/tf$|^/tf_static$|/map$|ground_truth|/f_scan$|/b_scan$|/scan$|/scan_merged_raw$|mobile_base_controller/odom|robot_description|planning_scene)' || true
+
+section "MoveIt"
+run ros2 node list --no-daemon
+run ros2 topic info /robot_description --verbose --no-daemon
+run ros2 topic info /robot_description_semantic --verbose --no-daemon
+run ros2 topic info "/${ROBOT_NAME}/robot_description_semantic" --verbose --no-daemon
+echo "-- /robot_description_semantic sample"
+timeout 8 ros2 topic echo /robot_description_semantic --once --qos-durability transient_local || true
+echo "-- /${ROBOT_NAME}/robot_description_semantic sample"
+timeout 8 ros2 topic echo "/${ROBOT_NAME}/robot_description_semantic" --once --qos-durability transient_local || true
+run ros2 action list --no-daemon
+run ros2 control list_controllers -c "/${ROBOT_NAME}/controller_manager"
 
 section "Clock"
 run ros2 topic info /clock --verbose
@@ -96,7 +108,7 @@ run ros2 lifecycle get /controller_server
 run ros2 lifecycle get /planner_server
 run ros2 lifecycle get /behavior_server
 run ros2 lifecycle get /bt_navigator
-run ros2 action list
+run ros2 action list --no-daemon
 run ros2 param get /controller_server enable_stamped_cmd_vel
 run ros2 param get /controller_server odom_topic
 run ros2 param get /behavior_server enable_stamped_cmd_vel
@@ -110,6 +122,18 @@ run ros2 param get "/${ROBOT_NAME}/mobile_base_controller" linear.x.has_velocity
 run ros2 param get "/${ROBOT_NAME}/mobile_base_controller" angular.z.has_velocity_limits
 echo "-- /${ROBOT_NAME}/mobile_base_controller/cmd_vel TwistStamped sample"
 timeout 8 ros2 topic echo "/${ROBOT_NAME}/mobile_base_controller/cmd_vel" geometry_msgs/msg/TwistStamped --once || true
+
+section "Recent MoveIt Logs"
+find /home/rosmatch/.ros/log -maxdepth 2 -type f \
+  \( -name '*move_group*.log' -o -name '*rviz*.log' -o -name '*moveit*.log' -o -name '*publish_moveit*.log' -o -name 'python3_*.log' \) \
+  -mmin -30 -printf '%T@ %p\n' \
+  | sort -nr \
+  | head -8 \
+  | cut -d' ' -f2- \
+  | while read -r logfile; do
+      echo "---- $logfile"
+      tail -120 "$logfile" || true
+    done
 
 section "Recent Ground Truth Logs"
 find /home/rosmatch/.ros/log -maxdepth 2 -type f \

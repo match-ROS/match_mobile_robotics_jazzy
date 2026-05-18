@@ -70,6 +70,7 @@ def generate_launch_description():
         DeclareLaunchArgument('ground_truth', default_value='true'),
         DeclareLaunchArgument('load_arm_controllers', default_value='true'),
         DeclareLaunchArgument('launch_moveit', default_value='true'),
+        DeclareLaunchArgument('launch_rviz', default_value='false'),
         DeclareLaunchArgument('launch_servo', default_value='false'),
         DeclareLaunchArgument('ur_type', default_value='ur10e'),
     ]
@@ -110,6 +111,18 @@ def generate_launch_description():
         ],
     )
 
+    moveit_descriptions = Node(
+        package='mur_launch_sim',
+        executable='publish_moveit_descriptions.py',
+        name=[LaunchConfiguration('robot_name'), '_moveit_descriptions'],
+        condition=IfCondition(LaunchConfiguration('launch_moveit')),
+        parameters=[{
+            'robot_name': LaunchConfiguration('robot_name'),
+            'use_sim_time': LaunchConfiguration('use_sim_time'),
+        }],
+        output='screen',
+    )
+
     moveit = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(moveit_launch),
         condition=IfCondition(LaunchConfiguration('launch_moveit')),
@@ -117,8 +130,11 @@ def generate_launch_description():
             'ur_type': LaunchConfiguration('ur_type'),
             'use_sim_time': LaunchConfiguration('use_sim_time'),
             'launch_servo': LaunchConfiguration('launch_servo'),
+            'launch_rviz': LaunchConfiguration('launch_rviz'),
             'controller_namespace': LaunchConfiguration('robot_name'),
         }.items(),
     )
 
-    return LaunchDescription(declared_arguments + [robot, arm_controllers, moveit])
+    return LaunchDescription(
+        declared_arguments + [robot, arm_controllers, moveit_descriptions, moveit]
+    )

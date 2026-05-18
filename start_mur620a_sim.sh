@@ -22,6 +22,7 @@ ROBOT_Y="${ROBOT_Y:-44.0}"
 ROBOT_Z="${ROBOT_Z:-0.07}"
 ROBOT_YAW="${ROBOT_YAW:-0.0}"
 LAUNCH_MOVEIT="${LAUNCH_MOVEIT:-true}"
+LAUNCH_RVIZ="${LAUNCH_RVIZ:-true}"
 LAUNCH_SERVO="${LAUNCH_SERVO:-false}"
 LOAD_ARM_CONTROLLERS="${LOAD_ARM_CONTROLLERS:-true}"
 
@@ -50,6 +51,7 @@ stop_old_sim() {
     "move_group"
     "moveit_servo"
     "servo_node"
+    "rviz2"
   )
 
   echo "[start_mur620a_sim] Stopping old ROS/Gazebo simulation processes..."
@@ -122,4 +124,5 @@ exec ros2 launch mur_launch_sim mur620.launch.py \
   ground_truth:=true \
   include_gz:=true \
   launch_moveit:="${LAUNCH_MOVEIT}" \
+  launch_rviz:="${LAUNCH_RVIZ}" \
   launch_servo:="${LAUNCH_SERVO}"

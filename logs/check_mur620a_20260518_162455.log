@@ -1,0 +1,136 @@
+Writing diagnostic log to: /home/rosmatch/colcon_ws/src/match_mobile_robotics_jazzy/logs/check_mur620a_20260518_162455.log
+Workspace: /home/rosmatch/colcon_ws
+Robot: mur620a
+World: maze
+ROS_DOMAIN_ID: 62
+
+== Processes ==
+506448 /home/rosmatch/colcon_ws/install/mur_launch_sim/lib/mur_launch_sim/gz_ground_truth_publisher --ros-args -r __node:=mur620a_ground_truth --params-file /tmp/launch_params_pfa82hqx
+523874 /home/rosmatch/colcon_ws/install/mur_launch_sim/lib/mur_launch_sim/gz_ground_truth_publisher --ros-args -r __node:=mur620a_ground_truth --params-file /tmp/launch_params_lkh3w9dz
+810535 /home/rosmatch/colcon_ws/install/mur_launch_sim/lib/mur_launch_sim/gz_ground_truth_publisher --ros-args -r __node:=mur620a_ground_truth --params-file /tmp/launch_params_jv3bhnug
+875742 /home/rosmatch/colcon_ws/install/mur_launch_sim/lib/mur_launch_sim/gz_ground_truth_publisher --ros-args -r __node:=mur620a_ground_truth --params-file /tmp/launch_params_613ioi59
+879492 /usr/bin/python3 /opt/ros/jazzy/bin/ros2 launch mur_launch_sim mur620.launch.py robot_name:=mur620a world:=scale map:=/home/rosmatch/colcon_ws/install/mir_gazebo/share/mir_gazebo/maps/scale.yaml x:=44.0 y:=44.0 z:=0.07 Y:=0.0 load_controllers:=true load_arm_controllers:=true laser_merger:=true localization:=true navigation:=true ground_truth:=true include_gz:=true launch_moveit:=true launch_rviz:=true launch_servo:=false
+880634 /bin/sh -c ruby /opt/ros/jazzy/opt/gz_tools_vendor/bin/gz sim scale.world -v 4 -r --force-version 8
+880636 gz sim scale.world -v 4 -r
+880637 /home/rosmatch/colcon_ws/install/mur_launch_sim/lib/mur_launch_sim/gz_ground_truth_publisher --ros-args -r __node:=mur620a_ground_truth --params-file /tmp/launch_params_sehpthkk
+880646 /opt/ros/jazzy/lib/nav2_map_server/map_server --ros-args -r __node:=map_server --params-file /tmp/mur_launch_sim/mur620a_localization.yaml
+880647 /opt/ros/jazzy/lib/nav2_amcl/amcl --ros-args -r __node:=amcl --params-file /tmp/mur_launch_sim/mur620a_localization.yaml
+880649 /opt/ros/jazzy/lib/nav2_controller/controller_server --ros-args -r __node:=controller_server --params-file /tmp/mur_launch_sim/mur620a_navigation.yaml -r /tf:=tf -r /tf_static:=tf_static -r cmd_vel:=/mur620a/mobile_base_controller/cmd_vel
+880650 /opt/ros/jazzy/lib/nav2_planner/planner_server --ros-args -r __node:=planner_server --params-file /tmp/mur_launch_sim/mur620a_navigation.yaml -r /tf:=tf -r /tf_static:=tf_static
+880651 /opt/ros/jazzy/lib/nav2_behaviors/behavior_server --ros-args -r __node:=behavior_server --params-file /tmp/mur_launch_sim/mur620a_navigation.yaml -r /tf:=tf -r /tf_static:=tf_static -r cmd_vel:=/mur620a/mobile_base_controller/cmd_vel
+880652 /opt/ros/jazzy/lib/nav2_bt_navigator/bt_navigator --ros-args -r __node:=bt_navigator --params-file /tmp/mur_launch_sim/mur620a_navigation.yaml -r /tf:=tf -r /tf_static:=tf_static -r goal_pose:=/mur620a/goal_pose
+880656 python3 /home/rosmatch/colcon_ws/install/mur_launch_sim/lib/mur_launch_sim/publish_moveit_descriptions.py --ros-args -r __node:=mur620a_moveit_descriptions --params-file /tmp/launch_params_7epbhzli
+880925 gz sim server
+880926 gz sim gui
+881436 /opt/ros/jazzy/lib/moveit_ros_move_group/move_group --ros-args -r __ns:=/mur620a --params-file /tmp/launch_params_lqj28_0y --params-file /tmp/launch_params_017itou2 --params-file /tmp/launch_params_0ns1qm1t --params-file /tmp/launch_params_9ccm7yef
+881437 /opt/ros/jazzy/lib/rviz2/rviz2 -d /home/rosmatch/colcon_ws/install/mur_moveit_config/share/mur_moveit_config/config/mur620a.rviz --ros-args -r __node:=rviz2_mur620a_moveit --params-file /tmp/launch_params_uf55ww62 --params-file /tmp/launch_params_u6k7ftuf --params-file /tmp/launch_params_hlurbi76
+
+== Core Topics ==
+/map
+/mur620a/scan
+/tf
+/tf_static
+
+== MoveIt ==
+
+$ ros2 node list --no-daemon
+WARNING: Be aware that there are nodes in the graph that share an exact name, which can have unintended side effects.
+/bt_navigator
+/bt_navigator_navigate_through_poses_rclcpp_node
+/bt_navigator_navigate_to_pose_rclcpp_node
+/global_costmap/global_costmap
+/lifecycle_manager_localization
+/lifecycle_manager_navigation
+/mur620a/controller_manager
+/mur620a/forward_velocity_controller_l
+/mur620a/forward_velocity_controller_r
+/mur620a/gz_ros_control
+/mur620a/joint_state_broadcaster
+/mur620a/joint_trajectory_controller_l
+/mur620a/joint_trajectory_controller_r
+/mur620a/lift_controller_l
+/mur620a/lift_controller_r
+/mur620a/mobile_base_controller
+/mur620a_back_scan_frame
+/mur620a_front_scan_frame
+/mur620a_global_rsp
+/mur620a_ground_truth
+/mur620a_merged_scan_frame
+/mur620a_merged_scan_frame
+/mur620a_merged_scan_frame
+/planner_server
+/rqt_gui_py_node_733320
+/transform_listener_impl_63ca1bcb2af0
+
+$ ros2 topic info /robot_description --verbose --no-daemon
+Unknown topic '/robot_description'
+
+$ ros2 topic info /robot_description_semantic --verbose --no-daemon
+Type: std_msgs/msg/String
+
+Publisher count: 1
+
+Node name: mur620a_moveit_descriptions
+Node namespace: /
+Topic type: std_msgs/msg/String
+Topic type hash: RIHS01_df668c740482bbd48fb39d76a70dfd4bd59db1288021743503259e948f6b1a18
+Endpoint type: PUBLISHER
+GID: 01.0f.f6.e2.10.70.0f.73.00.00.00.00.00.00.14.03
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: TRANSIENT_LOCAL
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Subscription count: 0
+
+
+$ ros2 topic info /mur620a/robot_description_semantic --verbose --no-daemon
+Type: std_msgs/msg/String
+
+Publisher count: 1
+
+Node name: move_group
+Node namespace: /mur620a
+Topic type: std_msgs/msg/String
+Topic type hash: RIHS01_df668c740482bbd48fb39d76a70dfd4bd59db1288021743503259e948f6b1a18
+Endpoint type: PUBLISHER
+GID: 01.0f.f6.e2.1c.73.7d.14.00.00.00.00.00.00.3a.03
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: TRANSIENT_LOCAL
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Subscription count: 0
+
+-- /robot_description_semantic sample
+-- /mur620a/robot_description_semantic sample
+
+$ ros2 action list --no-daemon
+usage: ros2 [-h] [--use-python-default-buffering]
+            Call `ros2 <command> -h` for more detailed usage. ...
+ros2: error: unrecognized arguments: --no-daemon
+
+$ ros2 control list_controllers -c /mur620a/controller_manager
+[INFO] [1779114318.990906882] [_ros2cli_890271]: waiting for service /mur620a/controller_manager/list_controllers to become available...
+[WARN] [1779114329.017900805] [_ros2cli_890271]: Could not contact service /mur620a/controller_manager/list_controllers
+[INFO] [1779114329.018369250] [_ros2cli_890271]: waiting for service /mur620a/controller_manager/list_controllers to become available...
+[WARN] [1779114339.048299816] [_ros2cli_890271]: Could not contact service /mur620a/controller_manager/list_controllers
+[INFO] [1779114339.049408800] [_ros2cli_890271]: waiting for service /mur620a/controller_manager/list_controllers to become available...
+[WARN] [1779114349.076478431] [_ros2cli_890271]: Could not contact service /mur620a/controller_manager/list_controllers
+[INFO] [1779114349.076960782] [_ros2cli_890271]: waiting for service /mur620a/controller_manager/list_controllers to become available...
+[WARN] [1779114359.106580616] [_ros2cli_890271]: Could not contact service /mur620a/controller_manager/list_controllers
+[INFO] [1779114359.107149605] [_ros2cli_890271]: waiting for service /mur620a/controller_manager/list_controllers to become available...
+[WARN] [1779114369.133302097] [_ros2cli_890271]: Could not contact service /mur620a/controller_manager/list_controllers
+[INFO] [1779114369.133773598] [_ros2cli_890271]: waiting for service /mur620a/controller_manager/list_controllers to become available...
+[WARN] [1779114379.161532587] [_ros2cli_890271]: Could not contact service /mur620a/controller_manager/list_controllers
+[INFO] [1779114379.162249401] [_ros2cli_890271]: waiting for service /mur620a/controller_manager/list_controllers to become available...
+[WARN] [1779114389.184972495] [_ros2cli_890271]: Could not contact service /mur620a/controller_manager/list_controllers
+[INFO] [1779114389.185437319] [_ros2cli_890271]: waiting for service /mur620a/controller_manager/list_controllers to become available...
