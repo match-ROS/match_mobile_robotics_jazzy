@@ -71,6 +71,7 @@ def generate_launch_description():
         DeclareLaunchArgument('load_arm_controllers', default_value='true'),
         DeclareLaunchArgument('launch_moveit', default_value='true'),
         DeclareLaunchArgument('launch_rviz', default_value='false'),
+        DeclareLaunchArgument('rviz_delay', default_value='10.0'),
         DeclareLaunchArgument('launch_servo', default_value='false'),
         DeclareLaunchArgument('auto_switch_arm_controllers', default_value='true'),
         DeclareLaunchArgument('ur_type', default_value='ur10e'),
@@ -109,6 +110,8 @@ def generate_launch_description():
             controller_spawner('forward_velocity_controller_r'),
             controller_spawner('joint_trajectory_controller_l', inactive=True),
             controller_spawner('joint_trajectory_controller_r', inactive=True),
+            controller_spawner('joint_trajectory_controller_lift_l', inactive=True),
+            controller_spawner('joint_trajectory_controller_lift_r', inactive=True),
         ],
     )
 
@@ -142,6 +145,28 @@ def generate_launch_description():
                 arguments=['--robot-name', LaunchConfiguration('robot_name'), '--arm', 'r'],
                 output='screen',
             ),
+            Node(
+                package='mur_launch_sim',
+                executable='moveit_trajectory_controller_proxy.py',
+                name=[LaunchConfiguration('robot_name'), '_moveit_lift_controller_proxy_l'],
+                arguments=[
+                    '--robot-name', LaunchConfiguration('robot_name'),
+                    '--arm', 'l',
+                    '--include-lift',
+                ],
+                output='screen',
+            ),
+            Node(
+                package='mur_launch_sim',
+                executable='moveit_trajectory_controller_proxy.py',
+                name=[LaunchConfiguration('robot_name'), '_moveit_lift_controller_proxy_r'],
+                arguments=[
+                    '--robot-name', LaunchConfiguration('robot_name'),
+                    '--arm', 'r',
+                    '--include-lift',
+                ],
+                output='screen',
+            ),
         ],
     )
 
@@ -153,6 +178,7 @@ def generate_launch_description():
             'use_sim_time': LaunchConfiguration('use_sim_time'),
             'launch_servo': LaunchConfiguration('launch_servo'),
             'launch_rviz': LaunchConfiguration('launch_rviz'),
+            'rviz_delay': LaunchConfiguration('rviz_delay'),
             'controller_namespace': LaunchConfiguration('robot_name'),
         }.items(),
     )

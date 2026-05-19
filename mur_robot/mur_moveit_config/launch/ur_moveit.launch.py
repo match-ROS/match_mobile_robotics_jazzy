@@ -64,6 +64,12 @@ def arm_controller_config(controller_namespace):
 
     left_controller = f"{controller_prefix}/moveit_joint_trajectory_controller_l"
     right_controller = f"{controller_prefix}/moveit_joint_trajectory_controller_r"
+    left_lift_controller = (
+        f"{controller_prefix}/moveit_joint_trajectory_controller_lift_l"
+    )
+    right_lift_controller = (
+        f"{controller_prefix}/moveit_joint_trajectory_controller_lift_r"
+    )
 
     left_joints = [
         "UR10_l/shoulder_pan_joint",
@@ -81,6 +87,8 @@ def arm_controller_config(controller_namespace):
         "UR10_r/wrist_2_joint",
         "UR10_r/wrist_3_joint",
     ]
+    left_lift_joints = ["left_lift_joint"] + left_joints
+    right_lift_joints = ["right_lift_joint"] + right_joints
 
     return {
         "moveit_controller_manager": (
@@ -96,6 +104,8 @@ def arm_controller_config(controller_namespace):
             "controller_names": [
                 left_controller,
                 right_controller,
+                left_lift_controller,
+                right_lift_controller,
             ],
             left_controller: {
                 "action_ns": "follow_joint_trajectory",
@@ -108,6 +118,18 @@ def arm_controller_config(controller_namespace):
                 "type": "FollowJointTrajectory",
                 "default": True,
                 "joints": right_joints,
+            },
+            left_lift_controller: {
+                "action_ns": "follow_joint_trajectory",
+                "type": "FollowJointTrajectory",
+                "default": True,
+                "joints": left_lift_joints,
+            },
+            right_lift_controller: {
+                "action_ns": "follow_joint_trajectory",
+                "type": "FollowJointTrajectory",
+                "default": True,
+                "joints": right_lift_joints,
             },
         },
     }
@@ -154,6 +176,11 @@ def declare_arguments():
                 "rviz_config",
                 default_value=default_rviz_config,
                 description="RViz config file",
+            ),
+            DeclareLaunchArgument(
+                "rviz_delay",
+                default_value="10.0",
+                description="Seconds to wait before launching RViz after MoveIt startup",
             ),
             DeclareLaunchArgument(
                 "ur_type",
@@ -213,6 +240,7 @@ def declare_arguments():
 def launch_setup(context, *args, **kwargs):
     launch_rviz = LaunchConfiguration("launch_rviz")
     rviz_config = LaunchConfiguration("rviz_config")
+    rviz_delay = LaunchConfiguration("rviz_delay")
     _ur_type = LaunchConfiguration("ur_type").perform(context)
     warehouse_sqlite_path = LaunchConfiguration("warehouse_sqlite_path").perform(context)
     launch_servo = LaunchConfiguration("launch_servo")
@@ -330,7 +358,11 @@ def launch_setup(context, *args, **kwargs):
         moveit_tf_alias,
         TimerAction(
             period=2.0,
-            actions=[move_group_node, servo_node, rviz_node],
+            actions=[move_group_node, servo_node],
+        ),
+        TimerAction(
+            period=rviz_delay,
+            actions=[rviz_node],
         ),
     ]
 

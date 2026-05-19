@@ -23,6 +23,7 @@ ROBOT_Z="${ROBOT_Z:-0.07}"
 ROBOT_YAW="${ROBOT_YAW:-0.0}"
 LAUNCH_MOVEIT="${LAUNCH_MOVEIT:-true}"
 LAUNCH_RVIZ="${LAUNCH_RVIZ:-true}"
+RVIZ_DELAY="${RVIZ_DELAY:-10.0}"
 LAUNCH_SERVO="${LAUNCH_SERVO:-false}"
 LOAD_ARM_CONTROLLERS="${LOAD_ARM_CONTROLLERS:-true}"
 AUTO_SWITCH_ARM_CONTROLLERS="${AUTO_SWITCH_ARM_CONTROLLERS:-true}"
@@ -127,5 +128,6 @@ exec ros2 launch mur_launch_sim mur620.launch.py \
   include_gz:=true \
   launch_moveit:="${LAUNCH_MOVEIT}" \
   launch_rviz:="${LAUNCH_RVIZ}" \
+  rviz_delay:="${RVIZ_DELAY}" \
   launch_servo:="${LAUNCH_SERVO}" \
   auto_switch_arm_controllers:="${AUTO_SWITCH_ARM_CONTROLLERS}"

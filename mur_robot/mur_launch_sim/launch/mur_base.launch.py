@@ -89,6 +89,10 @@ def make_controller_config(robot_name, source_yaml):
     namespaced_config[f'/{robot_name}/controller_manager'] = deepcopy(
         config['controller_manager']
     )
+    if 'gz_ros_control' in config:
+        namespaced_config[f'/{robot_name}/gz_ros_control'] = deepcopy(
+            config['gz_ros_control']
+        )
 
     controller_manager_params = config['controller_manager']['ros__parameters']
     for controller_name, controller_config in controller_manager_params.items():
@@ -447,16 +451,20 @@ def make_navigation_config(robot_name, use_sim_time):
     return out_file
 
 
-def controller_spawner(robot_name, controller_name, controllers_yaml):
+def controller_spawner(robot_name, controller_name, controllers_yaml, *, inactive=False):
+    arguments = [
+        controller_name,
+        '--controller-manager', f'/{robot_name}/controller_manager',
+        '--controller-manager-timeout', '60',
+        '--param-file', controllers_yaml,
+    ]
+    if inactive:
+        arguments.append('--inactive')
+
     return Node(
         package='controller_manager',
         executable='spawner',
-        arguments=[
-            controller_name,
-            '--controller-manager', f'/{robot_name}/controller_manager',
-            '--controller-manager-timeout', '60',
-            '--param-file', controllers_yaml,
-        ],
+        arguments=arguments,
         output='screen',
     )
 
@@ -623,15 +631,42 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
                             robot_name, 'mobile_base_controller', controllers_yaml
                         ),
                         controller_spawner(
-                            robot_name, 'lift_controller_l', controllers_yaml
+                            robot_name, 'lift_controller_l', controllers_yaml,
+                            inactive=True,
                         ),
                         controller_spawner(
-                            robot_name, 'lift_controller_r', controllers_yaml
+                            robot_name, 'lift_controller_r', controllers_yaml,
+                            inactive=True,
+                        ),
+                        controller_spawner(
+                            robot_name, 'lift_effort_controller_l', controllers_yaml,
+                        ),
+                        controller_spawner(
+                            robot_name, 'lift_effort_controller_r', controllers_yaml,
                         ),
                     ],
                 )
             )
         )
+
+        nodes.extend([
+            Node(
+                package='mur_launch_sim',
+                executable='lift_effort_position_controller.py',
+                name=f'{robot_name}_lift_effort_position_controller_l',
+                arguments=['--robot-name', robot_name, '--arm', 'l'],
+                parameters=[{'use_sim_time': use_sim_time}],
+                output='screen',
+            ),
+            Node(
+                package='mur_launch_sim',
+                executable='lift_effort_position_controller.py',
+                name=f'{robot_name}_lift_effort_position_controller_r',
+                arguments=['--robot-name', robot_name, '--arm', 'r'],
+                parameters=[{'use_sim_time': use_sim_time}],
+                output='screen',
+            ),
+        ])
 
     if lidar_bridge:
         nodes.append(

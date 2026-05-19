@@ -61,8 +61,13 @@ echo "-- /${ROBOT_NAME}/robot_description_semantic sample"
 timeout 8 ros2 topic echo "/${ROBOT_NAME}/robot_description_semantic" --once --qos-durability transient_local || true
 run ros2 action list
 timeout 8 ros2 control list_controllers -c "/${ROBOT_NAME}/controller_manager" || true
+run ros2 control list_hardware_interfaces -c "/${ROBOT_NAME}/controller_manager"
+run ros2 param get "/${ROBOT_NAME}/gz_ros_control" position_proportional_gain
+run ros2 param get "/${ROBOT_NAME}/gz_ros_control" hold_joints
 run ros2 action info "/${ROBOT_NAME}/moveit_joint_trajectory_controller_l/follow_joint_trajectory"
 run ros2 action info "/${ROBOT_NAME}/moveit_joint_trajectory_controller_r/follow_joint_trajectory"
+run ros2 action info "/${ROBOT_NAME}/moveit_joint_trajectory_controller_lift_l/follow_joint_trajectory"
+run ros2 action info "/${ROBOT_NAME}/moveit_joint_trajectory_controller_lift_r/follow_joint_trajectory"
 
 section "Clock"
 run ros2 topic info /clock --verbose
