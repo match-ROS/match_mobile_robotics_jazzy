@@ -198,6 +198,14 @@ def declare_arguments():
                 default_value="mur620a",
                 description="Namespace where the arm ros2_control controllers run",
             ),
+            DeclareLaunchArgument(
+                "publish_tf_alias",
+                default_value="true",
+                description=(
+                    "Publish an identity TF from the namespaced base frame to "
+                    "MoveIt's unprefixed planning frame"
+                ),
+            ),
         ]
     )
 
@@ -216,6 +224,7 @@ def launch_setup(context, *args, **kwargs):
         LaunchConfiguration("publish_robot_description_semantic"), value_type=bool
     )
     controller_namespace = LaunchConfiguration("controller_namespace").perform(context)
+    publish_tf_alias = LaunchConfiguration("publish_tf_alias")
 
     robot_xacro_file, robot_xacro_mappings = robot_description_source(controller_namespace)
     moveit_config = (
@@ -250,6 +259,8 @@ def launch_setup(context, *args, **kwargs):
                 "use_sim_time": use_sim_time,
                 "publish_robot_description": publish_robot_description,
                 "publish_robot_description_semantic": publish_robot_description_semantic,
+                "planning_pipelines": ["ompl"],
+                "default_planning_pipeline": "ompl",
                 "fix_start_state": True,
                 "default_workspace_bounds": 100.0,
             },
@@ -289,7 +300,34 @@ def launch_setup(context, *args, **kwargs):
         ],
     )
 
+    moveit_tf_alias = Node(
+        package="tf2_ros",
+        executable="static_transform_publisher",
+        name="moveit_base_footprint_alias",
+        condition=IfCondition(publish_tf_alias),
+        arguments=[
+            "--x",
+            "0",
+            "--y",
+            "0",
+            "--z",
+            "0",
+            "--roll",
+            "0",
+            "--pitch",
+            "0",
+            "--yaw",
+            "0",
+            "--frame-id",
+            f"{controller_namespace}/base_footprint",
+            "--child-frame-id",
+            "base_footprint",
+        ],
+        output="screen",
+    )
+
     return [
+        moveit_tf_alias,
         TimerAction(
             period=2.0,
             actions=[move_group_node, servo_node, rviz_node],

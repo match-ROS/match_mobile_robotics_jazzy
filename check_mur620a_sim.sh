@@ -82,6 +82,8 @@ run ros2 param get /amcl update_min_a
 run ros2 param get /amcl update_min_d
 echo "-- map -> odom"
 timeout 8 ros2 run tf2_ros tf2_echo map "${ROBOT_NAME}/odom" || true
+echo "-- ${ROBOT_NAME}/base_footprint -> base_footprint MoveIt TF alias"
+timeout 8 ros2 run tf2_ros tf2_echo "${ROBOT_NAME}/base_footprint" base_footprint || true
 
 section "Scan QoS"
 run ros2 topic info "/${ROBOT_NAME}/f_scan" --verbose
