@@ -172,9 +172,15 @@ public:
       "command_topic", "/" + robot_name_ + "/forward_velocity_controller_" + arm_ + "/commands");
     joint_states_topic_ = declare_parameter<std::string>(
       "joint_states_topic", "/" + robot_name_ + "/joint_states");
+    singular_values_topic_ = declare_parameter<std::string>(
+      "singular_values_topic",
+      "/" + robot_name_ + "/jparse_velocity_controller_" + arm_ + "/singular_values");
+    debug_twist_topic_ = declare_parameter<std::string>(
+      "debug_twist_topic",
+      "/" + robot_name_ + "/jparse_velocity_controller_" + arm_ + "/debug_twist");
     rate_hz_ = declare_parameter<double>("rate_hz", 500.0);
     command_timeout_ = declare_parameter<double>("command_timeout", 0.12);
-    gamma_ = declare_parameter<double>("gamma", 0.2);
+    gamma_ = declare_parameter<double>("gamma", 0.1);
     singular_gain_position_ = declare_parameter<double>("singular_gain_position", 1.0);
     singular_gain_angular_ = declare_parameter<double>("singular_gain_angular", 1.0);
     pinv_tolerance_ = declare_parameter<double>("pinv_tolerance", 1.0e-6);
@@ -190,7 +196,9 @@ public:
     command_pub_ =
       create_publisher<std_msgs::msg::Float64MultiArray>(command_topic_, rclcpp::SystemDefaultsQoS());
     singular_values_pub_ =
-      create_publisher<std_msgs::msg::Float64MultiArray>("~/singular_values", 10);
+      create_publisher<std_msgs::msg::Float64MultiArray>(singular_values_topic_, 10);
+    debug_twist_pub_ =
+      create_publisher<std_msgs::msg::Float64MultiArray>(debug_twist_topic_, 10);
 
     auto robot_description_qos = rclcpp::QoS(1).transient_local().reliable();
     robot_description_sub_ = create_subscription<std_msgs::msg::String>(
@@ -220,9 +228,9 @@ public:
 
     RCLCPP_INFO(
       get_logger(),
-      "J-PARSE velocity controller ready for arm %s: %s -> %s, command=%s, twist=%s",
+      "J-PARSE velocity controller ready for arm %s: %s -> %s, command=%s, twist=%s, debug=%s",
       arm_.c_str(), base_link_.c_str(), tip_link_.c_str(),
-      command_topic_.c_str(), twist_topic_.c_str());
+      command_topic_.c_str(), twist_topic_.c_str(), debug_twist_topic_.c_str());
   }
 
 private:
@@ -294,6 +302,7 @@ private:
       target_twist_.tail<3>(), max_cartesian_angular_velocity_);
     last_twist_time_ = now();
     have_twist_ = true;
+    idle_zero_sent_ = false;
   }
 
   Eigen::Vector3d clampVectorNorm(const Eigen::Vector3d & value, double max_norm) const
@@ -336,6 +345,15 @@ private:
     publishCommand(std::vector<double>(command_joint_names_.size(), 0.0));
   }
 
+  void publishIdleZeroOnce()
+  {
+    if (idle_zero_sent_) {
+      return;
+    }
+    publishZero();
+    idle_zero_sent_ = true;
+  }
+
   void update()
   {
     if (!chain_ready_) {
@@ -343,7 +361,7 @@ private:
     }
 
     if (!have_twist_ || (now() - last_twist_time_).seconds() > command_timeout_) {
-      publishZero();
+      publishIdleZeroOnce();
       return;
     }
 
@@ -382,6 +400,7 @@ private:
     if (max_abs_velocity > max_joint_velocity_ && max_abs_velocity > 0.0) {
       qdot *= max_joint_velocity_ / max_abs_velocity;
     }
+    const Eigen::VectorXd achieved_twist = jacobian * qdot;
 
     std::map<std::string, double> qdot_by_joint;
     for (std::size_t i = 0; i < chain_joint_names_.size(); ++i) {
@@ -403,6 +422,20 @@ private:
       singular_msg.data.push_back(singular_values(i));
     }
     singular_values_pub_->publish(singular_msg);
+
+    std_msgs::msg::Float64MultiArray debug_msg;
+    debug_msg.data.reserve(13 + static_cast<std::size_t>(qdot.size()));
+    debug_msg.data.push_back(inverse_condition);
+    for (Eigen::Index i = 0; i < target_twist_.size(); ++i) {
+      debug_msg.data.push_back(target_twist_(i));
+    }
+    for (Eigen::Index i = 0; i < achieved_twist.size(); ++i) {
+      debug_msg.data.push_back(achieved_twist(i));
+    }
+    for (Eigen::Index i = 0; i < qdot.size(); ++i) {
+      debug_msg.data.push_back(qdot(i));
+    }
+    debug_twist_pub_->publish(debug_msg);
   }
 
   std::string robot_name_;
@@ -413,6 +446,8 @@ private:
   std::string twist_topic_;
   std::string command_topic_;
   std::string joint_states_topic_;
+  std::string singular_values_topic_;
+  std::string debug_twist_topic_;
   double rate_hz_;
   double command_timeout_;
   double gamma_;
@@ -433,9 +468,11 @@ private:
   Eigen::Matrix<double, 6, 1> target_twist_{Eigen::Matrix<double, 6, 1>::Zero()};
   rclcpp::Time last_twist_time_{0, 0, RCL_ROS_TIME};
   bool have_twist_{false};
+  bool idle_zero_sent_{false};
 
   rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr command_pub_;
   rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr singular_values_pub_;
+  rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr debug_twist_pub_;
   rclcpp::Subscription<std_msgs::msg::String>::SharedPtr robot_description_sub_;
   rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_state_sub_;
   rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr twist_sub_;

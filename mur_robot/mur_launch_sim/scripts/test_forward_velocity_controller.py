@@ -2,10 +2,12 @@
 """Send a short, safe command to one UR forward velocity controller."""
 
 import argparse
+import math
 import time
 
 import rclpy
 from rclpy.node import Node
+from sensor_msgs.msg import JointState
 from std_msgs.msg import Float64MultiArray
 
 
@@ -22,6 +24,42 @@ class ForwardVelocityTester(Node):
             topic = f'/{args.robot_name}/forward_velocity_controller_{args.arm}/commands'
         self.topic = topic
         self.publisher = self.create_publisher(Float64MultiArray, topic, 10)
+        self.joint_names = [
+            f'UR10_{args.arm}/shoulder_pan_joint',
+            f'UR10_{args.arm}/shoulder_lift_joint',
+            f'UR10_{args.arm}/elbow_joint',
+            f'UR10_{args.arm}/wrist_1_joint',
+            f'UR10_{args.arm}/wrist_2_joint',
+            f'UR10_{args.arm}/wrist_3_joint',
+        ]
+        self.last_joint_positions = {}
+        self.create_subscription(
+            JointState,
+            f'/{args.robot_name}/joint_states',
+            self._joint_state_callback,
+            10,
+        )
+
+    def _joint_state_callback(self, msg):
+        for index, name in enumerate(msg.name):
+            if name not in self.joint_names:
+                continue
+            if index < len(msg.position) and math.isfinite(msg.position[index]):
+                self.last_joint_positions[name] = msg.position[index]
+
+    def wait_for_joint_states(self, timeout=2.0):
+        deadline = time.monotonic() + timeout
+        while rclpy.ok() and time.monotonic() < deadline:
+            if all(name in self.last_joint_positions for name in self.joint_names):
+                return True
+            rclpy.spin_once(self, timeout_sec=0.02)
+        return False
+
+    def joint_positions_snapshot(self):
+        return [
+            self.last_joint_positions.get(name, float('nan'))
+            for name in self.joint_names
+        ]
 
     def publish_command(self, velocities):
         msg = Float64MultiArray()
@@ -47,6 +85,7 @@ class ForwardVelocityTester(Node):
         velocities[self.args.joint_index] = self.args.velocity
 
         self.wait_for_controller()
+        self.wait_for_joint_states()
 
         period = 1.0 / self.args.rate
         zero = [0.0] * JOINT_COUNT
@@ -56,6 +95,7 @@ class ForwardVelocityTester(Node):
             rclpy.spin_once(self, timeout_sec=0.0)
             time.sleep(period)
 
+        start_positions = self.joint_positions_snapshot()
         self.get_logger().info(
             f'Publishing {velocities} to {self.topic} for {self.args.duration:.2f}s'
         )
@@ -64,12 +104,33 @@ class ForwardVelocityTester(Node):
             self.publish_command(velocities)
             rclpy.spin_once(self, timeout_sec=0.0)
             time.sleep(period)
+        end_positions = self.joint_positions_snapshot()
 
         self.get_logger().info('Stopping arm with zero velocity command')
         for _ in range(max(5, int(self.args.rate * 0.25))):
             self.publish_command(zero)
             rclpy.spin_once(self, timeout_sec=0.0)
             time.sleep(period)
+        if all(math.isfinite(value) for value in start_positions + end_positions):
+            delta = [
+                end_positions[index] - start_positions[index]
+                for index in range(JOINT_COUNT)
+            ]
+            self.get_logger().info(
+                'Start joint positions rad: [%s]' % ' '.join(
+                    f'{value:.4f}' for value in start_positions
+                )
+            )
+            self.get_logger().info(
+                'End joint positions rad:   [%s]' % ' '.join(
+                    f'{value:.4f}' for value in end_positions
+                )
+            )
+            self.get_logger().info(
+                'Measured joint delta rad: [%s]' % ' '.join(
+                    f'{value:.4f}' for value in delta
+                )
+            )
 
 
 def parse_args():

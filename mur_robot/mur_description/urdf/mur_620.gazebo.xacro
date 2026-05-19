@@ -95,12 +95,14 @@
 		name="UR10_l"
 		tf_prefix="UR10_l/"
 		transmission_hw_interface="$(arg transmission_hw_interface)"
+		initial_positions="${dict(shoulder_pan_joint=0.0,shoulder_lift_joint=-1.57079632679,elbow_joint=-1.57079632679,wrist_1_joint=-1.57079632679,wrist_2_joint=1.57079632679,wrist_3_joint=0.0)}"
 	/>
 
 	<xacro:ur_ros2_control
 		name="UR10_r"
 		tf_prefix="UR10_r/"
 		transmission_hw_interface="$(arg transmission_hw_interface)"
+		initial_positions="${dict(shoulder_pan_joint=3.14159265359,shoulder_lift_joint=-1.57079632679,elbow_joint=-1.57079632679,wrist_1_joint=-1.57079632679,wrist_2_joint=-1.57079632679,wrist_3_joint=0.0)}"
 	/>
 
 
