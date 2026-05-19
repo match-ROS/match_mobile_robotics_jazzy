@@ -17,6 +17,7 @@ find_package(nav_msgs REQUIRED)
 find_package(orocos_kdl_vendor REQUIRED)
 find_package(orocos_kdl REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
@@ -48,6 +49,11 @@ target_link_libraries(jparse_velocity_controller
   Eigen3::Eigen
 )
 
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "action/JparseMove.action"
+  DEPENDENCIES geometry_msgs
+)
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights
@@ -68,6 +74,7 @@ install(TARGETS
 
 install(PROGRAMS
   scripts/ground_truth_from_pose_tf.py
+  scripts/jparse_move_action_server.py
   scripts/laserscan_frame_republisher.py
   scripts/lift_effort_position_controller.py
   scripts/moveit_move_to_home.py  # Replace with the path to your Python node
@@ -84,4 +91,5 @@ install(DIRECTORY
   DESTINATION share/${PROJECT_NAME}
 )
 
+ament_export_dependencies(rosidl_default_runtime)
 ament_package()

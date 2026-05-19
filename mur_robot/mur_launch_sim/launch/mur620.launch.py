@@ -209,6 +209,26 @@ def generate_launch_description():
                 ],
                 output='screen',
             ),
+            Node(
+                package='mur_launch_sim',
+                executable='jparse_move_action_server.py',
+                name=[LaunchConfiguration('robot_name'), '_jparse_move_l'],
+                arguments=[
+                    '--robot-name', LaunchConfiguration('robot_name'),
+                    '--arm', 'l',
+                ],
+                output='screen',
+            ),
+            Node(
+                package='mur_launch_sim',
+                executable='jparse_move_action_server.py',
+                name=[LaunchConfiguration('robot_name'), '_jparse_move_r'],
+                arguments=[
+                    '--robot-name', LaunchConfiguration('robot_name'),
+                    '--arm', 'r',
+                ],
+                output='screen',
+            ),
         ],
     )
 

@@ -1,0 +1,30 @@
+# Goal mode:
+#   "task_space": move target_pose linearly in the arm base frame using J-PARSE twist commands.
+#   "joint_space": move joint_positions using the forward velocity controller.
+string mode
+
+# Accuracy profile:
+#   "approach": coarse pre-positioning with larger tolerances.
+#   "precision": fine positioning with tighter tolerances and longer settle time.
+string accuracy
+
+geometry_msgs/PoseStamped target_pose
+string[] joint_names
+float64[] joint_positions
+
+# Optional limits. Use <= 0.0 for server defaults.
+float64 max_linear_velocity
+float64 max_angular_velocity
+float64 max_joint_velocity
+float64 timeout
+---
+bool success
+string message
+float64 final_position_error
+float64 final_orientation_error
+float64 final_joint_error
+---
+float64 progress
+float64 position_error
+float64 orientation_error
+float64 joint_error

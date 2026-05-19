@@ -54,6 +54,7 @@ stop_old_sim() {
     "move_group"
     "moveit_trajectory_controller_proxy"
     "jparse_velocity_controller"
+    "jparse_move_action_server.py"
     "moveit_servo"
     "servo_node"
     "rviz2"
