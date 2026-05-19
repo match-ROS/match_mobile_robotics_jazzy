@@ -28,6 +28,7 @@ class LiftEffortPositionController(Node):
         self.position = None
         self.velocity = 0.0
         self.target = None
+        self.commanded_target = None
         self.integral = 0.0
         self.last_update = None
 
@@ -54,7 +55,12 @@ class LiftEffortPositionController(Node):
     def _command_callback(self, msg):
         if not msg.data:
             return
-        self.target = min(max(float(msg.data[0]), self.args.lower_limit), self.args.upper_limit)
+        self.commanded_target = min(
+            max(float(msg.data[0]), self.args.lower_limit),
+            self.args.upper_limit,
+        )
+        if self.target is None:
+            self.target = self.commanded_target
         self.integral = 0.0
 
     def _joint_state_callback(self, msg):
@@ -68,6 +74,8 @@ class LiftEffortPositionController(Node):
             self.velocity = msg.velocity[index]
         if self.target is None and self.position is not None:
             self.target = min(max(self.position, self.args.lower_limit), self.args.upper_limit)
+        if self.commanded_target is None and self.target is not None:
+            self.commanded_target = self.target
 
     def _publish_effort(self, effort):
         msg = Float64MultiArray()
@@ -76,7 +84,7 @@ class LiftEffortPositionController(Node):
 
     def _update(self):
         now = time.monotonic()
-        if self.position is None or self.target is None:
+        if self.position is None or self.target is None or self.commanded_target is None:
             self.last_update = now
             return
 
@@ -84,6 +92,13 @@ class LiftEffortPositionController(Node):
         if self.last_update is not None:
             dt = max(1.0e-4, min(now - self.last_update, 0.2))
         self.last_update = now
+
+        target_step = self.args.max_target_velocity * dt
+        target_delta = self.commanded_target - self.target
+        if abs(target_delta) <= target_step:
+            self.target = self.commanded_target
+        else:
+            self.target += math.copysign(target_step, target_delta)
 
         error = self.target - self.position
         self.integral += error * dt
@@ -112,13 +127,14 @@ def parse_args():
     parser.add_argument('--command-topic', default='')
     parser.add_argument('--effort-topic', default='')
     parser.add_argument('--rate', type=float, default=100.0)
-    parser.add_argument('--kp', type=float, default=3500.0)
-    parser.add_argument('--ki', type=float, default=500.0)
-    parser.add_argument('--kd', type=float, default=450.0)
+    parser.add_argument('--kp', type=float, default=1500.0)
+    parser.add_argument('--ki', type=float, default=80.0)
+    parser.add_argument('--kd', type=float, default=800.0)
     parser.add_argument('--gravity-effort', type=float, default=335.0)
-    parser.add_argument('--min-effort', type=float, default=-200.0)
-    parser.add_argument('--max-effort', type=float, default=1200.0)
-    parser.add_argument('--integral-limit', type=float, default=0.08)
+    parser.add_argument('--min-effort', type=float, default=0.0)
+    parser.add_argument('--max-effort', type=float, default=850.0)
+    parser.add_argument('--integral-limit', type=float, default=0.04)
+    parser.add_argument('--max-target-velocity', type=float, default=0.12)
     parser.add_argument('--lower-limit', type=float, default=0.0)
     parser.add_argument('--upper-limit', type=float, default=0.5)
     args, _ = parser.parse_known_args()

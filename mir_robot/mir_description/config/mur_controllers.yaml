@@ -62,11 +62,11 @@ controller_manager:
 
 gz_ros_control:
   ros__parameters:
-    # gz_ros2_control uses this gain to turn position-command errors into
-    # simulated joint effort/velocity. The default 0.1 is far too weak for the
-    # vertical lift carrying the UR arms; the lift joint reports roughly 334 N
-    # of load at rest, so low gains accept commands without producing motion.
-    position_proportional_gain: 10000.0
+    # Keep the global position-interface gain modest. The lift is held by the
+    # dedicated effort loop below; a large global position gain makes all
+    # position-controlled joints behave like very stiff springs and excites the
+    # UR/lift structure in Gazebo.
+    position_proportional_gain: 0.1
     hold_joints: true
 
 # -----------------------------------
