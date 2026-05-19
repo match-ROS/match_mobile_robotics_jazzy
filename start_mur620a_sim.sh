@@ -27,6 +27,7 @@ RVIZ_DELAY="${RVIZ_DELAY:-10.0}"
 LAUNCH_SERVO="${LAUNCH_SERVO:-false}"
 LOAD_ARM_CONTROLLERS="${LOAD_ARM_CONTROLLERS:-true}"
 AUTO_SWITCH_ARM_CONTROLLERS="${AUTO_SWITCH_ARM_CONTROLLERS:-true}"
+LAUNCH_JPARSE_IDK="${LAUNCH_JPARSE_IDK:-true}"
 
 export ROS_DOMAIN_ID
 
@@ -52,6 +53,7 @@ stop_old_sim() {
     "laserscan_multi_merger"
     "move_group"
     "moveit_trajectory_controller_proxy"
+    "jparse_velocity_controller"
     "moveit_servo"
     "servo_node"
     "rviz2"
@@ -130,4 +132,5 @@ exec ros2 launch mur_launch_sim mur620.launch.py \
   launch_rviz:="${LAUNCH_RVIZ}" \
   rviz_delay:="${RVIZ_DELAY}" \
   launch_servo:="${LAUNCH_SERVO}" \
-  auto_switch_arm_controllers:="${AUTO_SWITCH_ARM_CONTROLLERS}"
+  auto_switch_arm_controllers:="${AUTO_SWITCH_ARM_CONTROLLERS}" \
+  launch_jparse_idk:="${LAUNCH_JPARSE_IDK}"

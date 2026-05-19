@@ -74,6 +74,7 @@ def generate_launch_description():
         DeclareLaunchArgument('rviz_delay', default_value='10.0'),
         DeclareLaunchArgument('launch_servo', default_value='false'),
         DeclareLaunchArgument('auto_switch_arm_controllers', default_value='true'),
+        DeclareLaunchArgument('launch_jparse_idk', default_value='true'),
         DeclareLaunchArgument('ur_type', default_value='ur10e'),
     ]
 
@@ -170,6 +171,47 @@ def generate_launch_description():
         ],
     )
 
+    jparse_idk = TimerAction(
+        period=4.0,
+        condition=IfCondition(LaunchConfiguration('launch_jparse_idk')),
+        actions=[
+            Node(
+                package='mur_launch_sim',
+                executable='jparse_velocity_controller',
+                name=[LaunchConfiguration('robot_name'), '_jparse_velocity_controller_l'],
+                parameters=[{
+                    'robot_name': LaunchConfiguration('robot_name'),
+                    'arm': 'l',
+                    'use_sim_time': LaunchConfiguration('use_sim_time'),
+                }],
+                remappings=[
+                    (
+                        '~/twist_cmd',
+                        ['/', LaunchConfiguration('robot_name'), '/jparse_velocity_controller_l/twist_cmd'],
+                    ),
+                ],
+                output='screen',
+            ),
+            Node(
+                package='mur_launch_sim',
+                executable='jparse_velocity_controller',
+                name=[LaunchConfiguration('robot_name'), '_jparse_velocity_controller_r'],
+                parameters=[{
+                    'robot_name': LaunchConfiguration('robot_name'),
+                    'arm': 'r',
+                    'use_sim_time': LaunchConfiguration('use_sim_time'),
+                }],
+                remappings=[
+                    (
+                        '~/twist_cmd',
+                        ['/', LaunchConfiguration('robot_name'), '/jparse_velocity_controller_r/twist_cmd'],
+                    ),
+                ],
+                output='screen',
+            ),
+        ],
+    )
+
     moveit = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(moveit_launch),
         condition=IfCondition(LaunchConfiguration('launch_moveit')),
@@ -185,5 +227,12 @@ def generate_launch_description():
 
     return LaunchDescription(
         declared_arguments
-        + [robot, arm_controllers, moveit_descriptions, arm_controller_switchers, moveit]
+        + [
+            robot,
+            arm_controllers,
+            moveit_descriptions,
+            arm_controller_switchers,
+            jparse_idk,
+            moveit,
+        ]
     )

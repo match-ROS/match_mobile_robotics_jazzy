@@ -12,8 +12,14 @@ find_package(gz_msgs_vendor REQUIRED)
 find_package(gz_transport_vendor REQUIRED)
 find_package(gz-msgs10 REQUIRED)
 find_package(gz-transport13 REQUIRED)
+find_package(kdl_parser REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(orocos_kdl_vendor REQUIRED)
+find_package(orocos_kdl REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(Eigen3 REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
@@ -27,6 +33,19 @@ ament_target_dependencies(gz_ground_truth_publisher
 target_link_libraries(gz_ground_truth_publisher
   gz-msgs10::gz-msgs10
   gz-transport13::gz-transport13
+)
+
+add_executable(jparse_velocity_controller src/jparse_velocity_controller.cpp)
+ament_target_dependencies(jparse_velocity_controller
+  geometry_msgs
+  kdl_parser
+  orocos_kdl
+  rclcpp
+  sensor_msgs
+  std_msgs
+)
+target_link_libraries(jparse_velocity_controller
+  Eigen3::Eigen
 )
 
 if(BUILD_TESTING)
@@ -43,6 +62,7 @@ endif()
 
 install(TARGETS
   gz_ground_truth_publisher
+  jparse_velocity_controller
   DESTINATION lib/${PROJECT_NAME}
 )
 
@@ -54,6 +74,7 @@ install(PROGRAMS
   scripts/moveit_trajectory_controller_proxy.py
   scripts/publish_moveit_descriptions.py
   scripts/test_forward_velocity_controller.py
+  scripts/test_jparse_velocity_controller.py
   scripts/test_lift_controller.py
   DESTINATION lib/${PROJECT_NAME}
 )
