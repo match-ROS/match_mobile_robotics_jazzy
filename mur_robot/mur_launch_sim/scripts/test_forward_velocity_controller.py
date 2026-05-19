@@ -37,7 +37,7 @@ class ForwardVelocityTester(Node):
             JointState,
             f'/{args.robot_name}/joint_states',
             self._joint_state_callback,
-            10,
+            rclpy.qos.qos_profile_sensor_data,
         )
 
     def _joint_state_callback(self, msg):
@@ -84,8 +84,10 @@ class ForwardVelocityTester(Node):
         velocities = [0.0] * JOINT_COUNT
         velocities[self.args.joint_index] = self.args.velocity
 
+        setup_start = time.monotonic()
         self.wait_for_controller()
         self.wait_for_joint_states()
+        setup_duration = time.monotonic() - setup_start
 
         period = 1.0 / self.args.rate
         zero = [0.0] * JOINT_COUNT
@@ -97,13 +99,16 @@ class ForwardVelocityTester(Node):
 
         start_positions = self.joint_positions_snapshot()
         self.get_logger().info(
-            f'Publishing {velocities} to {self.topic} for {self.args.duration:.2f}s'
+            f'Publishing {velocities} to {self.topic} for {self.args.duration:.2f}s '
+            f'after {setup_duration:.3f}s setup/discovery wait'
         )
+        active_start = time.monotonic()
         end_time = time.monotonic() + self.args.duration
         while rclpy.ok() and time.monotonic() < end_time:
             self.publish_command(velocities)
             rclpy.spin_once(self, timeout_sec=0.0)
             time.sleep(period)
+        active_duration = time.monotonic() - active_start
         end_positions = self.joint_positions_snapshot()
 
         self.get_logger().info('Stopping arm with zero velocity command')
@@ -129,6 +134,11 @@ class ForwardVelocityTester(Node):
             self.get_logger().info(
                 'Measured joint delta rad: [%s]' % ' '.join(
                     f'{value:.4f}' for value in delta
+                )
+            )
+            self.get_logger().info(
+                'Measured avg joint velocity rad/s: [%s]' % ' '.join(
+                    f'{value / max(active_duration, 1.0e-9):.4f}' for value in delta
                 )
             )
 

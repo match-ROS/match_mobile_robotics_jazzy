@@ -40,9 +40,9 @@ joint_limits:
     has_position_limits: true
     has_velocity_limits: true
     max_effort: 330.0
-    max_position: 3.14159265359
+    max_position: 6.28318530718
     max_velocity: 2.09439510239
-    min_position: -3.14159265359
+    min_position: -6.28318530718
   shoulder_lift_joint:
     has_acceleration_limits: true
     max_acceleration: 5.0
@@ -50,9 +50,9 @@ joint_limits:
     has_position_limits: true
     has_velocity_limits: true
     max_effort: 330.0
-    max_position: 3.14159265359
+    max_position: 6.28318530718
     max_velocity: 2.09439510239
-    min_position: -3.14159265359
+    min_position: -6.28318530718
   elbow_joint:
     has_acceleration_limits: true
     max_acceleration: 5.0
@@ -60,19 +60,9 @@ joint_limits:
     has_position_limits: true
     has_velocity_limits: true
     max_effort: 150.0
-    # we artificially limit this joint to half its actual joint position limit
-    # to avoid (MoveIt/OMPL) planning problems, as due to the physical
-    # construction of the robot, it's impossible to rotate the 'elbow_joint'
-    # over more than approx +- 1 pi (the shoulder lift joint gets in the way).
-    #
-    # This leads to planning problems as the search space will be divided into
-    # two sections, with no connections from one to the other.
-    #
-    # Refer to https://github.com/ros-industrial/universal_robot/issues/265 for
-    # more information.
-    max_position: 1.57079632679 
-    max_velocity: 1.57079632679 
-    min_position: -1.57079632679 
+    max_position: 3.14159265359 
+    max_velocity: 3.14159265359 
+    min_position: -3.14159265359 
   wrist_1_joint:
     has_acceleration_limits: true
     max_acceleration: 5.0
@@ -80,9 +70,9 @@ joint_limits:
     has_position_limits: true
     has_velocity_limits: true
     max_effort: 54.0
-    max_position: 3.14159265359
-    max_velocity: 1.57079632679 
-    min_position: -3.14159265359
+    max_position: 6.28318530718
+    max_velocity: 3.14159265359 
+    min_position: -6.28318530718
   wrist_2_joint:
     has_acceleration_limits: true
     max_acceleration: 5.0
@@ -90,9 +80,9 @@ joint_limits:
     has_position_limits: true
     has_velocity_limits: true
     max_effort: 54.0
-    max_position: 3.14159265359
-    max_velocity: 1.57079632679 
-    min_position: -3.14159265359
+    max_position: 6.28318530718
+    max_velocity: 3.14159265359 
+    min_position: -6.28318530718
   wrist_3_joint:
     has_acceleration_limits: true
     max_acceleration: 5.0
@@ -100,9 +90,9 @@ joint_limits:
     has_position_limits: true
     has_velocity_limits: true
     max_effort: 54.0
-    max_position: 3.14159265359
-    max_velocity: 1.57079632679 
-    min_position: -3.14159265359
+    max_position: 6.28318530718
+    max_velocity: 3.14159265359 
+    min_position: -6.28318530718
 
   UR10_l/shoulder_pan_joint:
     has_acceleration_limits: true
@@ -118,22 +108,22 @@ joint_limits:
     has_acceleration_limits: true
     max_acceleration: 5.0
     has_velocity_limits: true
-    max_velocity: 1.57079632679
+    max_velocity: 3.14159265359
   UR10_l/wrist_1_joint:
     has_acceleration_limits: true
     max_acceleration: 5.0
     has_velocity_limits: true
-    max_velocity: 1.57079632679
+    max_velocity: 3.14159265359
   UR10_l/wrist_2_joint:
     has_acceleration_limits: true
     max_acceleration: 5.0
     has_velocity_limits: true
-    max_velocity: 1.57079632679
+    max_velocity: 3.14159265359
   UR10_l/wrist_3_joint:
     has_acceleration_limits: true
     max_acceleration: 5.0
     has_velocity_limits: true
-    max_velocity: 1.57079632679
+    max_velocity: 3.14159265359
 
   UR10_r/shoulder_pan_joint:
     has_acceleration_limits: true
@@ -149,19 +139,19 @@ joint_limits:
     has_acceleration_limits: true
     max_acceleration: 5.0
     has_velocity_limits: true
-    max_velocity: 1.57079632679
+    max_velocity: 3.14159265359
   UR10_r/wrist_1_joint:
     has_acceleration_limits: true
     max_acceleration: 5.0
     has_velocity_limits: true
-    max_velocity: 1.57079632679
+    max_velocity: 3.14159265359
   UR10_r/wrist_2_joint:
     has_acceleration_limits: true
     max_acceleration: 5.0
     has_velocity_limits: true
-    max_velocity: 1.57079632679
+    max_velocity: 3.14159265359
   UR10_r/wrist_3_joint:
     has_acceleration_limits: true
     max_acceleration: 5.0
     has_velocity_limits: true
-    max_velocity: 1.57079632679
+    max_velocity: 3.14159265359

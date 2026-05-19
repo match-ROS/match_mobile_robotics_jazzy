@@ -189,33 +189,43 @@ class JParseVelocityTester(Node):
             self.args.wz,
         ]
         self.get_logger().info(
-            f'Publishing twist {command} in {self.base_link} on {self.topic} '
+            f'Preparing twist {command} in {self.base_link} on {self.topic} '
             f'for {self.args.duration:.2f}s'
         )
+        discovery_start = time.monotonic()
         self.wait_for_controller()
+        discovery_duration = time.monotonic() - discovery_start
+        self.wait_for_joint_states(timeout=1.0)
+        start_joint_positions = self.joint_positions_snapshot()
         try:
             start_position, start_orientation = self.lookup_tool_pose()
         except RuntimeError as exc:
             self.get_logger().warn(str(exc))
             start_position = None
             start_orientation = None
-        self.wait_for_joint_states(timeout=1.0)
-        start_joint_positions = self.joint_positions_snapshot()
 
+        self.get_logger().info(
+            'Starting active publish window after %.3fs setup/discovery wait'
+            % discovery_duration
+        )
+        active_start = time.monotonic()
         deadline = time.monotonic() + self.args.duration
         while rclpy.ok() and time.monotonic() < deadline:
             self.publish_twist(command)
             rclpy.spin_once(self, timeout_sec=0.0)
             time.sleep(1.0 / self.args.rate)
+        active_duration = time.monotonic() - active_start
 
+        self.wait_for_joint_states(timeout=0.5)
+        end_joint_positions = self.joint_positions_snapshot()
+        for _ in range(5):
+            rclpy.spin_once(self, timeout_sec=0.02)
         try:
             end_position, end_orientation = self.lookup_tool_pose(timeout=0.5)
         except RuntimeError as exc:
             self.get_logger().warn(str(exc))
             end_position = None
             end_orientation = None
-        self.wait_for_joint_states(timeout=0.5)
-        end_joint_positions = self.joint_positions_snapshot()
 
         for _ in range(10):
             self.publish_twist([0.0] * 6)
@@ -230,7 +240,7 @@ class JParseVelocityTester(Node):
             q_delta = quat_multiply(end_orientation, quat_inverse(start_orientation))
             angle = quat_angle(q_delta)
             measured_velocity = [
-                value / max(self.args.duration, 1.0e-9)
+                value / max(active_duration, 1.0e-9)
                 for value in delta
             ]
             self.get_logger().info(
@@ -249,7 +259,7 @@ class JParseVelocityTester(Node):
                 for index in range(len(self.joint_names))
             ]
             joint_avg = [
-                value / max(self.args.duration, 1.0e-9)
+                value / max(active_duration, 1.0e-9)
                 for value in joint_delta
             ]
             self.get_logger().info(
