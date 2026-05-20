@@ -53,6 +53,11 @@ def declare_args():
         DeclareLaunchArgument('ground_truth', default_value='true'),
         DeclareLaunchArgument('use_simple_collisions', default_value='true'),
         DeclareLaunchArgument(
+            'use_simple_visuals',
+            default_value='false',
+            description='Replace heavy MiR visual meshes with primitives for RViz/GPU diagnosis.',
+        ),
+        DeclareLaunchArgument(
             'localization',
             default_value='true',
             description='Start one AMCL instance per robot.',
@@ -197,6 +202,7 @@ def launch_setup(context, *args, **kwargs):
                 'laser_merger': LaunchConfiguration('laser_merger'),
                 'ground_truth': LaunchConfiguration('ground_truth'),
                 'use_simple_collisions': LaunchConfiguration('use_simple_collisions'),
+                'use_simple_visuals': LaunchConfiguration('use_simple_visuals'),
                 'localization': 'false',
                 'navigation': 'false',
                 'load_arm_controllers': LaunchConfiguration('load_arm_controllers'),

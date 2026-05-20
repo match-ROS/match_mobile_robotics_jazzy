@@ -8,16 +8,27 @@
 	<xacro:property name="laser_z" value="0.185" />
 	<xacro:property name="laser_mass" value="2.0" />
 
-	<xacro:macro name="sick_s300" params="link topic use_simple_collisions:=false">
+	<xacro:macro name="sick_s300" params="link topic use_simple_collisions:=false use_simple_visuals:=false">
 		<link name="${link}">
-			<visual>
-				<origin xyz="0.0 0.0 0.0" rpy="${pi} 0 0" />
-				<geometry>
-					<mesh filename="package://mir_description/meshes/visual/sick_lms-100.stl" />
-				</geometry>
-				<!-- <xacro:insert_block name="material_yellow" /> -->
-				<xacro:insert_block name="material_black" />
-			</visual>
+			<xacro:if value="${use_simple_visuals}">
+				<visual>
+					<origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+					<geometry>
+						<box size="${laser_x} ${laser_y} ${laser_z}"/>
+					</geometry>
+					<xacro:insert_block name="material_black" />
+				</visual>
+			</xacro:if>
+			<xacro:unless value="${use_simple_visuals}">
+				<visual>
+					<origin xyz="0.0 0.0 0.0" rpy="${pi} 0 0" />
+					<geometry>
+						<mesh filename="package://mir_description/meshes/visual/sick_lms-100.stl" />
+					</geometry>
+					<!-- <xacro:insert_block name="material_yellow" /> -->
+					<xacro:insert_block name="material_black" />
+				</visual>
+			</xacro:unless>
 			<xacro:if value="${use_simple_collisions}">
 				<collision>
 					<origin xyz="0.0 0.0 0.0" rpy="0 0 0" />

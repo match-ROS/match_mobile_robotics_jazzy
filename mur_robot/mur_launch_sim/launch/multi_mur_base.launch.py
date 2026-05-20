@@ -56,6 +56,11 @@ def declare_args():
         DeclareLaunchArgument('ground_truth', default_value='true'),
         DeclareLaunchArgument('use_simple_collisions', default_value='true'),
         DeclareLaunchArgument(
+            'use_simple_visuals',
+            default_value='false',
+            description='Replace heavy MiR visual meshes with primitives for RViz/GPU diagnosis.',
+        ),
+        DeclareLaunchArgument(
             'launch_rviz',
             default_value='false',
             description='Start a lightweight multi-base RViz config.',
@@ -205,6 +210,7 @@ def launch_setup(context, *args, **kwargs):
                 'use_arms': 'false',
                 'use_camera': 'false',
                 'use_simple_collisions': LaunchConfiguration('use_simple_collisions'),
+                'use_simple_visuals': LaunchConfiguration('use_simple_visuals'),
                 'localization': 'false',
                 'navigation': 'false',
             }.items(),

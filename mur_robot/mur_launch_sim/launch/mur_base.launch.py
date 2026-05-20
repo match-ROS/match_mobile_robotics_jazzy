@@ -28,6 +28,7 @@ Arguments:
   use_arms (bool)          Include UR arm links/controllers in robot_description (default true)
   use_camera (bool)        Include D435 camera links/Gazebo sensor (default true)
   use_simple_collisions (bool) Replace most MiR collision meshes with primitives (default false)
+  use_simple_visuals (bool) Replace most MiR visual meshes with primitives for RViz/GPU diagnosis (default false)
 """
 
 import os
@@ -72,6 +73,7 @@ def declare_args():
         DeclareLaunchArgument('use_arms', default_value='true'),
         DeclareLaunchArgument('use_camera', default_value='true'),
         DeclareLaunchArgument('use_simple_collisions', default_value='false'),
+        DeclareLaunchArgument('use_simple_visuals', default_value='false'),
         DeclareLaunchArgument(
             'map',
             default_value=os.path.join(
@@ -503,6 +505,9 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
     use_simple_collisions = (
         LaunchConfiguration('use_simple_collisions').perform(context) == 'true'
     )
+    use_simple_visuals = (
+        LaunchConfiguration('use_simple_visuals').perform(context) == 'true'
+    )
     map_yaml = LaunchConfiguration('map').perform(context)
 
     mur_description_path = get_package_share_directory('mur_description')
@@ -519,6 +524,7 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
         'use_arms': 'true' if use_arms else 'false',
         'use_camera': 'true' if use_camera else 'false',
         'use_simple_collisions': 'true' if use_simple_collisions else 'false',
+        'use_simple_visuals': 'true' if use_simple_visuals else 'false',
     })
     robot_desc = doc.toxml()
 

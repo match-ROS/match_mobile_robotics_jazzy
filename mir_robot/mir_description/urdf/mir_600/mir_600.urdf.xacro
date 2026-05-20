@@ -35,7 +35,7 @@
 	<xacro:property name="mir_600_match_logo_dy" value="0.330" />
 	<xacro:property name="mir_600_match_logo_dz" value="0.27" />
 
-	<xacro:macro name="mir_600" params="use_camera:=true use_simple_collisions:=false">
+	<xacro:macro name="mir_600" params="use_camera:=true use_simple_collisions:=false use_simple_visuals:=false">
 		<link name="base_footprint" />
 
 		<joint name="base_joint" type="fixed">
@@ -48,13 +48,24 @@
 			<xacro:box_inertial mass="${mir_600_base_mass}" x="0.9" y="0.58" z="0.3">
 				<origin xyz="${mir_600_act_wheel_dx} 0 0.20" rpy="0 0 0" />
 			</xacro:box_inertial>
-			<visual>
-				<origin xyz="${mir_600_act_wheel_dx} 0 0" rpy="${pi * 0.5} 0 ${pi * 0.5}" />
-				<geometry>
-					<mesh filename="package://mir_description/meshes/visual/mir_600_base.stl"/>
-				</geometry>
-				<xacro:insert_block name="material_white" />
-			</visual>
+			<xacro:if value="${use_simple_visuals}">
+				<visual>
+					<origin xyz="${mir_600_act_wheel_dx} 0 0.20" rpy="0 0 0" />
+					<geometry>
+						<box size="0.9 0.58 0.3"/>
+					</geometry>
+					<xacro:insert_block name="material_white" />
+				</visual>
+			</xacro:if>
+			<xacro:unless value="${use_simple_visuals}">
+				<visual>
+					<origin xyz="${mir_600_act_wheel_dx} 0 0" rpy="${pi * 0.5} 0 ${pi * 0.5}" />
+					<geometry>
+						<mesh filename="package://mir_description/meshes/visual/mir_600_base.stl"/>
+					</geometry>
+					<xacro:insert_block name="material_white" />
+				</visual>
+			</xacro:unless>
 			<xacro:if value="${use_simple_collisions}">
 				<collision>
 					<origin xyz="${mir_600_act_wheel_dx} 0 0.20" rpy="0 0 0" />
@@ -99,7 +110,7 @@
 			<child link="front_laser_link" />
 			<origin xyz="0.58985 0.370 0.1914" rpy="0.0 0.0 ${0.25 * pi}" />  <!-- from visually matching up the meshes of the MiR and the laser scanner -->
 		</joint>
-		<xacro:sick_s300 link="front_laser_link" topic="f_scan" use_simple_collisions="${use_simple_collisions}" />
+		<xacro:sick_s300 link="front_laser_link" topic="f_scan" use_simple_collisions="${use_simple_collisions}" use_simple_visuals="${use_simple_visuals}" />
 
 		<joint name="base_link_to_back_laser_joint" type="fixed">
 			<parent link="base_link" />
@@ -107,7 +118,7 @@
 			<origin xyz="-0.58985 -0.370 0.1914" rpy="0.0 0.0 ${-0.75 * pi}" />  <!-- from visually matching up the meshes of the MiR and the laser scanner -->
 		</joint>
 
-		<xacro:sick_s300 link="back_laser_link" topic="b_scan" use_simple_collisions="${use_simple_collisions}" />
+		<xacro:sick_s300 link="back_laser_link" topic="b_scan" use_simple_collisions="${use_simple_collisions}" use_simple_visuals="${use_simple_visuals}" />
 
 		<!-- Ultrasound sensors -->
 		<joint name="us_1_joint" type="fixed">   <!-- right ultrasound -->
@@ -127,12 +138,12 @@
 		<link name="us_2_frame" />
 
 		<!-- wheels -->
-		<xacro:actuated_wheel locationprefix="left" locationright="-1"/>
-		<xacro:actuated_wheel locationprefix="right" locationright="1"/>
-		<xacro:caster_wheel locationprefix="fl" locationright="-1" wheel_base_dx="${mir_600_front_caster_wheel_base_dx}" use_simple_collisions="${use_simple_collisions}"/>
-		<xacro:caster_wheel locationprefix="fr" locationright="1" wheel_base_dx="${mir_600_front_caster_wheel_base_dx}" use_simple_collisions="${use_simple_collisions}"/>
-		<xacro:caster_wheel locationprefix="bl" locationright="-1" wheel_base_dx="${mir_600_back_caster_wheel_base_dx}" use_simple_collisions="${use_simple_collisions}"/>
-		<xacro:caster_wheel locationprefix="br" locationright="1" wheel_base_dx="${mir_600_back_caster_wheel_base_dx}" use_simple_collisions="${use_simple_collisions}"/>
+		<xacro:actuated_wheel locationprefix="left" locationright="-1" use_simple_visuals="${use_simple_visuals}"/>
+		<xacro:actuated_wheel locationprefix="right" locationright="1" use_simple_visuals="${use_simple_visuals}"/>
+		<xacro:caster_wheel locationprefix="fl" locationright="-1" wheel_base_dx="${mir_600_front_caster_wheel_base_dx}" use_simple_collisions="${use_simple_collisions}" use_simple_visuals="${use_simple_visuals}"/>
+		<xacro:caster_wheel locationprefix="fr" locationright="1" wheel_base_dx="${mir_600_front_caster_wheel_base_dx}" use_simple_collisions="${use_simple_collisions}" use_simple_visuals="${use_simple_visuals}"/>
+		<xacro:caster_wheel locationprefix="bl" locationright="-1" wheel_base_dx="${mir_600_back_caster_wheel_base_dx}" use_simple_collisions="${use_simple_collisions}" use_simple_visuals="${use_simple_visuals}"/>
+		<xacro:caster_wheel locationprefix="br" locationright="1" wheel_base_dx="${mir_600_back_caster_wheel_base_dx}" use_simple_collisions="${use_simple_collisions}" use_simple_visuals="${use_simple_visuals}"/>
 
 		<joint name="base_link_surface_joint" type="fixed">
 			<origin xyz="${mir_600_act_wheel_dx} 0 0.352" rpy="0 0 0" />
@@ -154,7 +165,7 @@
 		<!-- <xacro:match_logo parent="base_link" locationprefix="left" location_dx="${mir_600_match_logo_dx}" location_dy="${mir_600_match_logo_dy}" location_dz="${mir_600_match_logo_dz}"/>
 		<xacro:match_logo parent="base_link" locationprefix="right" location_dx="${mir_600_match_logo_dx}" location_dy="${-1 * mir_600_match_logo_dy}" location_dz="${mir_600_match_logo_dz}" orientation="${pi}"/> -->
 
-		<xacro:top_module use_simple_collisions="${use_simple_collisions}"/>
+		<xacro:top_module use_simple_collisions="${use_simple_collisions}" use_simple_visuals="${use_simple_visuals}"/>
 		
 
 

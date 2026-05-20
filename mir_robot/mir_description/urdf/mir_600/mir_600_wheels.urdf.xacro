@@ -2,7 +2,7 @@
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
 	<xacro:include filename="$(find mir_description)/urdf/general/common_properties.urdf.xacro" />
 
-	<xacro:macro name="actuated_wheel" params="locationprefix locationright">
+	<xacro:macro name="actuated_wheel" params="locationprefix locationright use_simple_visuals:=false">
 		<joint name="${locationprefix}_wheel_joint" type="continuous">
 			<origin xyz="0.0 ${-mir_600_act_wheel_dy * locationright} ${mir_600_act_wheel_radius}" rpy="0 0 0" />
 			<parent link="base_link" />
@@ -15,13 +15,24 @@
 			<xacro:cylinder_inertial mass="${mir_600_act_wheel_mass}" radius="${mir_600_act_wheel_radius}" length="${mir_600_act_wheel_width}">
 				<origin xyz="0 0 0" rpy="${0.5 * pi} 0 0" />
 			</xacro:cylinder_inertial>
-			<visual>
-				<origin xyz="0 ${locationright * mir_600_act_wheel_width*0.5} 0" rpy="${pi * 0.5} 0 ${0.5 * pi * (1+ locationright)}" />
-				<geometry>
-					<mesh filename="package://mir_description/meshes/visual/mir_600_wheel.stl" />
-				</geometry>
-				<xacro:insert_block name="material_dark_grey" />
-			</visual>
+			<xacro:if value="${use_simple_visuals}">
+				<visual>
+					<origin xyz="0 0 0" rpy="${pi * 0.5} 0 ${pi * -1}" />
+					<geometry>
+						<cylinder radius="${mir_600_act_wheel_radius}" length="${mir_600_act_wheel_width}"/>
+					</geometry>
+					<xacro:insert_block name="material_dark_grey" />
+				</visual>
+			</xacro:if>
+			<xacro:unless value="${use_simple_visuals}">
+				<visual>
+					<origin xyz="0 ${locationright * mir_600_act_wheel_width*0.5} 0" rpy="${pi * 0.5} 0 ${0.5 * pi * (1+ locationright)}" />
+					<geometry>
+						<mesh filename="package://mir_description/meshes/visual/mir_600_wheel.stl" />
+					</geometry>
+					<xacro:insert_block name="material_dark_grey" />
+				</visual>
+			</xacro:unless>
 			<collision>
 				<origin xyz="0 0 0" rpy="${pi * 0.5} 0 ${pi * -1}" />
 				<geometry>
@@ -31,7 +42,7 @@
 		</link>
 	</xacro:macro>
 
-	<xacro:macro name="caster_wheel" params="locationprefix locationright wheel_base_dx use_simple_collisions:=false">
+	<xacro:macro name="caster_wheel" params="locationprefix locationright wheel_base_dx use_simple_collisions:=false use_simple_visuals:=false">
 		<!-- caster hub -->
 		<joint name="${locationprefix}_caster_rotation_joint" type="continuous">
 			<origin xyz="${wheel_base_dx} ${-mir_600_caster_wheel_base_dy * locationright} ${mir_600_caster_wheel_base_dz}" rpy="0 0 0" />
@@ -54,13 +65,24 @@
 				iyz="0"
 				izz="0.00017923555074" />
 		</inertial>
-		<visual>
-			<origin xyz="0 0 0" rpy="0 0 0" />
-			<geometry>
-				<mesh filename="package://mir_description/meshes/visual/caster_wheel_base.stl" />
-			</geometry>
-			<xacro:insert_block name="material_silver" />
-		</visual>
+		<xacro:if value="${use_simple_visuals}">
+			<visual>
+				<origin xyz="0 0 -0.03" rpy="0 0 0" />
+				<geometry>
+					<box size="0.16 0.12 0.08"/>
+				</geometry>
+				<xacro:insert_block name="material_silver" />
+			</visual>
+		</xacro:if>
+		<xacro:unless value="${use_simple_visuals}">
+			<visual>
+				<origin xyz="0 0 0" rpy="0 0 0" />
+				<geometry>
+					<mesh filename="package://mir_description/meshes/visual/caster_wheel_base.stl" />
+				</geometry>
+				<xacro:insert_block name="material_silver" />
+			</visual>
+		</xacro:unless>
 		<xacro:if value="${use_simple_collisions}">
 			<collision>
 				<origin xyz="0 0 -0.03" rpy="0 0 0" />
@@ -91,13 +113,24 @@
 			<xacro:cylinder_inertial mass="${mir_600_caster_wheel_mass}" radius="${mir_600_caster_wheel_radius}" length="${mir_600_caster_wheel_width}">
 				<origin xyz="0 0 0" rpy="${0.5 * pi} 0 0" />
 			</xacro:cylinder_inertial>
-			<visual>
-				<origin xyz="0 0 0" rpy="${pi * 0.5} 0 0" />
-				<geometry>
-					<mesh filename="package://mir_description/meshes/visual/mir_600_caster_wheel.stl" />
-				</geometry>
-				<xacro:insert_block name="material_dark_grey" />
-			</visual>
+			<xacro:if value="${use_simple_visuals}">
+				<visual>
+					<origin xyz="0 0 0" rpy="${pi * 0.5} 0 0" />
+					<geometry>
+						<cylinder radius="${mir_600_caster_wheel_radius}" length="${mir_600_caster_wheel_width}"/>
+					</geometry>
+					<xacro:insert_block name="material_dark_grey" />
+				</visual>
+			</xacro:if>
+			<xacro:unless value="${use_simple_visuals}">
+				<visual>
+					<origin xyz="0 0 0" rpy="${pi * 0.5} 0 0" />
+					<geometry>
+						<mesh filename="package://mir_description/meshes/visual/mir_600_caster_wheel.stl" />
+					</geometry>
+					<xacro:insert_block name="material_dark_grey" />
+				</visual>
+			</xacro:unless>
 			<collision>
 				<origin xyz="0 0 0" rpy="${pi * 0.5} 0 0" />
 				<geometry>

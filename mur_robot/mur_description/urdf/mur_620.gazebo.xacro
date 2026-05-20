@@ -12,6 +12,8 @@
 	<xacro:property name="use_camera" value="$(arg use_camera)"/>
 	<xacro:arg name="use_simple_collisions" default='false'/>
 	<xacro:property name="use_simple_collisions" value="$(arg use_simple_collisions)"/>
+	<xacro:arg name="use_simple_visuals" default='false'/>
+	<xacro:property name="use_simple_visuals" value="$(arg use_simple_visuals)"/>
 	<xacro:arg name="use_lift" default='true'/>
 	<xacro:property name="use_lift" value="$(arg use_lift)"/>
 	<xacro:arg name="ur_l_xyz" default='0 0 0'/>
@@ -54,6 +56,7 @@
 	<xacro:mir_600
 		use_camera="$(arg use_camera)"
 		use_simple_collisions="$(arg use_simple_collisions)"
+		use_simple_visuals="$(arg use_simple_visuals)"
 	/>
 	<!-- Init the MiR600 macro that includes all infos that Gazebo need to function -->
 	<xacro:mir_600_gazebo tf_prefix="$(arg tf_prefix_mir)" robot_namespace="$(arg robot_namespace)" use_camera="$(arg use_camera)"/>
@@ -121,7 +124,7 @@
 
 	<!-- Init the lift macro -->
 	<xacro:if value="${use_lift}">
-		<xacro:top_lift use_simple_collisions="$(arg use_simple_collisions)"/>
+		<xacro:top_lift use_simple_collisions="$(arg use_simple_collisions)" use_simple_visuals="$(arg use_simple_visuals)"/>
 
 		<xacro:if value="${use_arms}">
 			<joint name="plattform_manipulator_joint_l" type="fixed">
