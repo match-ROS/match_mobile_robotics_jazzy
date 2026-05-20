@@ -20,10 +20,14 @@ Arguments:
   lidar_bridge (bool)      Whether to bridge the robot's /scan topic (default true)
   start_controller_manager (bool) Start standalone ros2_control_node (default false)
   load_controllers (bool)  Spawn Gazebo ros2_control controllers (default true)
+  load_lift_controllers (bool) Spawn lift controllers/holding loops (default true)
   laser_merger (bool)      Merge front/back scans to /<robot_name>/scan (default true)
   localization (bool)      Start map_server and AMCL (default false)
   navigation (bool)        Start Nav2 planner/controller/BT navigator (default false)
   ground_truth (bool)      Publish Gazebo model pose as ground truth topics (default true)
+  use_arms (bool)          Include UR arm links/controllers in robot_description (default true)
+  use_camera (bool)        Include D435 camera links/Gazebo sensor (default true)
+  use_simple_collisions (bool) Replace most MiR collision meshes with primitives (default false)
 """
 
 import os
@@ -60,10 +64,14 @@ def declare_args():
         DeclareLaunchArgument('lidar_bridge', default_value='true'),
         DeclareLaunchArgument('start_controller_manager', default_value='false'),
         DeclareLaunchArgument('load_controllers', default_value='true'),
+        DeclareLaunchArgument('load_lift_controllers', default_value='true'),
         DeclareLaunchArgument('laser_merger', default_value='true'),
         DeclareLaunchArgument('localization', default_value='false'),
         DeclareLaunchArgument('navigation', default_value='false'),
         DeclareLaunchArgument('ground_truth', default_value='true'),
+        DeclareLaunchArgument('use_arms', default_value='true'),
+        DeclareLaunchArgument('use_camera', default_value='true'),
+        DeclareLaunchArgument('use_simple_collisions', default_value='false'),
         DeclareLaunchArgument(
             'map',
             default_value=os.path.join(
@@ -483,10 +491,18 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
         LaunchConfiguration('start_controller_manager').perform(context) == 'true'
     )
     load_controllers = LaunchConfiguration('load_controllers').perform(context) == 'true'
+    load_lift_controllers = (
+        LaunchConfiguration('load_lift_controllers').perform(context) == 'true'
+    )
     laser_merger = LaunchConfiguration('laser_merger').perform(context) == 'true'
     localization = LaunchConfiguration('localization').perform(context) == 'true'
     navigation = LaunchConfiguration('navigation').perform(context) == 'true'
     ground_truth = LaunchConfiguration('ground_truth').perform(context) == 'true'
+    use_arms = LaunchConfiguration('use_arms').perform(context) == 'true'
+    use_camera = LaunchConfiguration('use_camera').perform(context) == 'true'
+    use_simple_collisions = (
+        LaunchConfiguration('use_simple_collisions').perform(context) == 'true'
+    )
     map_yaml = LaunchConfiguration('map').perform(context)
 
     mur_description_path = get_package_share_directory('mur_description')
@@ -500,6 +516,9 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
         'tf_prefix_mir': robot_name,
         'robot_namespace': robot_name,
         'simulation_controllers': controllers_yaml,
+        'use_arms': 'true' if use_arms else 'false',
+        'use_camera': 'true' if use_camera else 'false',
+        'use_simple_collisions': 'true' if use_simple_collisions else 'false',
     })
     robot_desc = doc.toxml()
 
@@ -619,54 +638,60 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
     nodes.append(spawn_entity)
 
     if load_controllers:
+        controller_actions = [
+            controller_spawner(
+                robot_name, 'joint_state_broadcaster', controllers_yaml
+            ),
+            controller_spawner(
+                robot_name, 'mobile_base_controller', controllers_yaml
+            ),
+        ]
+        if load_lift_controllers:
+            controller_actions.extend([
+                controller_spawner(
+                    robot_name, 'lift_controller_l', controllers_yaml,
+                    inactive=True,
+                ),
+                controller_spawner(
+                    robot_name, 'lift_controller_r', controllers_yaml,
+                    inactive=True,
+                ),
+                controller_spawner(
+                    robot_name, 'lift_effort_controller_l', controllers_yaml,
+                ),
+                controller_spawner(
+                    robot_name, 'lift_effort_controller_r', controllers_yaml,
+                ),
+            ])
+
         nodes.append(
             RegisterEventHandler(
                 OnProcessExit(
                     target_action=spawn_entity,
-                    on_exit=[
-                        controller_spawner(
-                            robot_name, 'joint_state_broadcaster', controllers_yaml
-                        ),
-                        controller_spawner(
-                            robot_name, 'mobile_base_controller', controllers_yaml
-                        ),
-                        controller_spawner(
-                            robot_name, 'lift_controller_l', controllers_yaml,
-                            inactive=True,
-                        ),
-                        controller_spawner(
-                            robot_name, 'lift_controller_r', controllers_yaml,
-                            inactive=True,
-                        ),
-                        controller_spawner(
-                            robot_name, 'lift_effort_controller_l', controllers_yaml,
-                        ),
-                        controller_spawner(
-                            robot_name, 'lift_effort_controller_r', controllers_yaml,
-                        ),
-                    ],
+                    on_exit=controller_actions,
                 )
             )
         )
 
-        nodes.extend([
-            Node(
-                package='mur_launch_sim',
-                executable='lift_effort_position_controller.py',
-                name=f'{robot_name}_lift_effort_position_controller_l',
-                arguments=['--robot-name', robot_name, '--arm', 'l'],
-                parameters=[{'use_sim_time': use_sim_time}],
-                output='screen',
-            ),
-            Node(
-                package='mur_launch_sim',
-                executable='lift_effort_position_controller.py',
-                name=f'{robot_name}_lift_effort_position_controller_r',
-                arguments=['--robot-name', robot_name, '--arm', 'r'],
-                parameters=[{'use_sim_time': use_sim_time}],
-                output='screen',
-            ),
-        ])
+        if load_lift_controllers:
+            nodes.extend([
+                Node(
+                    package='mur_launch_sim',
+                    executable='lift_effort_position_controller.py',
+                    name=f'{robot_name}_lift_effort_position_controller_l',
+                    arguments=['--robot-name', robot_name, '--arm', 'l'],
+                    parameters=[{'use_sim_time': use_sim_time}],
+                    output='screen',
+                ),
+                Node(
+                    package='mur_launch_sim',
+                    executable='lift_effort_position_controller.py',
+                    name=f'{robot_name}_lift_effort_position_controller_r',
+                    arguments=['--robot-name', robot_name, '--arm', 'r'],
+                    parameters=[{'use_sim_time': use_sim_time}],
+                    output='screen',
+                ),
+            ])
 
     if lidar_bridge:
         nodes.append(

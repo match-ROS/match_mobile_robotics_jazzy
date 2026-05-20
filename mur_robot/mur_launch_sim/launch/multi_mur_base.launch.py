@@ -16,6 +16,7 @@ from launch.actions import (
     SetEnvironmentVariable,
     TimerAction,
 )
+from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
@@ -53,6 +54,21 @@ def declare_args():
         DeclareLaunchArgument('load_controllers', default_value='true'),
         DeclareLaunchArgument('laser_merger', default_value='true'),
         DeclareLaunchArgument('ground_truth', default_value='true'),
+        DeclareLaunchArgument('use_simple_collisions', default_value='true'),
+        DeclareLaunchArgument(
+            'launch_rviz',
+            default_value='false',
+            description='Start a lightweight multi-base RViz config.',
+        ),
+        DeclareLaunchArgument('rviz_delay', default_value='6.0'),
+        DeclareLaunchArgument(
+            'rviz_config',
+            default_value=os.path.join(
+                get_package_share_directory('mur_launch_sim'),
+                'rviz',
+                'multi_mur_base.rviz',
+            ),
+        ),
         DeclareLaunchArgument(
             'localization',
             default_value='true',
@@ -79,9 +95,9 @@ def amcl_params(robot_name, use_sim_time, x, y, yaw):
         'robot_model_type': 'nav2_amcl::DifferentialMotionModel',
         'laser_model_type': 'likelihood_field',
         'laser_likelihood_max_dist': 2.0,
-        'max_beams': 120,
-        'max_particles': 5000,
-        'min_particles': 500,
+        'max_beams': 60,
+        'max_particles': 1500,
+        'min_particles': 200,
         'pf_err': 0.05,
         'pf_z': 0.99,
         'resample_interval': 1,
@@ -183,8 +199,12 @@ def launch_setup(context, *args, **kwargs):
                 'include_gz': 'false',
                 'lidar_bridge': LaunchConfiguration('lidar_bridge'),
                 'load_controllers': LaunchConfiguration('load_controllers'),
+                'load_lift_controllers': 'false',
                 'laser_merger': LaunchConfiguration('laser_merger'),
                 'ground_truth': LaunchConfiguration('ground_truth'),
+                'use_arms': 'false',
+                'use_camera': 'false',
+                'use_simple_collisions': LaunchConfiguration('use_simple_collisions'),
                 'localization': 'false',
                 'navigation': 'false',
             }.items(),
@@ -218,6 +238,22 @@ def launch_setup(context, *args, **kwargs):
                     ],
                 )
             )
+
+    actions.append(
+        TimerAction(
+            period=float(LaunchConfiguration('rviz_delay').perform(context)),
+            condition=IfCondition(LaunchConfiguration('launch_rviz')),
+            actions=[
+                Node(
+                    package='rviz2',
+                    executable='rviz2',
+                    name='rviz2_multi_mur_base',
+                    arguments=['-d', LaunchConfiguration('rviz_config')],
+                    output='screen',
+                ),
+            ],
+        )
+    )
 
     return actions
 

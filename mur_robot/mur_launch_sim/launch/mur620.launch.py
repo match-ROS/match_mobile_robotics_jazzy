@@ -68,6 +68,7 @@ def generate_launch_description():
         DeclareLaunchArgument('localization', default_value='false'),
         DeclareLaunchArgument('navigation', default_value='false'),
         DeclareLaunchArgument('ground_truth', default_value='true'),
+        DeclareLaunchArgument('use_simple_collisions', default_value='false'),
         DeclareLaunchArgument('load_arm_controllers', default_value='true'),
         DeclareLaunchArgument('launch_moveit', default_value='true'),
         DeclareLaunchArgument('launch_rviz', default_value='false'),
@@ -94,6 +95,9 @@ def generate_launch_description():
         'localization': LaunchConfiguration('localization'),
         'navigation': LaunchConfiguration('navigation'),
         'ground_truth': LaunchConfiguration('ground_truth'),
+        'use_arms': 'true',
+        'use_camera': 'true',
+        'use_simple_collisions': LaunchConfiguration('use_simple_collisions'),
     }
 
     base_arguments['map'] = LaunchConfiguration('map')

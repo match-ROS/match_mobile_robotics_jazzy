@@ -88,7 +88,7 @@ install(PROGRAMS
 )
 
 install(DIRECTORY
-  launch scripts
+  launch rviz scripts
   DESTINATION share/${PROJECT_NAME}
 )
 

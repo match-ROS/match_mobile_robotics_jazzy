@@ -31,7 +31,7 @@
 		</link>
 	</xacro:macro>
 
-	<xacro:macro name="caster_wheel" params="locationprefix locationright wheel_base_dx">
+	<xacro:macro name="caster_wheel" params="locationprefix locationright wheel_base_dx use_simple_collisions:=false">
 		<!-- caster hub -->
 		<joint name="${locationprefix}_caster_rotation_joint" type="continuous">
 			<origin xyz="${wheel_base_dx} ${-mir_600_caster_wheel_base_dy * locationright} ${mir_600_caster_wheel_base_dz}" rpy="0 0 0" />
@@ -61,12 +61,22 @@
 			</geometry>
 			<xacro:insert_block name="material_silver" />
 		</visual>
-		<collision>
-			<origin xyz="0 0 0" rpy="0 0 0" />
-			<geometry>
-				<mesh filename="package://mir_description/meshes/collision/caster_wheel_base.stl" />
-			</geometry>
-		</collision>
+		<xacro:if value="${use_simple_collisions}">
+			<collision>
+				<origin xyz="0 0 -0.03" rpy="0 0 0" />
+				<geometry>
+					<box size="0.16 0.12 0.08"/>
+				</geometry>
+			</collision>
+		</xacro:if>
+		<xacro:unless value="${use_simple_collisions}">
+			<collision>
+				<origin xyz="0 0 0" rpy="0 0 0" />
+				<geometry>
+					<mesh filename="package://mir_description/meshes/collision/caster_wheel_base.stl" />
+				</geometry>
+			</collision>
+		</xacro:unless>
 		</link>
 
 		<!-- caster wheel -->

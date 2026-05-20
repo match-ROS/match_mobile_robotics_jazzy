@@ -6,6 +6,12 @@
 	<xacro:arg name="tf_prefix" default='UR10_l/'/>
 	<xacro:arg name="tf_prefix_mir" default='mur620'/>
 	<xacro:arg name="name" default=''/>
+	<xacro:arg name="use_arms" default='true'/>
+	<xacro:property name="use_arms" value="$(arg use_arms)"/>
+	<xacro:arg name="use_camera" default='true'/>
+	<xacro:property name="use_camera" value="$(arg use_camera)"/>
+	<xacro:arg name="use_simple_collisions" default='false'/>
+	<xacro:property name="use_simple_collisions" value="$(arg use_simple_collisions)"/>
 	<xacro:arg name="use_lift" default='true'/>
 	<xacro:property name="use_lift" value="$(arg use_lift)"/>
 	<xacro:arg name="ur_l_xyz" default='0 0 0'/>
@@ -45,100 +51,107 @@
 	<xacro:include filename="$(find mir_description)/urdf/general/plugins.gazebo.xacro" />
 
 	<!-- Init the MiR600 marco that is also used for the hardware -->
-	<xacro:mir_600/>
+	<xacro:mir_600
+		use_camera="$(arg use_camera)"
+		use_simple_collisions="$(arg use_simple_collisions)"
+	/>
 	<!-- Init the MiR600 macro that includes all infos that Gazebo need to function -->
-	<xacro:mir_600_gazebo tf_prefix="$(arg tf_prefix_mir)" robot_namespace="$(arg robot_namespace)"/>
+	<xacro:mir_600_gazebo tf_prefix="$(arg tf_prefix_mir)" robot_namespace="$(arg robot_namespace)" use_camera="$(arg use_camera)"/>
 	<!-- Init the plugins that run the MiR in Gazebo -->
 	<xacro:controller_plugin_gazebo
 		robot_namespace="$(arg robot_namespace)"
 		controllers_file="$(arg simulation_controllers)"
 	/>
-	<xacro:p3d_base_controller robot_namespace="$(arg robot_namespace)"/>
 	<xacro:gazebo_sim_sensors robot_namespace="$(arg robot_namespace)"/>
 	<xacro:mir_robot_ros2_control/>
 
 
-	<!-- UR10_l -->
-	<xacro:ur_robot
-		name="UR10_l"
-		tf_prefix="UR10_l/"
-		parent="UR10_l/base_ideal"
-		joint_limits_parameters_file="$(arg joint_limit_params)"
-		kinematics_parameters_file="$(arg kinematics_params)"
-		physical_parameters_file="$(arg physical_params)"
-		visual_parameters_file="$(arg visual_params)"
-		safety_limits="$(arg safety_limits)"
-		safety_pos_margin="$(arg safety_pos_margin)"
-		safety_k_position="$(arg safety_k_position)"
-		force_abs_paths="true"
-		>
-		<origin xyz="0 0 0" rpy="$(arg ur_l_rpy)" />          <!-- position robot in the world -->
-  	</xacro:ur_robot>
+	<xacro:if value="${use_arms}">
+		<!-- UR10_l -->
+		<xacro:ur_robot
+			name="UR10_l"
+			tf_prefix="UR10_l/"
+			parent="UR10_l/base_ideal"
+			joint_limits_parameters_file="$(arg joint_limit_params)"
+			kinematics_parameters_file="$(arg kinematics_params)"
+			physical_parameters_file="$(arg physical_params)"
+			visual_parameters_file="$(arg visual_params)"
+			safety_limits="$(arg safety_limits)"
+			safety_pos_margin="$(arg safety_pos_margin)"
+			safety_k_position="$(arg safety_k_position)"
+			force_abs_paths="true"
+			>
+			<origin xyz="0 0 0" rpy="$(arg ur_l_rpy)" />          <!-- position robot in the world -->
+		</xacro:ur_robot>
 
-	<xacro:ur_robot
-		name="UR10_r"
-		tf_prefix="UR10_r/"
-		parent="UR10_r/base_ideal"
-		joint_limits_parameters_file="$(arg joint_limit_params)"
-		kinematics_parameters_file="$(arg kinematics_params)"
-		physical_parameters_file="$(arg physical_params)"
-		visual_parameters_file="$(arg visual_params)"
-		safety_limits="$(arg safety_limits)"
-		safety_pos_margin="$(arg safety_pos_margin)"
-		safety_k_position="$(arg safety_k_position)"
-		force_abs_paths="true"
-		>
-		<origin xyz="0 0 0" rpy="$(arg ur_r_rpy)" />          <!-- position robot in the world -->
-  	</xacro:ur_robot>
+		<xacro:ur_robot
+			name="UR10_r"
+			tf_prefix="UR10_r/"
+			parent="UR10_r/base_ideal"
+			joint_limits_parameters_file="$(arg joint_limit_params)"
+			kinematics_parameters_file="$(arg kinematics_params)"
+			physical_parameters_file="$(arg physical_params)"
+			visual_parameters_file="$(arg visual_params)"
+			safety_limits="$(arg safety_limits)"
+			safety_pos_margin="$(arg safety_pos_margin)"
+			safety_k_position="$(arg safety_k_position)"
+			force_abs_paths="true"
+			>
+			<origin xyz="0 0 0" rpy="$(arg ur_r_rpy)" />          <!-- position robot in the world -->
+		</xacro:ur_robot>
 
-	<xacro:ur_ros2_control
-		name="UR10_l"
-		tf_prefix="UR10_l/"
-		transmission_hw_interface="$(arg transmission_hw_interface)"
-		initial_positions="${dict(shoulder_pan_joint=0.0,shoulder_lift_joint=-1.57079632679,elbow_joint=-1.57079632679,wrist_1_joint=-1.57079632679,wrist_2_joint=1.57079632679,wrist_3_joint=0.0)}"
-	/>
+		<xacro:ur_ros2_control
+			name="UR10_l"
+			tf_prefix="UR10_l/"
+			transmission_hw_interface="$(arg transmission_hw_interface)"
+			initial_positions="${dict(shoulder_pan_joint=0.0,shoulder_lift_joint=-1.57079632679,elbow_joint=-1.57079632679,wrist_1_joint=-1.57079632679,wrist_2_joint=1.57079632679,wrist_3_joint=0.0)}"
+		/>
 
-	<xacro:ur_ros2_control
-		name="UR10_r"
-		tf_prefix="UR10_r/"
-		transmission_hw_interface="$(arg transmission_hw_interface)"
-		initial_positions="${dict(shoulder_pan_joint=3.14159265359,shoulder_lift_joint=-1.57079632679,elbow_joint=-1.57079632679,wrist_1_joint=-1.57079632679,wrist_2_joint=-1.57079632679,wrist_3_joint=0.0)}"
-	/>
-
+		<xacro:ur_ros2_control
+			name="UR10_r"
+			tf_prefix="UR10_r/"
+			transmission_hw_interface="$(arg transmission_hw_interface)"
+			initial_positions="${dict(shoulder_pan_joint=3.14159265359,shoulder_lift_joint=-1.57079632679,elbow_joint=-1.57079632679,wrist_1_joint=-1.57079632679,wrist_2_joint=-1.57079632679,wrist_3_joint=0.0)}"
+		/>
 
 		<!-- virtual link rotated to show in same direction like mir  -->
-	<link name="UR10_l/base_ideal" />
-	<link name="UR10_r/base_ideal" />
+		<link name="UR10_l/base_ideal" />
+		<link name="UR10_r/base_ideal" />
+	</xacro:if>
 
 	<!-- Init the lift macro -->
 	<xacro:if value="${use_lift}">
-		<xacro:top_lift/>
+		<xacro:top_lift use_simple_collisions="$(arg use_simple_collisions)"/>
 
-		<joint name="plattform_manipulator_joint_l" type="fixed">
-				<parent link="left_lift_top" />
-				<child link="UR10_l/base_ideal" />
-				<origin xyz="0.0 0.0 0.555" rpy="0 0 0" />
-		</joint>
+		<xacro:if value="${use_arms}">
+			<joint name="plattform_manipulator_joint_l" type="fixed">
+					<parent link="left_lift_top" />
+					<child link="UR10_l/base_ideal" />
+					<origin xyz="0.0 0.0 0.555" rpy="0 0 0" />
+			</joint>
 
-		<joint name="plattform_manipulator_joint_r" type="fixed">
-				<parent link="right_lift_top" />
-				<child link="UR10_r/base_ideal" />
-				<origin xyz="0.0 0.0 0.555" rpy="0 0 0" />
-		</joint>
+			<joint name="plattform_manipulator_joint_r" type="fixed">
+					<parent link="right_lift_top" />
+					<child link="UR10_r/base_ideal" />
+					<origin xyz="0.0 0.0 0.555" rpy="0 0 0" />
+			</joint>
+		</xacro:if>
 	</xacro:if>
 
 	<xacro:unless value="${use_lift}">
-		<joint name="plattform_manipulator_joint_l" type="fixed">
-			<parent link="left_lift_bottom" />
-			<child link="UR10_l/base_ideal" />
-			<origin xyz="0.0 0.0 0.555" rpy="0 0 0" />
-		</joint>
+		<xacro:if value="${use_arms}">
+			<joint name="plattform_manipulator_joint_l" type="fixed">
+				<parent link="left_lift_bottom" />
+				<child link="UR10_l/base_ideal" />
+				<origin xyz="0.0 0.0 0.555" rpy="0 0 0" />
+			</joint>
 
-		<joint name="plattform_manipulator_joint_r" type="fixed">
-			<parent link="right_lift_bottom" />
-			<child link="UR10_r/base_ideal" />
-			<origin xyz="0.0 0.0 0.555" rpy="0 0 0" />
-		</joint>
+			<joint name="plattform_manipulator_joint_r" type="fixed">
+				<parent link="right_lift_bottom" />
+				<child link="UR10_r/base_ideal" />
+				<origin xyz="0.0 0.0 0.555" rpy="0 0 0" />
+			</joint>
+		</xacro:if>
 
 	</xacro:unless>
 

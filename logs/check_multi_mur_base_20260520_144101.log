@@ -1,0 +1,2205 @@
+Writing diagnostic log to: /home/rosmatch/colcon_ws/src/match_mobile_robotics_jazzy/logs/check_multi_mur_base_20260520_144101.log
+Workspace: /home/rosmatch/colcon_ws
+World: scale
+ROS_DOMAIN_ID: 62
+Robots: mur620a mur620b mur620c mur620d
+
+== Processes ==
+418753 /usr/bin/python3 /opt/ros/jazzy/bin/ros2 launch mur_launch_sim multi_mur_base.launch.py
+418777 /bin/sh -c ruby /opt/ros/jazzy/opt/gz_tools_vendor/bin/gz sim scale.world -v 4 -r --force-version 8
+418778 /opt/ros/jazzy/lib/ros_gz_bridge/parameter_bridge /clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock --ros-args -r __node:=clock_bridge
+418779 /opt/ros/jazzy/lib/nav2_map_server/map_server --ros-args -r __node:=map_server --params-file /tmp/launch_params_aox5s9ub
+418781 gz sim scale.world -v 4 -r
+418782 /opt/ros/jazzy/lib/nav2_lifecycle_manager/lifecycle_manager --ros-args -r __node:=lifecycle_manager_map --params-file /tmp/launch_params_marj6fd9
+418838 gz sim server
+418839 gz sim gui
+418857 /opt/ros/jazzy/lib/robot_state_publisher/robot_state_publisher --ros-args -r __node:=mur620a_rsp -r __ns:=/mur620a --params-file /tmp/launch_params_vewdrf5a --params-file /tmp/launch_params_ovzt0lgg --params-file /tmp/launch_params_u7530z3a
+418858 /opt/ros/jazzy/lib/robot_state_publisher/robot_state_publisher --ros-args -r __node:=mur620a_global_rsp --params-file /tmp/launch_params_acazish9 --params-file /tmp/launch_params_ielpo7z_ --params-file /tmp/launch_params_w9xslsda -r /tf:=unused_tf -r /tf_static:=unused_tf_static
+418863 /opt/ros/jazzy/lib/ros_gz_bridge/parameter_bridge /mur620a/f_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan /mur620a/b_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan --ros-args -r __node:=mur620a_lidar_bridge -r /mur620a/f_scan:=/mur620a/f_scan_raw -r /mur620a/b_scan:=/mur620a/b_scan_raw
+418866 /home/rosmatch/colcon_ws/install/ira_laser_tools/lib/ira_laser_tools/laserscan_multi_merger --ros-args -r __node:=mur620a_laser_scan_merger --params-file /tmp/launch_params_dd1ea4ad
+419357 /opt/ros/jazzy/lib/nav2_amcl/amcl --ros-args -r __node:=amcl -r __ns:=/mur620a --params-file /tmp/launch_params_lvyqq03n
+419358 /opt/ros/jazzy/lib/nav2_lifecycle_manager/lifecycle_manager --ros-args -r __node:=lifecycle_manager_localization -r __ns:=/mur620a --params-file /tmp/launch_params_amrzo9gt
+419736 /opt/ros/jazzy/lib/robot_state_publisher/robot_state_publisher --ros-args -r __node:=mur620b_rsp -r __ns:=/mur620b --params-file /tmp/launch_params_ztwau8ku --params-file /tmp/launch_params_i2r4h8yp --params-file /tmp/launch_params_ji6qb27a
+419737 /opt/ros/jazzy/lib/robot_state_publisher/robot_state_publisher --ros-args -r __node:=mur620b_global_rsp --params-file /tmp/launch_params_37j6chhy --params-file /tmp/launch_params_9vra_0e6 --params-file /tmp/launch_params_p_25a3ni -r /tf:=unused_tf -r /tf_static:=unused_tf_static
+419741 /opt/ros/jazzy/lib/ros_gz_bridge/parameter_bridge /mur620b/f_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan /mur620b/b_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan --ros-args -r __node:=mur620b_lidar_bridge -r /mur620b/f_scan:=/mur620b/f_scan_raw -r /mur620b/b_scan:=/mur620b/b_scan_raw
+419744 /home/rosmatch/colcon_ws/install/ira_laser_tools/lib/ira_laser_tools/laserscan_multi_merger --ros-args -r __node:=mur620b_laser_scan_merger --params-file /tmp/launch_params__b5qgfi6
+419973 /usr/bin/python3 /opt/ros/jazzy/lib/controller_manager/spawner lift_controller_l --controller-manager /mur620b/controller_manager --controller-manager-timeout 60 --param-file /tmp/mur_launch_sim/mur620b_mur_controllers.yaml --inactive --ros-args
+419974 /usr/bin/python3 /opt/ros/jazzy/lib/controller_manager/spawner lift_controller_r --controller-manager /mur620b/controller_manager --controller-manager-timeout 60 --param-file /tmp/mur_launch_sim/mur620b_mur_controllers.yaml --inactive --ros-args
+419975 /usr/bin/python3 /opt/ros/jazzy/lib/controller_manager/spawner lift_effort_controller_l --controller-manager /mur620b/controller_manager --controller-manager-timeout 60 --param-file /tmp/mur_launch_sim/mur620b_mur_controllers.yaml --ros-args
+419976 /usr/bin/python3 /opt/ros/jazzy/lib/controller_manager/spawner lift_effort_controller_r --controller-manager /mur620b/controller_manager --controller-manager-timeout 60 --param-file /tmp/mur_launch_sim/mur620b_mur_controllers.yaml --ros-args
+420122 /opt/ros/jazzy/lib/nav2_amcl/amcl --ros-args -r __node:=amcl -r __ns:=/mur620b --params-file /tmp/launch_params_10gkgsoc
+420123 /opt/ros/jazzy/lib/nav2_lifecycle_manager/lifecycle_manager --ros-args -r __node:=lifecycle_manager_localization -r __ns:=/mur620b --params-file /tmp/launch_params_rum_o04_
+420377 /opt/ros/jazzy/lib/robot_state_publisher/robot_state_publisher --ros-args -r __node:=mur620c_rsp -r __ns:=/mur620c --params-file /tmp/launch_params_sz6mxl7a --params-file /tmp/launch_params_lritcfx0 --params-file /tmp/launch_params_mk4lv6n_
+420378 /opt/ros/jazzy/lib/robot_state_publisher/robot_state_publisher --ros-args -r __node:=mur620c_global_rsp --params-file /tmp/launch_params_z_7w05ft --params-file /tmp/launch_params_w8yu3qnz --params-file /tmp/launch_params_s1mxv3xe -r /tf:=unused_tf -r /tf_static:=unused_tf_static
+420382 /opt/ros/jazzy/lib/ros_gz_bridge/parameter_bridge /mur620c/f_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan /mur620c/b_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan --ros-args -r __node:=mur620c_lidar_bridge -r /mur620c/f_scan:=/mur620c/f_scan_raw -r /mur620c/b_scan:=/mur620c/b_scan_raw
+420385 /home/rosmatch/colcon_ws/install/ira_laser_tools/lib/ira_laser_tools/laserscan_multi_merger --ros-args -r __node:=mur620c_laser_scan_merger --params-file /tmp/launch_params_cr7cmruy
+420612 /usr/bin/python3 /opt/ros/jazzy/lib/controller_manager/spawner joint_state_broadcaster --controller-manager /mur620c/controller_manager --controller-manager-timeout 60 --param-file /tmp/mur_launch_sim/mur620c_mur_controllers.yaml --ros-args
+420613 /usr/bin/python3 /opt/ros/jazzy/lib/controller_manager/spawner mobile_base_controller --controller-manager /mur620c/controller_manager --controller-manager-timeout 60 --param-file /tmp/mur_launch_sim/mur620c_mur_controllers.yaml --ros-args
+420614 /usr/bin/python3 /opt/ros/jazzy/lib/controller_manager/spawner lift_controller_l --controller-manager /mur620c/controller_manager --controller-manager-timeout 60 --param-file /tmp/mur_launch_sim/mur620c_mur_controllers.yaml --inactive --ros-args
+420615 /usr/bin/python3 /opt/ros/jazzy/lib/controller_manager/spawner lift_controller_r --controller-manager /mur620c/controller_manager --controller-manager-timeout 60 --param-file /tmp/mur_launch_sim/mur620c_mur_controllers.yaml --inactive --ros-args
+420616 /usr/bin/python3 /opt/ros/jazzy/lib/controller_manager/spawner lift_effort_controller_l --controller-manager /mur620c/controller_manager --controller-manager-timeout 60 --param-file /tmp/mur_launch_sim/mur620c_mur_controllers.yaml --ros-args
+420617 /usr/bin/python3 /opt/ros/jazzy/lib/controller_manager/spawner lift_effort_controller_r --controller-manager /mur620c/controller_manager --controller-manager-timeout 60 --param-file /tmp/mur_launch_sim/mur620c_mur_controllers.yaml --ros-args
+420742 /opt/ros/jazzy/lib/nav2_amcl/amcl --ros-args -r __node:=amcl -r __ns:=/mur620c --params-file /tmp/launch_params_8jn02uv4
+420743 /opt/ros/jazzy/lib/nav2_lifecycle_manager/lifecycle_manager --ros-args -r __node:=lifecycle_manager_localization -r __ns:=/mur620c --params-file /tmp/launch_params_8anhd_nr
+420975 /opt/ros/jazzy/lib/robot_state_publisher/robot_state_publisher --ros-args -r __node:=mur620d_rsp -r __ns:=/mur620d --params-file /tmp/launch_params_5zz65l2u --params-file /tmp/launch_params_a8e53lru --params-file /tmp/launch_params_b58zn94z
+420976 /opt/ros/jazzy/lib/robot_state_publisher/robot_state_publisher --ros-args -r __node:=mur620d_global_rsp --params-file /tmp/launch_params_2q8j45lq --params-file /tmp/launch_params_5snid_e2 --params-file /tmp/launch_params_6u7ak8hf -r /tf:=unused_tf -r /tf_static:=unused_tf_static
+420992 /opt/ros/jazzy/lib/ros_gz_bridge/parameter_bridge /mur620d/f_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan /mur620d/b_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan --ros-args -r __node:=mur620d_lidar_bridge -r /mur620d/f_scan:=/mur620d/f_scan_raw -r /mur620d/b_scan:=/mur620d/b_scan_raw
+421009 /home/rosmatch/colcon_ws/install/ira_laser_tools/lib/ira_laser_tools/laserscan_multi_merger --ros-args -r __node:=mur620d_laser_scan_merger --params-file /tmp/launch_params_6j84p49x
+421215 /usr/bin/python3 /opt/ros/jazzy/lib/controller_manager/spawner joint_state_broadcaster --controller-manager /mur620d/controller_manager --controller-manager-timeout 60 --param-file /tmp/mur_launch_sim/mur620d_mur_controllers.yaml --ros-args
+421216 /usr/bin/python3 /opt/ros/jazzy/lib/controller_manager/spawner mobile_base_controller --controller-manager /mur620d/controller_manager --controller-manager-timeout 60 --param-file /tmp/mur_launch_sim/mur620d_mur_controllers.yaml --ros-args
+421217 /usr/bin/python3 /opt/ros/jazzy/lib/controller_manager/spawner lift_controller_l --controller-manager /mur620d/controller_manager --controller-manager-timeout 60 --param-file /tmp/mur_launch_sim/mur620d_mur_controllers.yaml --inactive --ros-args
+421218 /usr/bin/python3 /opt/ros/jazzy/lib/controller_manager/spawner lift_controller_r --controller-manager /mur620d/controller_manager --controller-manager-timeout 60 --param-file /tmp/mur_launch_sim/mur620d_mur_controllers.yaml --inactive --ros-args
+421220 /usr/bin/python3 /opt/ros/jazzy/lib/controller_manager/spawner lift_effort_controller_r --controller-manager /mur620d/controller_manager --controller-manager-timeout 60 --param-file /tmp/mur_launch_sim/mur620d_mur_controllers.yaml --ros-args
+421362 /opt/ros/jazzy/lib/nav2_amcl/amcl --ros-args -r __node:=amcl -r __ns:=/mur620d --params-file /tmp/launch_params_2gcdd0w5
+421363 /opt/ros/jazzy/lib/nav2_lifecycle_manager/lifecycle_manager --ros-args -r __node:=lifecycle_manager_localization -r __ns:=/mur620d --params-file /tmp/launch_params_7pqcu3g7
+
+ 418838  418781  117  6.4       00:32 gz sim server
+ 418839  418781 65.2  4.0       00:32 gz sim gui
+ 418778  418753 11.3  0.2       00:33 /opt/ros/jazzy/lib/ros_gz_bridge/parameter_bridge /clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock --ros-args -r __node:=clock_bridge
+ 421362  418753 10.2  0.2       00:06 /opt/ros/jazzy/lib/nav2_amcl/amcl --ros-args -r __node:=amcl -r __ns:=/mur620d --params-file /tmp/launch_params_2gcdd0w5
+ 420122  418753  9.1  0.3       00:22 /opt/ros/jazzy/lib/nav2_amcl/amcl --ros-args -r __node:=amcl -r __ns:=/mur620b --params-file /tmp/launch_params_10gkgsoc
+ 420385  418753  8.8  0.1       00:16 /home/rosmatch/colcon_ws/install/ira_laser_tools/lib/ira_laser_tools/laserscan_multi_merger --ros-args -r __node:=mur620c_laser_scan_merger --params-file /tmp/launch_params_cr7cmruy
+ 421009  418753  8.6  0.1       00:08 /home/rosmatch/colcon_ws/install/ira_laser_tools/lib/ira_laser_tools/laserscan_multi_merger --ros-args -r __node:=mur620d_laser_scan_merger --params-file /tmp/launch_params_6j84p49x
+ 419744  418753  8.4  0.1       00:24 /home/rosmatch/colcon_ws/install/ira_laser_tools/lib/ira_laser_tools/laserscan_multi_merger --ros-args -r __node:=mur620b_laser_scan_merger --params-file /tmp/launch_params__b5qgfi6
+ 420742  418753  8.4  0.2       00:14 /opt/ros/jazzy/lib/nav2_amcl/amcl --ros-args -r __node:=amcl -r __ns:=/mur620c --params-file /tmp/launch_params_8jn02uv4
+ 419357  418753  8.0  0.3       00:30 /opt/ros/jazzy/lib/nav2_amcl/amcl --ros-args -r __node:=amcl -r __ns:=/mur620a --params-file /tmp/launch_params_lvyqq03n
+ 418866  418753  7.5  0.1       00:32 /home/rosmatch/colcon_ws/install/ira_laser_tools/lib/ira_laser_tools/laserscan_multi_merger --ros-args -r __node:=mur620a_laser_scan_merger --params-file /tmp/launch_params_dd1ea4ad
+ 420975  418753  7.4  0.1       00:08 /opt/ros/jazzy/lib/robot_state_publisher/robot_state_publisher --ros-args -r __node:=mur620d_rsp -r __ns:=/mur620d --params-file /tmp/launch_params_5zz65l2u --params-file /tmp/launch_params_a8e53lru --params-file /tmp/launch_params_b58zn94z
+ 420992  418753  7.1  0.2       00:08 /opt/ros/jazzy/lib/ros_gz_bridge/parameter_bridge /mur620d/f_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan /mur620d/b_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan --ros-args -r __node:=mur620d_lidar_bridge -r /mur620d/f_scan:=/mur620d/f_scan_raw -r /mur620d/b_scan:=/mur620d/b_scan_raw
+ 420378  418753  7.0  0.1       00:16 /opt/ros/jazzy/lib/robot_state_publisher/robot_state_publisher --ros-args -r __node:=mur620c_global_rsp --params-file /tmp/launch_params_z_7w05ft --params-file /tmp/launch_params_w8yu3qnz --params-file /tmp/launch_params_s1mxv3xe -r /tf:=unused_tf -r /tf_static:=unused_tf_static
+ 420377  418753  6.9  0.1       00:16 /opt/ros/jazzy/lib/robot_state_publisher/robot_state_publisher --ros-args -r __node:=mur620c_rsp -r __ns:=/mur620c --params-file /tmp/launch_params_sz6mxl7a --params-file /tmp/launch_params_lritcfx0 --params-file /tmp/launch_params_mk4lv6n_
+ 420976  418753  6.9  0.1       00:08 /opt/ros/jazzy/lib/robot_state_publisher/robot_state_publisher --ros-args -r __node:=mur620d_global_rsp --params-file /tmp/launch_params_2q8j45lq --params-file /tmp/launch_params_5snid_e2 --params-file /tmp/launch_params_6u7ak8hf -r /tf:=unused_tf -r /tf_static:=unused_tf_static
+ 419736  418753  6.7  0.1       00:24 /opt/ros/jazzy/lib/robot_state_publisher/robot_state_publisher --ros-args -r __node:=mur620b_rsp -r __ns:=/mur620b --params-file /tmp/launch_params_ztwau8ku --params-file /tmp/launch_params_i2r4h8yp --params-file /tmp/launch_params_ji6qb27a
+ 419737  418753  6.3  0.1       00:24 /opt/ros/jazzy/lib/robot_state_publisher/robot_state_publisher --ros-args -r __node:=mur620b_global_rsp --params-file /tmp/launch_params_37j6chhy --params-file /tmp/launch_params_9vra_0e6 --params-file /tmp/launch_params_p_25a3ni -r /tf:=unused_tf -r /tf_static:=unused_tf_static
+ 420382  418753  6.2  0.2       00:16 /opt/ros/jazzy/lib/ros_gz_bridge/parameter_bridge /mur620c/f_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan /mur620c/b_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan --ros-args -r __node:=mur620c_lidar_bridge -r /mur620c/f_scan:=/mur620c/f_scan_raw -r /mur620c/b_scan:=/mur620c/b_scan_raw
+ 418779  418753  6.1  0.2       00:33 /opt/ros/jazzy/lib/nav2_map_server/map_server --ros-args -r __node:=map_server --params-file /tmp/launch_params_aox5s9ub
+ 418857  418753  5.7  0.1       00:32 /opt/ros/jazzy/lib/robot_state_publisher/robot_state_publisher --ros-args -r __node:=mur620a_rsp -r __ns:=/mur620a --params-file /tmp/launch_params_vewdrf5a --params-file /tmp/launch_params_ovzt0lgg --params-file /tmp/launch_params_u7530z3a
+ 419741  418753  5.7  0.2       00:24 /opt/ros/jazzy/lib/ros_gz_bridge/parameter_bridge /mur620b/f_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan /mur620b/b_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan --ros-args -r __node:=mur620b_lidar_bridge -r /mur620b/f_scan:=/mur620b/f_scan_raw -r /mur620b/b_scan:=/mur620b/b_scan_raw
+ 418858  418753  5.5  0.1       00:32 /opt/ros/jazzy/lib/robot_state_publisher/robot_state_publisher --ros-args -r __node:=mur620a_global_rsp --params-file /tmp/launch_params_acazish9 --params-file /tmp/launch_params_ielpo7z_ --params-file /tmp/launch_params_w9xslsda -r /tf:=unused_tf -r /tf_static:=unused_tf_static
+ 418863  418753  5.0  0.2       00:32 /opt/ros/jazzy/lib/ros_gz_bridge/parameter_bridge /mur620a/f_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan /mur620a/b_scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan --ros-args -r __node:=mur620a_lidar_bridge -r /mur620a/f_scan:=/mur620a/f_scan_raw -r /mur620a/b_scan:=/mur620a/b_scan_raw
+ 421220  418753  3.3  0.1       00:08 /usr/bin/python3 /opt/ros/jazzy/lib/controller_manager/spawner lift_effort_controller_r --controller-manager /mur620d/controller_manager --controller-manager-timeout 60 --param-file /tmp/mur_launch_sim/mur620d_mur_controllers.yaml --ros-args
+ 421215  418753  3.1  0.1       00:08 /usr/bin/python3 /opt/ros/jazzy/lib/controller_manager/spawner joint_state_broadcaster --controller-manager /mur620d/controller_manager --controller-manager-timeout 60 --param-file /tmp/mur_launch_sim/mur620d_mur_controllers.yaml --ros-args
+ 421216  418753  3.1  0.1       00:08 /usr/bin/python3 /opt/ros/jazzy/lib/controller_manager/spawner mobile_base_controller --controller-manager /mur620d/controller_manager --controller-manager-timeout 60 --param-file /tmp/mur_launch_sim/mur620d_mur_controllers.yaml --ros-args
+ 421217  418753  3.1  0.1       00:08 /usr/bin/python3 /opt/ros/jazzy/lib/controller_manager/spawner lift_controller_l --controller-manager /mur620d/controller_manager --controller-manager-timeout 60 --param-file /tmp/mur_launch_sim/mur620d_mur_controllers.yaml --inactive --ros-args
+ 421218  418753  3.0  0.1       00:08 /usr/bin/python3 /opt/ros/jazzy/lib/controller_manager/spawner lift_controller_r --controller-manager /mur620d/controller_manager --controller-manager-timeout 60 --param-file /tmp/mur_launch_sim/mur620d_mur_controllers.yaml --inactive --ros-args
+ 420613  418753  2.3  0.2       00:16 /usr/bin/python3 /opt/ros/jazzy/lib/controller_manager/spawner mobile_base_controller --controller-manager /mur620c/controller_manager --controller-manager-timeout 60 --param-file /tmp/mur_launch_sim/mur620c_mur_controllers.yaml --ros-args
+ 420612  418753  1.6  0.1       00:16 /usr/bin/python3 /opt/ros/jazzy/lib/controller_manager/spawner joint_state_broadcaster --controller-manager /mur620c/controller_manager --controller-manager-timeout 60 --param-file /tmp/mur_launch_sim/mur620c_mur_controllers.yaml --ros-args
+ 420614  418753  1.6  0.1       00:16 /usr/bin/python3 /opt/ros/jazzy/lib/controller_manager/spawner lift_controller_l --controller-manager /mur620c/controller_manager --controller-manager-timeout 60 --param-file /tmp/mur_launch_sim/mur620c_mur_controllers.yaml --inactive --ros-args
+ 420615  418753  1.6  0.1       00:16 /usr/bin/python3 /opt/ros/jazzy/lib/controller_manager/spawner lift_controller_r --controller-manager /mur620c/controller_manager --controller-manager-timeout 60 --param-file /tmp/mur_launch_sim/mur620c_mur_controllers.yaml --inactive --ros-args
+ 420616  418753  1.6  0.1       00:16 /usr/bin/python3 /opt/ros/jazzy/lib/controller_manager/spawner lift_effort_controller_l --controller-manager /mur620c/controller_manager --controller-manager-timeout 60 --param-file /tmp/mur_launch_sim/mur620c_mur_controllers.yaml --ros-args
+ 420617  418753  1.6  0.1       00:16 /usr/bin/python3 /opt/ros/jazzy/lib/controller_manager/spawner lift_effort_controller_r --controller-manager /mur620c/controller_manager --controller-manager-timeout 60 --param-file /tmp/mur_launch_sim/mur620c_mur_controllers.yaml --ros-args
+ 419973  418753  1.1  0.1       00:24 /usr/bin/python3 /opt/ros/jazzy/lib/controller_manager/spawner lift_controller_l --controller-manager /mur620b/controller_manager --controller-manager-timeout 60 --param-file /tmp/mur_launch_sim/mur620b_mur_controllers.yaml --inactive --ros-args
+ 419974  418753  1.1  0.1       00:24 /usr/bin/python3 /opt/ros/jazzy/lib/controller_manager/spawner lift_controller_r --controller-manager /mur620b/controller_manager --controller-manager-timeout 60 --param-file /tmp/mur_launch_sim/mur620b_mur_controllers.yaml --inactive --ros-args
+ 419975  418753  1.1  0.1       00:24 /usr/bin/python3 /opt/ros/jazzy/lib/controller_manager/spawner lift_effort_controller_l --controller-manager /mur620b/controller_manager --controller-manager-timeout 60 --param-file /tmp/mur_launch_sim/mur620b_mur_controllers.yaml --ros-args
+ 419976  418753  1.1  0.1       00:24 /usr/bin/python3 /opt/ros/jazzy/lib/controller_manager/spawner lift_effort_controller_r --controller-manager /mur620b/controller_manager --controller-manager-timeout 60 --param-file /tmp/mur_launch_sim/mur620b_mur_controllers.yaml --ros-args
+ 418781  418777  0.1  0.1       00:33 gz sim scale.world -v 4 -r
+
+== Core Graph ==
+
+$ ros2 node list --no-daemon
+/map_server
+/mur620a/controller_manager
+/mur620a/gz_ros_control
+/mur620a/joint_state_broadcaster
+/mur620a/lifecycle_manager_localization
+/mur620a/lift_controller_l
+/mur620a/lift_controller_r
+/mur620a/lift_effort_controller_l
+/mur620a/lift_effort_controller_r
+/mur620a/mobile_base_controller
+/mur620a_lift_effort_position_controller_l
+/mur620b/controller_manager
+/mur620b/gz_ros_control
+/mur620b/joint_state_broadcaster
+/mur620b/mobile_base_controller
+/mur620c/controller_manager
+/mur620c/gz_ros_control
+/mur620d/controller_manager
+/mur620d/gz_ros_control
+/mur620d/lift_effort_controller_l
+
+$ ros2 topic list --no-daemon
+/bond
+/clock
+/diagnostics
+/joint_states
+/map
+/mur620a/amcl/transition_event
+/mur620a/amcl_pose
+/mur620a/b_scan
+/mur620a/b_scan_raw
+/mur620a/bond
+/mur620a/controller_manager/activity
+/mur620a/controller_manager/introspection_data/full
+/mur620a/controller_manager/introspection_data/names
+/mur620a/controller_manager/introspection_data/values
+/mur620a/controller_manager/statistics/full
+/mur620a/controller_manager/statistics/names
+/mur620a/controller_manager/statistics/values
+/mur620a/dynamic_joint_states
+/mur620a/f_scan
+/mur620a/f_scan_raw
+/mur620a/ground_truth/odom
+/mur620a/ground_truth/pose
+/mur620a/joint_state_broadcaster/transition_event
+/mur620a/joint_states
+/mur620a/lift_controller_l/commands
+/mur620a/lift_controller_l/transition_event
+/mur620a/lift_controller_r/commands
+/mur620a/lift_controller_r/transition_event
+/mur620a/lift_effort_controller_l/commands
+/mur620a/lift_effort_controller_l/transition_event
+/mur620a/lift_effort_controller_r/commands
+/mur620a/lift_effort_controller_r/transition_event
+/mur620a/mobile_base_controller/cmd_vel
+/mur620a/mobile_base_controller/odom
+/mur620a/mobile_base_controller/transition_event
+/mur620a/particle_cloud
+/mur620a/robot_description
+/mur620a/scan
+/mur620a/scan_cloud
+/mur620a/scan_merged_raw
+/mur620b/amcl/transition_event
+/mur620b/amcl_pose
+/mur620b/b_scan
+/mur620b/b_scan_raw
+/mur620b/bond
+/mur620b/controller_manager/activity
+/mur620b/dynamic_joint_states
+/mur620b/f_scan
+/mur620b/f_scan_raw
+/mur620b/initialpose
+/mur620b/joint_state_broadcaster/transition_event
+/mur620b/joint_states
+/mur620b/lift_controller_l/commands
+/mur620b/lift_controller_r/commands
+/mur620b/lift_effort_controller_l/commands
+/mur620b/mobile_base_controller/cmd_vel
+/mur620b/mobile_base_controller/odom
+/mur620b/mobile_base_controller/transition_event
+/mur620b/particle_cloud
+/mur620b/robot_description
+/mur620b/scan
+/mur620b/scan_cloud
+/mur620b/scan_merged_raw
+/mur620c/amcl/transition_event
+/mur620c/amcl_pose
+/mur620c/b_scan
+/mur620c/b_scan_raw
+/mur620c/bond
+/mur620c/controller_manager/activity
+/mur620c/f_scan
+/mur620c/f_scan_raw
+/mur620c/joint_states
+/mur620c/lift_controller_l/commands
+/mur620c/lift_effort_controller_l/commands
+/mur620c/mobile_base_controller/cmd_vel
+/mur620c/mobile_base_controller/odom
+/mur620c/mobile_base_controller/transition_event
+/mur620c/particle_cloud
+/mur620c/robot_description
+/mur620c/scan_cloud
+/mur620c/scan_merged_raw
+/mur620d/amcl/transition_event
+/mur620d/amcl_pose
+/mur620d/b_scan
+/mur620d/b_scan_raw
+/mur620d/bond
+/mur620d/controller_manager/activity
+/mur620d/f_scan
+/mur620d/f_scan_raw
+/mur620d/ground_truth/odom
+/mur620d/ground_truth/pose
+/mur620d/initialpose
+/mur620d/joint_states
+/mur620d/lift_controller_l/commands
+/mur620d/lift_effort_controller_l/commands
+/mur620d/lift_effort_controller_l/transition_event
+/mur620d/lift_effort_controller_r/commands
+/mur620d/particle_cloud
+/mur620d/robot_description
+/mur620d/scan
+/mur620d/scan_cloud
+/mur620d/scan_merged_raw
+/parameter_events
+/robot_description
+/rosout
+/tf
+/tf_static
+/unused_tf
+/unused_tf_static
+
+== Clock ==
+
+$ ros2 topic info /clock --verbose
+Type: rosgraph_msgs/msg/Clock
+
+Publisher count: 1
+
+Node name: clock_bridge
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: PUBLISHER
+GID: 01.0f.f6.e2.da.63.f6.53.00.00.00.00.00.00.14.03
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Subscription count: 64
+
+Node name: controller_manager
+Node namespace: /mur620a
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.16.64.7c.5e.00.00.00.00.00.00.22.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: lift_effort_controller_l
+Node namespace: /mur620a
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.16.64.7c.5e.00.00.00.00.00.00.57.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: lift_controller_r
+Node namespace: /mur620a
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.16.64.7c.5e.00.00.00.00.00.00.6f.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: controller_manager
+Node namespace: /mur620b
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.16.64.7c.5e.00.00.00.00.00.00.98.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: lift_controller_l
+Node namespace: /mur620a
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.16.64.7c.5e.00.00.00.00.00.00.b1.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mobile_base_controller
+Node namespace: /mur620a
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.16.64.7c.5e.00.00.00.00.00.00.df.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: controller_manager
+Node namespace: /mur620c
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.16.64.7c.5e.00.00.00.00.00.01.0a.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: lift_effort_controller_r
+Node namespace: /mur620a
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.16.64.7c.5e.00.00.00.00.00.01.23.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: joint_state_broadcaster
+Node namespace: /mur620a
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.16.64.7c.5e.00.00.00.00.00.01.51.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: joint_state_broadcaster
+Node namespace: /mur620b
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.16.64.7c.5e.00.00.00.00.00.01.6a.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: controller_manager
+Node namespace: /mur620d
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.16.64.7c.5e.00.00.00.00.00.01.94.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mobile_base_controller
+Node namespace: /mur620b
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.16.64.7c.5e.00.00.00.00.00.01.ad.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: lift_effort_controller_l
+Node namespace: /mur620d
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.16.64.7c.5e.00.00.00.00.00.01.dd.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mobile_base_controller
+Node namespace: /mur620c
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.16.64.7c.5e.00.00.00.00.00.01.f5.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620c_ground_truth
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.18.6a.12.bc.00.00.00.00.00.00.11.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620c_rsp
+Node namespace: /mur620c
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.19.6a.f6.f6.00.00.00.00.00.00.11.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: amcl
+Node namespace: /mur620b
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.1a.69.f1.08.00.00.00.00.00.00.11.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620c_global_rsp
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.1a.6a.8a.78.00.00.00.00.00.00.11.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: lifecycle_manager_localization
+Node namespace: /mur620b
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.1b.69.9c.5a.00.00.00.00.00.00.11.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620c_lift_effort_position_controller_l
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.1c.6a.f9.a4.00.00.00.00.00.00.05.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: amcl
+Node namespace: /mur620a
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.1d.66.5e.e2.00.00.00.00.00.00.11.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620c_lift_effort_position_controller_r
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.1d.6a.59.a5.00.00.00.00.00.00.05.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: lifecycle_manager_localization
+Node namespace: /mur620a
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.1e.66.d6.0f.00.00.00.00.00.00.11.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620c_front_scan_frame
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.1f.6a.50.8d.00.00.00.00.00.00.05.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620c_back_scan_frame
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.20.6a.6a.b9.00.00.00.00.00.00.05.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620c_laser_scan_merger
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.21.6a.ab.fd.00.00.00.00.00.00.11.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: transform_listener_impl_58c86549c160
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.21.6a.ab.fd.00.00.00.00.00.00.16.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620c_merged_scan_frame
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.22.6a.78.02.00.00.00.00.00.00.05.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620a_ground_truth
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.28.64.4c.b4.00.00.00.00.00.00.11.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620a_rsp
+Node namespace: /mur620a
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.29.64.55.f8.00.00.00.00.00.00.11.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620a_global_rsp
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.2a.64.71.11.00.00.00.00.00.00.11.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620a_lift_effort_position_controller_l
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.2d.64.6c.79.00.00.00.00.00.00.05.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620a_lift_effort_position_controller_r
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.2e.64.b9.19.00.00.00.00.00.00.05.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620a_front_scan_frame
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.30.64.d9.01.00.00.00.00.00.00.05.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620a_back_scan_frame
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.31.64.d1.ab.00.00.00.00.00.00.05.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620a_laser_scan_merger
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.32.64.f8.9a.00.00.00.00.00.00.11.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: transform_listener_impl_569de0752550
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.32.64.f8.9a.00.00.00.00.00.00.16.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620a_merged_scan_frame
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.33.64.ad.6a.00.00.00.00.00.00.05.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620d_ground_truth
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.6e.6c.57.21.00.00.00.00.00.00.11.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620d_rsp
+Node namespace: /mur620d
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.6f.6c.a8.e2.00.00.00.00.00.00.11.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620d_global_rsp
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.70.6c.4d.4d.00.00.00.00.00.00.11.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620d_lift_effort_position_controller_l
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.7d.6c.8c.94.00.00.00.00.00.00.05.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620d_lift_effort_position_controller_r
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.7f.6c.26.b4.00.00.00.00.00.00.05.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620d_front_scan_frame
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.81.6c.13.50.00.00.00.00.00.00.05.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: amcl
+Node namespace: /mur620c
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.86.6b.a5.0c.00.00.00.00.00.00.11.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620d_back_scan_frame
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.86.6c.41.fa.00.00.00.00.00.00.05.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: lifecycle_manager_localization
+Node namespace: /mur620c
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.87.6b.ae.eb.00.00.00.00.00.00.11.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620d_laser_scan_merger
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.91.6c.ac.f6.00.00.00.00.00.00.11.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: transform_listener_impl_5c004a2d1480
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.91.6c.ac.f6.00.00.00.00.00.00.16.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620d_merged_scan_frame
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.94.6c.57.e1.00.00.00.00.00.00.05.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620b_ground_truth
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.97.67.0f.b0.00.00.00.00.00.00.11.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620b_rsp
+Node namespace: /mur620b
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.98.67.bb.99.00.00.00.00.00.00.11.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620b_global_rsp
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.99.67.1f.1b.00.00.00.00.00.00.11.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620b_lift_effort_position_controller_l
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.9b.67.f1.0d.00.00.00.00.00.00.05.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620b_lift_effort_position_controller_r
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.9c.67.a0.ad.00.00.00.00.00.00.05.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620b_front_scan_frame
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.9e.67.db.1e.00.00.00.00.00.00.05.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620b_back_scan_frame
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.9f.67.aa.ea.00.00.00.00.00.00.05.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620b_laser_scan_merger
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.a0.67.e2.2b.00.00.00.00.00.00.11.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: transform_listener_impl_5bdd45b65640
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.a0.67.e2.2b.00.00.00.00.00.00.16.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620b_merged_scan_frame
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.a1.67.3f.37.00.00.00.00.00.00.05.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: map_server
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.db.63.24.f1.00.00.00.00.00.00.11.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: lifecycle_manager_map
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.de.63.18.e0.00.00.00.00.00.00.11.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: amcl
+Node namespace: /mur620d
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.f2.6d.10.df.00.00.00.00.00.00.11.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: lifecycle_manager_localization
+Node namespace: /mur620d
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.f3.6d.91.d0.00.00.00.00.00.00.11.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+-- /clock sample
+A message was lost!!!
+	total count change:1
+	total count: 1---
+A message was lost!!!
+	total count change:1
+	total count: 2---
+A message was lost!!!
+	total count change:1
+	total count: 3---
+A message was lost!!!
+	total count change:1
+	total count: 4---
+A message was lost!!!
+	total count change:1
+	total count: 5---
+A message was lost!!!
+	total count change:1
+	total count: 6---
+A message was lost!!!
+	total count change:1
+	total count: 7---
+clock:
+  sec: 17
+  nanosec: 631000000
+---
+
+== Map ==
+
+$ ros2 lifecycle get /map_server
+active [3]
+
+$ ros2 topic info /map --verbose
+Type: nav_msgs/msg/OccupancyGrid
+
+Publisher count: 1
+
+Node name: map_server
+Node namespace: /
+Topic type: nav_msgs/msg/OccupancyGrid
+Topic type hash: RIHS01_8d348150c12913a31ee0ec170fbf25089e4745d17035792a1ba94d6f0bc0cfc7
+Endpoint type: PUBLISHER
+GID: 01.0f.f6.e2.db.63.24.f1.00.00.00.00.00.00.22.03
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: TRANSIENT_LOCAL
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Subscription count: 4
+
+Node name: amcl
+Node namespace: /mur620b
+Topic type: nav_msgs/msg/OccupancyGrid
+Topic type hash: RIHS01_8d348150c12913a31ee0ec170fbf25089e4745d17035792a1ba94d6f0bc0cfc7
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.1a.69.f1.08.00.00.00.00.00.00.27.04
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: TRANSIENT_LOCAL
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: amcl
+Node namespace: /mur620a
+Topic type: nav_msgs/msg/OccupancyGrid
+Topic type hash: RIHS01_8d348150c12913a31ee0ec170fbf25089e4745d17035792a1ba94d6f0bc0cfc7
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.1d.66.5e.e2.00.00.00.00.00.00.27.04
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: TRANSIENT_LOCAL
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: amcl
+Node namespace: /mur620c
+Topic type: nav_msgs/msg/OccupancyGrid
+Topic type hash: RIHS01_8d348150c12913a31ee0ec170fbf25089e4745d17035792a1ba94d6f0bc0cfc7
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.86.6b.a5.0c.00.00.00.00.00.00.27.04
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: TRANSIENT_LOCAL
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: amcl
+Node namespace: /mur620d
+Topic type: nav_msgs/msg/OccupancyGrid
+Topic type hash: RIHS01_8d348150c12913a31ee0ec170fbf25089e4745d17035792a1ba94d6f0bc0cfc7
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.f2.6d.10.df.00.00.00.00.00.00.27.04
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: TRANSIENT_LOCAL
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+-- /map metadata sample, transient local
+
+== RViz Hints ==
+RViz Fixed Frame should be: map
+RViz Map display topic should be: /map
+If /map has a publisher but no map appears, set Map display QoS Durability to Transient Local.
+For performance, avoid enabling four RobotModel displays with full visual meshes at once.
+
+== Robot mur620a ==
+-- Nodes
+-- Controllers
+[INFO] [1779280879.631320302] [_ros2cli_422605]: waiting for service /mur620a/controller_manager/list_controllers to become available...
+joint_state_broadcaster  joint_state_broadcaster/JointStateBroadcaster      active  
+lift_effort_controller_r effort_controllers/JointGroupEffortController      active  
+mobile_base_controller   diff_drive_controller/DiffDriveController          active  
+lift_controller_l        position_controllers/JointGroupPositionController  inactive
+lift_controller_r        position_controllers/JointGroupPositionController  inactive
+lift_effort_controller_l effort_controllers/JointGroupEffortController      active  
+-- Topics
+/mur620a/b_scan
+/mur620a/b_scan_raw
+/mur620a/f_scan
+/mur620a/f_scan_raw
+/mur620a/joint_states
+/mur620a/scan
+/mur620a/scan_merged_raw
+-- AMCL lifecycle
+
+$ ros2 lifecycle get /mur620a/amcl
+active [3]
+
+$ ros2 param get /mur620a/amcl map_topic
+String value is: /map
+
+$ ros2 param get /mur620a/amcl scan_topic
+String value is: /mur620a/scan
+
+$ ros2 param get /mur620a/amcl odom_frame_id
+String value is: mur620a/odom
+
+$ ros2 param get /mur620a/amcl base_frame_id
+String value is: mur620a/base_footprint
+-- TF map -> mur620a/odom
+[INFO] [1779280893.244302361] [tf2_echo]: Waiting for transform map ->  mur620a/odom: Invalid frame ID "map" passed to canTransform argument target_frame - frame does not exist
+[INFO] [1779280895.145110770] [tf2_echo]: Waiting for transform map ->  mur620a/odom: Invalid frame ID "mur620a/odom" passed to canTransform argument source_frame - frame does not exist
+At time 37.980000000
+- Translation: [44.000, 44.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, -0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, 0.000, -0.000]
+- Rotation: in RPY (degree) [0.000, 0.000, -0.000]
+- Matrix:
+  1.000  0.000  0.000 44.000
+ -0.000  1.000 -0.000 44.000
+ -0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 38.620000000
+- Translation: [44.000, 44.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, -0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, 0.000, -0.000]
+- Rotation: in RPY (degree) [0.000, 0.000, -0.000]
+- Matrix:
+  1.000  0.000  0.000 44.000
+ -0.000  1.000 -0.000 44.000
+ -0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 39.260000000
+- Translation: [44.000, 44.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, -0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, 0.000, -0.000]
+- Rotation: in RPY (degree) [0.000, 0.000, -0.000]
+- Matrix:
+  1.000  0.000  0.000 44.000
+ -0.000  1.000 -0.000 44.000
+ -0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 39.900000000
+- Translation: [44.000, 44.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, -0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, 0.000, -0.000]
+- Rotation: in RPY (degree) [0.000, 0.000, -0.000]
+- Matrix:
+  1.000  0.000  0.000 44.000
+ -0.000  1.000 -0.000 44.000
+ -0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+[INFO] [1779280899.942642565] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+-- TF mur620a/odom -> mur620a/base_footprint
+[INFO] [1779280900.202215687] [tf2_echo]: Waiting for transform mur620a/odom ->  mur620a/base_footprint: Invalid frame ID "mur620a/odom" passed to canTransform argument target_frame - frame does not exist
+At time 40.960000000
+- Translation: [-0.000, -0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, -0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, 0.000, -0.000]
+- Rotation: in RPY (degree) [0.000, 0.000, -0.000]
+- Matrix:
+  1.000  0.000  0.000 -0.000
+ -0.000  1.000 -0.000 -0.000
+ -0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 41.350000000
+- Translation: [-0.000, -0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000 -0.000  0.000 -0.000
+  0.000  1.000  0.000 -0.000
+  0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 41.640000000
+- Translation: [-0.000, -0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000 -0.000  0.000 -0.000
+  0.000  1.000  0.000 -0.000
+  0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 41.930000000
+- Translation: [-0.000, -0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000 -0.000  0.000 -0.000
+  0.000  1.000  0.000 -0.000
+  0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 42.220000000
+- Translation: [-0.000, -0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000 -0.000  0.000 -0.000
+  0.000  1.000  0.000 -0.000
+  0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 42.520000000
+- Translation: [-0.000, -0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000 -0.000  0.000 -0.000
+  0.000  1.000  0.000 -0.000
+  0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+[INFO] [1779280906.946214227] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+-- Scan info
+
+$ ros2 topic info /mur620a/scan --verbose
+Type: sensor_msgs/msg/LaserScan
+
+Publisher count: 1
+
+Node name: mur620a_merged_scan_frame
+Node namespace: /
+Topic type: sensor_msgs/msg/LaserScan
+Topic type hash: RIHS01_64c191398013af96509d518dac71d5164f9382553fce5c1f8cca5be7924bd828
+Endpoint type: PUBLISHER
+GID: 01.0f.f6.e2.33.64.ad.6a.00.00.00.00.00.00.14.03
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Subscription count: 1
+
+Node name: amcl
+Node namespace: /mur620a
+Topic type: sensor_msgs/msg/LaserScan
+Topic type hash: RIHS01_64c191398013af96509d518dac71d5164f9382553fce5c1f8cca5be7924bd828
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.1d.66.5e.e2.00.00.00.00.00.00.23.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+-- /mur620a/scan header sample
+stamp:
+  sec: 43
+  nanosec: 120000000
+frame_id: mur620a/base_footprint
+---
+-- Odom sample
+stamp:
+  sec: 43
+  nanosec: 920000000
+frame_id: mur620a/odom
+---
+-- Robot description size
+robot_description chars: 42614
+
+== Robot mur620b ==
+-- Nodes
+/mur620b/amcl
+/mur620b/lifecycle_manager_localization
+/mur620b/mur620b_rsp
+/mur620b_front_scan_frame
+-- Controllers
+lift_controller_l        position_controllers/JointGroupPositionController  inactive
+lift_effort_controller_l effort_controllers/JointGroupEffortController      active  
+lift_controller_r        position_controllers/JointGroupPositionController  inactive
+lift_effort_controller_r effort_controllers/JointGroupEffortController      active  
+mobile_base_controller   diff_drive_controller/DiffDriveController          active  
+joint_state_broadcaster  joint_state_broadcaster/JointStateBroadcaster      active  
+-- Topics
+/mur620b/f_scan
+/mur620b/joint_states
+/mur620b/mobile_base_controller/odom
+/mur620b/scan_merged_raw
+-- AMCL lifecycle
+
+$ ros2 lifecycle get /mur620b/amcl
+active [3]
+
+$ ros2 param get /mur620b/amcl map_topic
+String value is: /map
+
+$ ros2 param get /mur620b/amcl scan_topic
+String value is: /mur620b/scan
+
+$ ros2 param get /mur620b/amcl odom_frame_id
+String value is: mur620b/odom
+
+$ ros2 param get /mur620b/amcl base_frame_id
+String value is: mur620b/base_footprint
+-- TF map -> mur620b/odom
+[INFO] [1779280927.260305332] [tf2_echo]: Waiting for transform map ->  mur620b/odom: Invalid frame ID "map" passed to canTransform argument target_frame - frame does not exist
+At time 49.340000000
+- Translation: [46.000, 44.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, -0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, 0.000, -0.000]
+- Rotation: in RPY (degree) [0.000, 0.000, -0.000]
+- Matrix:
+  1.000  0.000  0.000 46.000
+ -0.000  1.000 -0.000 44.000
+ -0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 49.660000000
+- Translation: [46.000, 44.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, -0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, 0.000, -0.000]
+- Rotation: in RPY (degree) [0.000, 0.000, -0.000]
+- Matrix:
+  1.000  0.000  0.000 46.000
+ -0.000  1.000 -0.000 44.000
+ -0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 49.980000000
+- Translation: [46.000, 44.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, -0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, 0.000, -0.000]
+- Rotation: in RPY (degree) [0.000, 0.000, -0.000]
+- Matrix:
+  1.000  0.000  0.000 46.000
+ -0.000  1.000 -0.000 44.000
+ -0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 50.300000000
+- Translation: [46.000, 44.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, -0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, 0.000, -0.000]
+- Rotation: in RPY (degree) [0.000, 0.000, -0.000]
+- Matrix:
+  1.000  0.000  0.000 46.000
+ -0.000  1.000 -0.000 44.000
+ -0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 50.460000000
+- Translation: [46.000, 44.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, -0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, 0.000, -0.000]
+- Rotation: in RPY (degree) [0.000, 0.000, -0.000]
+- Matrix:
+  1.000  0.000  0.000 46.000
+ -0.000  1.000 -0.000 44.000
+ -0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+[INFO] [1779280934.089308411] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+-- TF mur620b/odom -> mur620b/base_footprint
+[INFO] [1779280934.280729669] [tf2_echo]: Waiting for transform mur620b/odom ->  mur620b/base_footprint: Invalid frame ID "mur620b/odom" passed to canTransform argument target_frame - frame does not exist
+At time 51.21000000
+- Translation: [-0.000, 0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000 -0.000  0.000 -0.000
+  0.000  1.000  0.000  0.000
+  0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 51.311000000
+- Translation: [-0.000, 0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, -0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, 0.000, -0.000]
+- Rotation: in RPY (degree) [0.000, 0.000, -0.000]
+- Matrix:
+  1.000  0.000  0.000 -0.000
+ -0.000  1.000 -0.000  0.000
+ -0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 51.621000000
+- Translation: [-0.000, 0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000 -0.000  0.000 -0.000
+  0.000  1.000  0.000  0.000
+  0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 51.911000000
+- Translation: [-0.000, 0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, -0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, 0.000, -0.000]
+- Rotation: in RPY (degree) [0.000, 0.000, -0.000]
+- Matrix:
+  1.000  0.000  0.000 -0.000
+ -0.000  1.000 -0.000  0.000
+ -0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 52.181000000
+- Translation: [-0.000, 0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000 -0.000  0.000 -0.000
+  0.000  1.000  0.000  0.000
+  0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 52.471000000
+- Translation: [-0.000, 0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000 -0.000  0.000 -0.000
+  0.000  1.000  0.000  0.000
+  0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+[INFO] [1779280941.092748225] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+-- Scan info
+
+$ ros2 topic info /mur620b/scan --verbose
+Type: sensor_msgs/msg/LaserScan
+
+Publisher count: 1
+
+Node name: mur620b_merged_scan_frame
+Node namespace: /
+Topic type: sensor_msgs/msg/LaserScan
+Topic type hash: RIHS01_64c191398013af96509d518dac71d5164f9382553fce5c1f8cca5be7924bd828
+Endpoint type: PUBLISHER
+GID: 01.0f.f6.e2.a1.67.3f.37.00.00.00.00.00.00.14.03
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Subscription count: 1
+
+Node name: amcl
+Node namespace: /mur620b
+Topic type: sensor_msgs/msg/LaserScan
+Topic type hash: RIHS01_64c191398013af96509d518dac71d5164f9382553fce5c1f8cca5be7924bd828
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.1a.69.f1.08.00.00.00.00.00.00.23.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+-- /mur620b/scan header sample
+stamp:
+  sec: 53
+  nanosec: 520000000
+frame_id: mur620b/base_footprint
+---
+-- Odom sample
+A message was lost!!!
+	total count change:1
+	total count: 1---
+stamp:
+  sec: 54
+  nanosec: 561000000
+frame_id: mur620b/odom
+---
+-- Robot description size
+robot_description chars: 42465
+
+== Robot mur620c ==
+-- Nodes
+-- Controllers
+[INFO] [1779280951.462278532] [_ros2cli_427797]: waiting for service /mur620c/controller_manager/list_controllers to become available...
+lift_controller_l        position_controllers/JointGroupPositionController  inactive
+joint_state_broadcaster  joint_state_broadcaster/JointStateBroadcaster      active  
+lift_effort_controller_l effort_controllers/JointGroupEffortController      active  
+lift_controller_r        position_controllers/JointGroupPositionController  inactive
+lift_effort_controller_r effort_controllers/JointGroupEffortController      active  
+mobile_base_controller   diff_drive_controller/DiffDriveController          active  
+-- Topics
+/mur620c/scan_merged_raw
+-- AMCL lifecycle
+
+$ ros2 lifecycle get /mur620c/amcl
+active [3]
+
+$ ros2 param get /mur620c/amcl map_topic
+String value is: /map
+
+$ ros2 param get /mur620c/amcl scan_topic
+String value is: /mur620c/scan
+
+$ ros2 param get /mur620c/amcl odom_frame_id
+String value is: mur620c/odom
+
+$ ros2 param get /mur620c/amcl base_frame_id
+String value is: mur620c/base_footprint
+-- TF map -> mur620c/odom
+[INFO] [1779280966.167245182] [tf2_echo]: Waiting for transform map ->  mur620c/odom: Invalid frame ID "map" passed to canTransform argument target_frame - frame does not exist
+[INFO] [1779280968.152125967] [tf2_echo]: Waiting for transform map ->  mur620c/odom: Invalid frame ID "mur620c/odom" passed to canTransform argument source_frame - frame does not exist
+At time 61.340000000
+- Translation: [48.000, 44.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, -0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, 0.000, -0.000]
+- Rotation: in RPY (degree) [0.000, 0.000, -0.000]
+- Matrix:
+  1.000  0.000  0.000 48.000
+ -0.000  1.000 -0.000 44.000
+ -0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 61.500000000
+- Translation: [48.000, 44.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, -0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, 0.000, -0.000]
+- Rotation: in RPY (degree) [0.000, 0.000, -0.000]
+- Matrix:
+  1.000  0.000  0.000 48.000
+ -0.000  1.000 -0.000 44.000
+ -0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 61.820000000
+- Translation: [48.000, 44.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, -0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, 0.000, -0.000]
+- Rotation: in RPY (degree) [0.000, 0.000, -0.000]
+- Matrix:
+  1.000  0.000  0.000 48.000
+ -0.000  1.000 -0.000 44.000
+ -0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+[INFO] [1779280972.975173888] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+-- TF mur620c/odom -> mur620c/base_footprint
+[INFO] [1779280973.153833388] [tf2_echo]: Waiting for transform mur620c/odom ->  mur620c/base_footprint: Invalid frame ID "mur620c/odom" passed to canTransform argument target_frame - frame does not exist
+[INFO] [1779280975.136315011] [tf2_echo]: Waiting for transform mur620c/odom ->  mur620c/base_footprint: Invalid frame ID "mur620c/odom" passed to canTransform argument target_frame - frame does not exist
+[INFO] [1779280976.136329800] [tf2_echo]: Waiting for transform mur620c/odom ->  mur620c/base_footprint: Could not find a connection between 'mur620c/odom' and 'mur620c/base_footprint' because they are not part of the same tree.Tf has two or more unconnected trees.
+At time 63.280000000
+- Translation: [-0.000, 0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, -0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, 0.000, -0.000]
+- Rotation: in RPY (degree) [0.000, 0.000, -0.000]
+- Matrix:
+  1.000  0.000  0.000 -0.000
+ -0.000  1.000 -0.000  0.000
+ -0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 63.590000000
+- Translation: [-0.000, 0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, -0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, 0.000, -0.000]
+- Rotation: in RPY (degree) [0.000, 0.000, -0.000]
+- Matrix:
+  1.000  0.000  0.000 -0.000
+ -0.000  1.000 -0.000  0.000
+ -0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 63.840000000
+- Translation: [-0.000, 0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, -0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, 0.000, -0.000]
+- Rotation: in RPY (degree) [0.000, 0.000, -0.000]
+- Matrix:
+  1.000  0.000  0.000 -0.000
+ -0.000  1.000 -0.000  0.000
+ -0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+[INFO] [1779280979.979236964] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+-- Scan info
+
+$ ros2 topic info /mur620c/scan --verbose
+Type: sensor_msgs/msg/LaserScan
+
+Publisher count: 1
+
+Node name: mur620c_merged_scan_frame
+Node namespace: /
+Topic type: sensor_msgs/msg/LaserScan
+Topic type hash: RIHS01_64c191398013af96509d518dac71d5164f9382553fce5c1f8cca5be7924bd828
+Endpoint type: PUBLISHER
+GID: 01.0f.f6.e2.22.6a.78.02.00.00.00.00.00.00.14.03
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Subscription count: 1
+
+Node name: amcl
+Node namespace: /mur620c
+Topic type: sensor_msgs/msg/LaserScan
+Topic type hash: RIHS01_64c191398013af96509d518dac71d5164f9382553fce5c1f8cca5be7924bd828
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.86.6b.a5.0c.00.00.00.00.00.00.23.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+-- /mur620c/scan header sample
+stamp:
+  sec: 64
+  nanosec: 400000000
+frame_id: mur620c/base_footprint
+---
+-- Odom sample
+stamp:
+  sec: 65
+  nanosec: 120000000
+frame_id: mur620c/odom
+---
+-- Robot description size
+robot_description chars: 42465
+
+== Robot mur620d ==
+-- Nodes
+-- Controllers
+[INFO] [1779280989.412156686] [_ros2cli_431726]: waiting for service /mur620d/controller_manager/list_controllers to become available...
+failed to check service availability: rcl node's context is invalid, at ./src/rcl/node.c:404
+-- Topics
+/mur620d/b_scan
+/mur620d/ground_truth/odom
+/mur620d/ground_truth/pose
+/mur620d/joint_states
+/mur620d/mobile_base_controller/odom
+/mur620d/scan
+/mur620d/scan_cloud
+/mur620d/scan_merged_raw
+-- AMCL lifecycle
+
+$ ros2 lifecycle get /mur620d/amcl
+active [3]
+
+$ ros2 param get /mur620d/amcl map_topic
+String value is: /map
+
+$ ros2 param get /mur620d/amcl scan_topic
+String value is: /mur620d/scan
+
+$ ros2 param get /mur620d/amcl odom_frame_id
+String value is: mur620d/odom
+
+$ ros2 param get /mur620d/amcl base_frame_id
+String value is: mur620d/base_footprint
+-- TF map -> mur620d/odom
+[INFO] [1779281009.441631853] [tf2_echo]: Waiting for transform map ->  mur620d/odom: Invalid frame ID "map" passed to canTransform argument target_frame - frame does not exist
+At time 73.180000000
+- Translation: [50.000, 44.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, -0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, 0.000, -0.000]
+- Rotation: in RPY (degree) [0.000, 0.000, -0.000]
+- Matrix:
+  1.000  0.000  0.000 50.000
+ -0.000  1.000 -0.000 44.000
+ -0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 73.500000000
+- Translation: [50.000, 44.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, -0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, 0.000, -0.000]
+- Rotation: in RPY (degree) [0.000, 0.000, -0.000]
+- Matrix:
+  1.000  0.000  0.000 50.000
+ -0.000  1.000 -0.000 44.000
+ -0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 73.820000000
+- Translation: [50.000, 44.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, -0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, 0.000, -0.000]
+- Rotation: in RPY (degree) [0.000, 0.000, -0.000]
+- Matrix:
+  1.000  0.000  0.000 50.000
+ -0.000  1.000 -0.000 44.000
+ -0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 74.140000000
+- Translation: [50.000, 44.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, -0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, 0.000, -0.000]
+- Rotation: in RPY (degree) [0.000, 0.000, -0.000]
+- Matrix:
+  1.000  0.000  0.000 50.000
+ -0.000  1.000 -0.000 44.000
+ -0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 74.460000000
+- Translation: [50.000, 44.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, -0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, 0.000, -0.000]
+- Rotation: in RPY (degree) [0.000, 0.000, -0.000]
+- Matrix:
+  1.000  0.000  0.000 50.000
+ -0.000  1.000 -0.000 44.000
+ -0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 74.780000000
+- Translation: [50.000, 44.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, -0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, 0.000, -0.000]
+- Rotation: in RPY (degree) [0.000, 0.000, -0.000]
+- Matrix:
+  1.000  0.000  0.000 50.000
+ -0.000  1.000 -0.000 44.000
+ -0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+[INFO] [1779281016.253979822] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+-- TF mur620d/odom -> mur620d/base_footprint
+[INFO] [1779281016.473144153] [tf2_echo]: Waiting for transform mur620d/odom ->  mur620d/base_footprint: Invalid frame ID "mur620d/odom" passed to canTransform argument target_frame - frame does not exist
+[INFO] [1779281018.461444617] [tf2_echo]: Waiting for transform mur620d/odom ->  mur620d/base_footprint: Invalid frame ID "mur620d/odom" passed to canTransform argument target_frame - frame does not exist
+At time 75.919000000
+- Translation: [-0.000, -0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000 -0.000  0.000 -0.000
+  0.000  1.000  0.000 -0.000
+  0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 76.219000000
+- Translation: [-0.000, -0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000 -0.000  0.000 -0.000
+  0.000  1.000  0.000 -0.000
+  0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 76.509000000
+- Translation: [-0.000, -0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000 -0.000  0.000 -0.000
+  0.000  1.000  0.000 -0.000
+  0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 76.819000000
+- Translation: [-0.000, -0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000 -0.000  0.000 -0.000
+  0.000  1.000  0.000 -0.000
+  0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+[INFO] [1779281023.257971454] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+-- Scan info
+
+$ ros2 topic info /mur620d/scan --verbose
+Type: sensor_msgs/msg/LaserScan
+
+Publisher count: 1
+
+Node name: mur620d_merged_scan_frame
+Node namespace: /
+Topic type: sensor_msgs/msg/LaserScan
+Topic type hash: RIHS01_64c191398013af96509d518dac71d5164f9382553fce5c1f8cca5be7924bd828
+Endpoint type: PUBLISHER
+GID: 01.0f.f6.e2.94.6c.57.e1.00.00.00.00.00.00.14.03
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Subscription count: 1
+
+Node name: amcl
+Node namespace: /mur620d
+Topic type: sensor_msgs/msg/LaserScan
+Topic type hash: RIHS01_64c191398013af96509d518dac71d5164f9382553fce5c1f8cca5be7924bd828
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.f2.6d.10.df.00.00.00.00.00.00.23.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+-- /mur620d/scan header sample
+stamp:
+  sec: 77
+  nanosec: 360000000
+frame_id: mur620d/base_footprint
+---
+-- Odom sample
+stamp:
+  sec: 78
+  nanosec: 309000000
+frame_id: mur620d/odom
+---
+-- Robot description size
+robot_description chars: 42465
+
+== Recent ROS Logs ==
+---- /home/rosmatch/.ros/log/rviz2_423448_1779280894153.log
+[INFO] [1779280894.914239892] [rviz2]: Stereo is NOT SUPPORTED
+[INFO] [1779280894.914328481] [rviz2]: OpenGl version: 4.6 (GLSL 4.6)
+[INFO] [1779280894.977530077] [rviz2]: Stereo is NOT SUPPORTED
+---- /home/rosmatch/.ros/log/amcl_421362_1779280855689.log
+[INFO] [1779280855.710898519] [mur620d.amcl]: 
+	amcl lifecycle node launched. 
+	Waiting on external lifecycle transitions to activate
+	See https://design.ros2.org/articles/node_lifecycle.html for more information.
+[INFO] [1779280855.711325444] [mur620d.amcl]: Creating
+[INFO] [1779280856.634411711] [mur620d.amcl]: Configuring
+[INFO] [1779280856.634525677] [mur620d.amcl]: initTransforms
+[INFO] [1779280856.651176565] [mur620d.amcl]: initPubSub
+[INFO] [1779280856.664705869] [mur620d.amcl]: Subscribed to map topic.
+[INFO] [1779280856.671423157] [mur620d.amcl]: Activating
+[INFO] [1779280856.671452302] [mur620d.amcl]: initialPoseReceived
+[INFO] [1779280856.671513251] [mur620d.amcl]: Setting pose (0.000000): 50.000 44.000 0.000
+[INFO] [1779280856.672930469] [mur620d.amcl]: Creating bond (amcl) to lifecycle manager.
+[INFO] [1779280858.555431348] [mur620d.amcl]: Received a 1626 X 2140 map @ 0.050 m/pix
+[INFO] [1779280858.657409200] [mur620d.amcl]: Message Filter dropping message: frame 'mur620d/base_footprint' at time 12.720 for reason 'the timestamp on the message is earlier than all the data in the transform cache'
+[INFO] [1779280862.317899932] [mur620d.amcl]: Message Filter dropping message: frame 'mur620d/base_footprint' at time 15.280 for reason 'the timestamp on the message is earlier than all the data in the transform cache'
+[INFO] [1779280866.449833286] [mur620d.amcl]: Message Filter dropping message: frame 'mur620d/base_footprint' at time 17.840 for reason 'the timestamp on the message is earlier than all the data in the transform cache'
+[INFO] [1779280870.006828501] [mur620d.amcl]: Message Filter dropping message: frame 'mur620d/base_footprint' at time 20.400 for reason 'the timestamp on the message is earlier than all the data in the transform cache'
+[INFO] [1779280873.453491990] [mur620d.amcl]: Message Filter dropping message: frame 'mur620d/base_footprint' at time 22.960 for reason 'the timestamp on the message is earlier than all the data in the transform cache'
+[INFO] [1779280876.996373037] [mur620d.amcl]: Message Filter dropping message: frame 'mur620d/base_footprint' at time 25.520 for reason 'the timestamp on the message is earlier than all the data in the transform cache'
+[INFO] [1779280880.882568703] [mur620d.amcl]: Message Filter dropping message: frame 'mur620d/base_footprint' at time 28.080 for reason 'the timestamp on the message is earlier than all the data in the transform cache'
+[INFO] [1779280885.119875313] [mur620d.amcl]: Message Filter dropping message: frame 'mur620d/base_footprint' at time 30.640 for reason 'the timestamp on the message is earlier than all the data in the transform cache'
+[INFO] [1779280889.067840221] [mur620d.amcl]: Message Filter dropping message: frame 'mur620d/base_footprint' at time 33.200 for reason 'the timestamp on the message is earlier than all the data in the transform cache'
+[INFO] [1779280890.723780115] [mur620d.amcl]: createLaserObject
+---- /home/rosmatch/.ros/log/amcl_420742_1779280847691.log
+[INFO] [1779280847.712942862] [mur620c.amcl]: 
+	amcl lifecycle node launched. 
+	Waiting on external lifecycle transitions to activate
+	See https://design.ros2.org/articles/node_lifecycle.html for more information.
+[INFO] [1779280847.713262452] [mur620c.amcl]: Creating
+[INFO] [1779280847.714452561] [mur620c.amcl]: Configuring
+[INFO] [1779280847.714491933] [mur620c.amcl]: initTransforms
+[INFO] [1779280847.718590915] [mur620c.amcl]: initPubSub
+[INFO] [1779280847.723141608] [mur620c.amcl]: Subscribed to map topic.
+[INFO] [1779280847.725272008] [mur620c.amcl]: Activating
+[INFO] [1779280847.725287844] [mur620c.amcl]: initialPoseReceived
+[INFO] [1779280847.725329667] [mur620c.amcl]: Setting pose (0.000000): 48.000 44.000 0.000
+[INFO] [1779280847.725917201] [mur620c.amcl]: Creating bond (amcl) to lifecycle manager.
+[INFO] [1779280848.249404397] [mur620c.amcl]: Received a 1626 X 2140 map @ 0.050 m/pix
+[INFO] [1779280850.356009240] [mur620c.amcl]: Message Filter dropping message: frame 'mur620c/base_footprint' at time 9.600 for reason 'the timestamp on the message is earlier than all the data in the transform cache'
+[INFO] [1779280857.755639942] [mur620c.amcl]: Message Filter dropping message: frame 'mur620c/base_footprint' at time 12.160 for reason 'the timestamp on the message is earlier than all the data in the transform cache'
+[INFO] [1779280861.466080165] [mur620c.amcl]: Message Filter dropping message: frame 'mur620c/base_footprint' at time 14.720 for reason 'the timestamp on the message is earlier than all the data in the transform cache'
+[INFO] [1779280864.017860329] [mur620c.amcl]: createLaserObject
+---- /home/rosmatch/.ros/log/lifecycle_manager_421363_1779280855688.log
+[INFO] [1779280855.705241470] [mur620d.lifecycle_manager_localization]: Creating
+[INFO] [1779280855.708060500] [mur620d.lifecycle_manager_localization]: [34m[1mCreating and initializing lifecycle service clients[0m[0m
+[INFO] [1779280856.634134094] [mur620d.lifecycle_manager_localization]: [34m[1mStarting managed nodes bringup...[0m[0m
+[INFO] [1779280856.634165336] [mur620d.lifecycle_manager_localization]: [34m[1mConfiguring amcl[0m[0m
+[INFO] [1779280856.671188765] [mur620d.lifecycle_manager_localization]: [34m[1mActivating amcl[0m[0m
+[INFO] [1779280857.049207039] [mur620d.lifecycle_manager_localization]: Server amcl connected with bond.
+[INFO] [1779280857.049233631] [mur620d.lifecycle_manager_localization]: [34m[1mManaged nodes are active[0m[0m
+[INFO] [1779280857.049237733] [mur620d.lifecycle_manager_localization]: [34m[1mCreating bond timer...[0m[0m
+---- /home/rosmatch/.ros/log/amcl_420122_1779280839696.log
+[INFO] [1779280840.492513594] [mur620b.amcl]: 
+	amcl lifecycle node launched. 
+	Waiting on external lifecycle transitions to activate
+	See https://design.ros2.org/articles/node_lifecycle.html for more information.
+[INFO] [1779280840.493002835] [mur620b.amcl]: Creating
+[INFO] [1779280841.250456240] [mur620b.amcl]: Configuring
+[INFO] [1779280841.250539798] [mur620b.amcl]: initTransforms
+[INFO] [1779280841.258301154] [mur620b.amcl]: initPubSub
+[INFO] [1779280841.265246648] [mur620b.amcl]: Subscribed to map topic.
+[INFO] [1779280841.269208941] [mur620b.amcl]: Activating
+[INFO] [1779280841.269228070] [mur620b.amcl]: initialPoseReceived
+[INFO] [1779280841.269271265] [mur620b.amcl]: Setting pose (3.734000): 46.000 44.000 0.000
+[INFO] [1779280841.269827020] [mur620b.amcl]: Creating bond (amcl) to lifecycle manager.
+[INFO] [1779280841.289303951] [mur620b.amcl]: Received a 1626 X 2140 map @ 0.050 m/pix
+[INFO] [1779280842.335940257] [mur620b.amcl]: Message Filter dropping message: frame 'mur620b/base_footprint' at time 4.400 for reason 'the timestamp on the message is earlier than all the data in the transform cache'
+[INFO] [1779280844.925238552] [mur620b.amcl]: Message Filter dropping message: frame 'mur620b/base_footprint' at time 6.960 for reason 'the timestamp on the message is earlier than all the data in the transform cache'
+[INFO] [1779280850.379716050] [mur620b.amcl]: Message Filter dropping message: frame 'mur620b/base_footprint' at time 9.360 for reason 'discarding message because the queue is full'
+[INFO] [1779280857.926046626] [mur620b.amcl]: Message Filter dropping message: frame 'mur620b/base_footprint' at time 12.240 for reason 'the timestamp on the message is earlier than all the data in the transform cache'
+[INFO] [1779280858.739709626] [mur620b.amcl]: createLaserObject
+---- /home/rosmatch/.ros/log/robot_state_publisher_420975_1779280852881.log
+[INFO] [1779280852.922108567] [mur620d.mur620d_rsp]: Robot initialized
+---- /home/rosmatch/.ros/log/robot_state_publisher_420976_1779280852881.log
+[INFO] [1779280852.978167845] [mur620d_global_rsp]: Robot initialized
+---- /home/rosmatch/.ros/log/lifecycle_manager_420743_1779280847691.log
+[INFO] [1779280847.709768743] [mur620c.lifecycle_manager_localization]: Creating
+[INFO] [1779280847.712596770] [mur620c.lifecycle_manager_localization]: [34m[1mCreating and initializing lifecycle service clients[0m[0m
+[INFO] [1779280847.714266399] [mur620c.lifecycle_manager_localization]: [34m[1mStarting managed nodes bringup...[0m[0m
+[INFO] [1779280847.714296551] [mur620c.lifecycle_manager_localization]: [34m[1mConfiguring amcl[0m[0m
+[INFO] [1779280847.725191546] [mur620c.lifecycle_manager_localization]: [34m[1mActivating amcl[0m[0m
+[INFO] [1779280847.828293472] [mur620c.lifecycle_manager_localization]: Server amcl connected with bond.
+[INFO] [1779280847.828331320] [mur620c.lifecycle_manager_localization]: [34m[1mManaged nodes are active[0m[0m
+[INFO] [1779280847.828337508] [mur620c.lifecycle_manager_localization]: [34m[1mCreating bond timer...[0m[0m
+---- /home/rosmatch/.ros/log/robot_state_publisher_420378_1779280844846.log
+[INFO] [1779280844.875832141] [mur620c_global_rsp]: Robot initialized
+---- /home/rosmatch/.ros/log/robot_state_publisher_420377_1779280844846.log
+[INFO] [1779280844.916495947] [mur620c.mur620c_rsp]: Robot initialized
+---- /home/rosmatch/.ros/log/amcl_419357_1779280831686.log
+[INFO] [1779280831.697935386] [mur620a.amcl]: 
+	amcl lifecycle node launched. 
+	Waiting on external lifecycle transitions to activate
+	See https://design.ros2.org/articles/node_lifecycle.html for more information.
+[INFO] [1779280831.698216384] [mur620a.amcl]: Creating
+[INFO] [1779280832.537947788] [mur620a.amcl]: Configuring
+[INFO] [1779280832.538032706] [mur620a.amcl]: initTransforms
+[INFO] [1779280832.549900648] [mur620a.amcl]: initPubSub
+[INFO] [1779280832.555676064] [mur620a.amcl]: Subscribed to map topic.
+[INFO] [1779280832.559810229] [mur620a.amcl]: Activating
+[INFO] [1779280832.559827040] [mur620a.amcl]: initialPoseReceived
+[INFO] [1779280832.559863237] [mur620a.amcl]: Setting pose (0.000000): 44.000 44.000 0.000
+[INFO] [1779280832.560469469] [mur620a.amcl]: Creating bond (amcl) to lifecycle manager.
+[INFO] [1779280832.580217638] [mur620a.amcl]: Received a 1626 X 2140 map @ 0.050 m/pix
+[INFO] [1779280840.080603392] [mur620a.amcl]: Message Filter dropping message: frame 'mur620a/base_footprint' at time 2.160 for reason 'the timestamp on the message is earlier than all the data in the transform cache'
+[INFO] [1779280841.862529419] [mur620a.amcl]: createLaserObject
+---- /home/rosmatch/.ros/log/lifecycle_manager_420123_1779280839689.log
+[INFO] [1779280839.715893848] [mur620b.lifecycle_manager_localization]: Creating
+[INFO] [1779280839.719298768] [mur620b.lifecycle_manager_localization]: [34m[1mCreating and initializing lifecycle service clients[0m[0m
+[INFO] [1779280841.250194747] [mur620b.lifecycle_manager_localization]: [34m[1mStarting managed nodes bringup...[0m[0m
+[INFO] [1779280841.250230435] [mur620b.lifecycle_manager_localization]: [34m[1mConfiguring amcl[0m[0m
+[INFO] [1779280841.269056846] [mur620b.lifecycle_manager_localization]: [34m[1mActivating amcl[0m[0m
+[INFO] [1779280841.374078707] [mur620b.lifecycle_manager_localization]: Server amcl connected with bond.
+[INFO] [1779280841.374106472] [mur620b.lifecycle_manager_localization]: [34m[1mManaged nodes are active[0m[0m
+[INFO] [1779280841.374112345] [mur620b.lifecycle_manager_localization]: [34m[1mCreating bond timer...[0m[0m
+
+== Done ==
+Diagnostic log written to: /home/rosmatch/colcon_ws/src/match_mobile_robotics_jazzy/logs/check_multi_mur_base_20260520_144101.log
