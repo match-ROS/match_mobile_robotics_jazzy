@@ -74,6 +74,7 @@ install(TARGETS
 
 install(PROGRAMS
   scripts/ground_truth_from_pose_tf.py
+  scripts/jparse_simple_goal.py
   scripts/jparse_move_action_server.py
   scripts/laserscan_frame_republisher.py
   scripts/lift_effort_position_controller.py
