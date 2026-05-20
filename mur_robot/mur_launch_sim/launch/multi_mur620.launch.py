@@ -1,37 +1,246 @@
-"""Multi-robot mur620 launch (robot-only, no Gazebo world).
+"""Launch several full MUR620 mobile manipulators in one Gazebo world.
 
-Spawns four mur620 robots (a-d) into an ALREADY running Gazebo instance. It
-does not start a world. For a ready-to-run example including Gazebo, use
-`example_multi_mur620.launch.py`.
+Edit ROBOT_POSES below to choose names and spawn poses. The launch includes
+mur620.launch.py for each robot with a delay between includes so Gazebo does
+not have to create every full model at once.
 """
 
-from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription
-from launch.launch_description_sources import PythonLaunchDescriptionSource
 import os
+
 from ament_index_python.packages import get_package_share_directory
+from launch import LaunchDescription
+from launch.actions import (
+    DeclareLaunchArgument,
+    IncludeLaunchDescription,
+    OpaqueFunction,
+    SetEnvironmentVariable,
+    TimerAction,
+)
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration
+from launch_ros.actions import Node
+
+
+# name, x, y, z, yaw
+ROBOT_POSES = [
+    ('mur620a', 44.0, 44.0, 0.07, 0.0),
+    ('mur620b', 46.0, 44.0, 0.07, 0.0),
+]
+
+
+def declare_args():
+    mir_gazebo_path = get_package_share_directory('mir_gazebo')
+    return [
+        DeclareLaunchArgument('world', default_value='scale'),
+        DeclareLaunchArgument(
+            'map',
+            default_value=os.path.join(mir_gazebo_path, 'maps', 'scale.yaml'),
+        ),
+        DeclareLaunchArgument('use_sim_time', default_value='true'),
+        DeclareLaunchArgument(
+            'spawn_interval',
+            default_value='12.0',
+            description='Seconds between two full robot includes/spawn attempts.',
+        ),
+        DeclareLaunchArgument(
+            'map_server',
+            default_value='true',
+            description='Start one shared /map server for all robots.',
+        ),
+        DeclareLaunchArgument('lidar_bridge', default_value='true'),
+        DeclareLaunchArgument('load_controllers', default_value='true'),
+        DeclareLaunchArgument('laser_merger', default_value='true'),
+        DeclareLaunchArgument('ground_truth', default_value='true'),
+        DeclareLaunchArgument(
+            'localization',
+            default_value='true',
+            description='Start one AMCL instance per robot.',
+        ),
+        DeclareLaunchArgument('navigation', default_value='false'),
+        DeclareLaunchArgument('load_arm_controllers', default_value='true'),
+        DeclareLaunchArgument('auto_switch_arm_controllers', default_value='true'),
+        DeclareLaunchArgument('launch_jparse_idk', default_value='true'),
+        DeclareLaunchArgument(
+            'launch_moveit',
+            default_value='false',
+            description='Start one MoveIt instance per robot. Keep false unless needed.',
+        ),
+        DeclareLaunchArgument('launch_rviz', default_value='false'),
+        DeclareLaunchArgument('launch_servo', default_value='false'),
+        DeclareLaunchArgument('rviz_delay', default_value='14.0'),
+        DeclareLaunchArgument('ur_type', default_value='ur10e'),
+    ]
+
+
+def amcl_params(robot_name, use_sim_time, x, y, yaw):
+    return {
+        'use_sim_time': use_sim_time,
+        'alpha1': 0.35,
+        'alpha2': 0.15,
+        'alpha3': 0.12,
+        'alpha4': 0.35,
+        'alpha5': 0.1,
+        'base_frame_id': f'{robot_name}/base_footprint',
+        'global_frame_id': 'map',
+        'map_topic': '/map',
+        'map_subscribe_transient_local': True,
+        'odom_frame_id': f'{robot_name}/odom',
+        'scan_topic': f'/{robot_name}/scan',
+        'robot_model_type': 'nav2_amcl::DifferentialMotionModel',
+        'laser_model_type': 'likelihood_field',
+        'laser_likelihood_max_dist': 2.0,
+        'max_beams': 120,
+        'max_particles': 5000,
+        'min_particles': 500,
+        'pf_err': 0.05,
+        'pf_z': 0.99,
+        'resample_interval': 1,
+        'set_initial_pose': True,
+        'initial_pose': {
+            'x': float(x),
+            'y': float(y),
+            'z': 0.0,
+            'yaw': float(yaw),
+        },
+        'tf_broadcast': True,
+        'transform_tolerance': 0.3,
+        'update_min_a': 0.05,
+        'update_min_d': 0.05,
+    }
+
+
+def launch_setup(context, *args, **kwargs):
+    world = LaunchConfiguration('world').perform(context)
+    map_yaml = LaunchConfiguration('map').perform(context)
+    use_sim_time = LaunchConfiguration('use_sim_time').perform(context).lower() == 'true'
+    start_map_server = (
+        LaunchConfiguration('map_server').perform(context).lower() == 'true'
+    )
+    start_localization = (
+        LaunchConfiguration('localization').perform(context).lower() == 'true'
+    )
+    spawn_interval = float(LaunchConfiguration('spawn_interval').perform(context))
+    mur_launch_sim_path = get_package_share_directory('mur_launch_sim')
+    mir_gazebo_path = get_package_share_directory('mir_gazebo')
+    mur620_launch = os.path.join(mur_launch_sim_path, 'launch', 'mur620.launch.py')
+    gz_sim_launch = os.path.join(
+        get_package_share_directory('ros_gz_sim'),
+        'launch',
+        'gz_sim.launch.py',
+    )
+
+    actions = [
+        SetEnvironmentVariable(
+            name='GZ_SIM_RESOURCE_PATH',
+            value=os.pathsep.join([
+                os.path.join(mir_gazebo_path, 'worlds'),
+                os.path.join(mir_gazebo_path, 'worlds', 'include'),
+                os.path.join(mir_gazebo_path, 'models'),
+            ]),
+        ),
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(gz_sim_launch),
+            launch_arguments={'gz_args': f'{world}.world -v 4 -r'}.items(),
+        ),
+        Node(
+            package='ros_gz_bridge',
+            executable='parameter_bridge',
+            name='clock_bridge',
+            arguments=['/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock'],
+            output='screen',
+        ),
+    ]
+
+    if start_map_server:
+        actions.extend([
+            Node(
+                package='nav2_map_server',
+                executable='map_server',
+                name='map_server',
+                parameters=[{
+                    'use_sim_time': use_sim_time,
+                    'yaml_filename': map_yaml,
+                    'frame_id': 'map',
+                    'topic_name': 'map',
+                }],
+                output='screen',
+            ),
+            Node(
+                package='nav2_lifecycle_manager',
+                executable='lifecycle_manager',
+                name='lifecycle_manager_map',
+                parameters=[{
+                    'use_sim_time': use_sim_time,
+                    'autostart': True,
+                    'node_names': ['map_server'],
+                }],
+                output='screen',
+            ),
+        ])
+
+    for index, (robot_name, x, y, z, yaw) in enumerate(ROBOT_POSES):
+        robot = IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(mur620_launch),
+            launch_arguments={
+                'robot_name': robot_name,
+                'world': world,
+                'map': LaunchConfiguration('map'),
+                'x': str(x),
+                'y': str(y),
+                'z': str(z),
+                'Y': str(yaw),
+                'use_sim_time': LaunchConfiguration('use_sim_time'),
+                'include_gz': 'false',
+                'lidar_bridge': LaunchConfiguration('lidar_bridge'),
+                'load_controllers': LaunchConfiguration('load_controllers'),
+                'laser_merger': LaunchConfiguration('laser_merger'),
+                'ground_truth': LaunchConfiguration('ground_truth'),
+                'localization': 'false',
+                'navigation': 'false',
+                'load_arm_controllers': LaunchConfiguration('load_arm_controllers'),
+                'auto_switch_arm_controllers': LaunchConfiguration(
+                    'auto_switch_arm_controllers'
+                ),
+                'launch_jparse_idk': LaunchConfiguration('launch_jparse_idk'),
+                'launch_moveit': LaunchConfiguration('launch_moveit'),
+                'launch_rviz': LaunchConfiguration('launch_rviz'),
+                'launch_servo': LaunchConfiguration('launch_servo'),
+                'rviz_delay': LaunchConfiguration('rviz_delay'),
+                'ur_type': LaunchConfiguration('ur_type'),
+            }.items(),
+        )
+        actions.append(TimerAction(period=index * spawn_interval, actions=[robot]))
+        if start_localization:
+            actions.append(
+                TimerAction(
+                    period=index * spawn_interval + 3.0,
+                    actions=[
+                        Node(
+                            package='nav2_amcl',
+                            executable='amcl',
+                            namespace=robot_name,
+                            name='amcl',
+                            parameters=[amcl_params(robot_name, use_sim_time, x, y, yaw)],
+                            output='screen',
+                        ),
+                        Node(
+                            package='nav2_lifecycle_manager',
+                            executable='lifecycle_manager',
+                            namespace=robot_name,
+                            name='lifecycle_manager_localization',
+                            parameters=[{
+                                'use_sim_time': use_sim_time,
+                                'autostart': True,
+                                'node_names': ['amcl'],
+                            }],
+                            output='screen',
+                        ),
+                    ],
+                )
+            )
+
+    return actions
 
 
 def generate_launch_description():
-    mur_launch_sim_path = get_package_share_directory('mur_launch_sim')
-    mur_base_launch = os.path.join(mur_launch_sim_path, 'launch', 'mur_base.launch.py')
-
-    def robot_inc(name, x):
-        return IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(mur_base_launch),
-            launch_arguments={
-                'robot_name': name,
-                'x': str(x), 'y': '0.0', 'z': '0.07', 'Y': '0.0',
-                'include_gz': 'false',  # world handled elsewhere
-                'lidar_bridge': 'true',
-            }.items()
-        )
-
-    robots = [
-        robot_inc('mur620a', 0.0),
-        robot_inc('mur620b', 1.5),
-        robot_inc('mur620c', 3.5),
-        robot_inc('mur620d', 5.5),
-    ]
-
-    return LaunchDescription(robots)
+    return LaunchDescription(declare_args() + [OpaqueFunction(function=launch_setup)])
