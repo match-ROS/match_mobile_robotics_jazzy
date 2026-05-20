@@ -42,7 +42,7 @@
 		</link>
 	</xacro:macro>
 
-	<xacro:macro name="caster_wheel" params="locationprefix locationright wheel_base_dx use_simple_collisions:=false use_simple_visuals:=false use_caster_visual_mesh:=false">
+	<xacro:macro name="caster_wheel" params="locationprefix locationright wheel_base_dx use_simple_collisions:=false use_simple_visuals:=false use_high_quality_visuals:=false use_caster_visual_mesh:=false">
 		<!-- caster hub -->
 		<joint name="${locationprefix}_caster_rotation_joint" type="continuous">
 			<origin xyz="${wheel_base_dx} ${-mir_600_caster_wheel_base_dy * locationright} ${mir_600_caster_wheel_base_dz}" rpy="0 0 0" />
@@ -126,7 +126,12 @@
 				<visual>
 					<origin xyz="0 0 0" rpy="${pi * 0.5} 0 0" />
 					<geometry>
-						<mesh filename="package://mir_description/meshes/visual/mir_600_caster_wheel.stl" />
+						<xacro:if value="${use_high_quality_visuals}">
+							<mesh filename="package://mir_description/meshes/visual/mir_600_caster_wheel.stl" />
+						</xacro:if>
+						<xacro:unless value="${use_high_quality_visuals}">
+							<mesh filename="package://mir_description/meshes/visual/simplify_caster_wheel_mir600.stl" />
+						</xacro:unless>
 					</geometry>
 					<xacro:insert_block name="material_dark_grey" />
 				</visual>

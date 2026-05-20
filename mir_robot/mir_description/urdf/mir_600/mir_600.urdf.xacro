@@ -145,10 +145,10 @@
 		<!-- wheels -->
 		<xacro:actuated_wheel locationprefix="left" locationright="-1" use_simple_visuals="${use_simple_visuals}" use_wheel_visual_mesh="${use_wheel_visual_mesh}"/>
 		<xacro:actuated_wheel locationprefix="right" locationright="1" use_simple_visuals="${use_simple_visuals}" use_wheel_visual_mesh="${use_wheel_visual_mesh}"/>
-		<xacro:caster_wheel locationprefix="fl" locationright="-1" wheel_base_dx="${mir_600_front_caster_wheel_base_dx}" use_simple_collisions="${use_simple_collisions}" use_simple_visuals="${use_simple_visuals}" use_caster_visual_mesh="${use_caster_visual_mesh}"/>
-		<xacro:caster_wheel locationprefix="fr" locationright="1" wheel_base_dx="${mir_600_front_caster_wheel_base_dx}" use_simple_collisions="${use_simple_collisions}" use_simple_visuals="${use_simple_visuals}" use_caster_visual_mesh="${use_caster_visual_mesh}"/>
-		<xacro:caster_wheel locationprefix="bl" locationright="-1" wheel_base_dx="${mir_600_back_caster_wheel_base_dx}" use_simple_collisions="${use_simple_collisions}" use_simple_visuals="${use_simple_visuals}" use_caster_visual_mesh="${use_caster_visual_mesh}"/>
-		<xacro:caster_wheel locationprefix="br" locationright="1" wheel_base_dx="${mir_600_back_caster_wheel_base_dx}" use_simple_collisions="${use_simple_collisions}" use_simple_visuals="${use_simple_visuals}" use_caster_visual_mesh="${use_caster_visual_mesh}"/>
+		<xacro:caster_wheel locationprefix="fl" locationright="-1" wheel_base_dx="${mir_600_front_caster_wheel_base_dx}" use_simple_collisions="${use_simple_collisions}" use_simple_visuals="${use_simple_visuals}" use_high_quality_visuals="${use_high_quality_visuals}" use_caster_visual_mesh="${use_caster_visual_mesh}"/>
+		<xacro:caster_wheel locationprefix="fr" locationright="1" wheel_base_dx="${mir_600_front_caster_wheel_base_dx}" use_simple_collisions="${use_simple_collisions}" use_simple_visuals="${use_simple_visuals}" use_high_quality_visuals="${use_high_quality_visuals}" use_caster_visual_mesh="${use_caster_visual_mesh}"/>
+		<xacro:caster_wheel locationprefix="bl" locationright="-1" wheel_base_dx="${mir_600_back_caster_wheel_base_dx}" use_simple_collisions="${use_simple_collisions}" use_simple_visuals="${use_simple_visuals}" use_high_quality_visuals="${use_high_quality_visuals}" use_caster_visual_mesh="${use_caster_visual_mesh}"/>
+		<xacro:caster_wheel locationprefix="br" locationright="1" wheel_base_dx="${mir_600_back_caster_wheel_base_dx}" use_simple_collisions="${use_simple_collisions}" use_simple_visuals="${use_simple_visuals}" use_high_quality_visuals="${use_high_quality_visuals}" use_caster_visual_mesh="${use_caster_visual_mesh}"/>
 
 		<joint name="base_link_surface_joint" type="fixed">
 			<origin xyz="${mir_600_act_wheel_dx} 0 0.352" rpy="0 0 0" />
