@@ -502,7 +502,8 @@ def parse_args():
     parser.add_argument('--max-linear-velocity', type=float, default=0.12)
     parser.add_argument('--max-angular-velocity', type=float, default=0.5)
     parser.add_argument('--max-joint-velocity', type=float, default=0.6)
-    return parser.parse_args()
+    args, _ = parser.parse_known_args()
+    return args
 
 
 def main():
