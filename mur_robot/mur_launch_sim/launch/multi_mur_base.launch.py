@@ -61,6 +61,17 @@ def declare_args():
             description='Replace heavy MiR visual meshes with primitives for RViz/GPU diagnosis.',
         ),
         DeclareLaunchArgument(
+            'use_high_quality_visuals',
+            default_value='false',
+            description='Use full-resolution MiR base/top visual meshes instead of simplified meshes.',
+        ),
+        DeclareLaunchArgument('use_base_visual_mesh', default_value='false'),
+        DeclareLaunchArgument('use_top_visual_mesh', default_value='false'),
+        DeclareLaunchArgument('use_wheel_visual_mesh', default_value='false'),
+        DeclareLaunchArgument('use_caster_visual_mesh', default_value='false'),
+        DeclareLaunchArgument('use_lift_visual_mesh', default_value='false'),
+        DeclareLaunchArgument('use_laser_visual_mesh', default_value='false'),
+        DeclareLaunchArgument(
             'launch_rviz',
             default_value='false',
             description='Start a lightweight multi-base RViz config.',
@@ -211,6 +222,15 @@ def launch_setup(context, *args, **kwargs):
                 'use_camera': 'false',
                 'use_simple_collisions': LaunchConfiguration('use_simple_collisions'),
                 'use_simple_visuals': LaunchConfiguration('use_simple_visuals'),
+                'use_high_quality_visuals': LaunchConfiguration(
+                    'use_high_quality_visuals'
+                ),
+                'use_base_visual_mesh': LaunchConfiguration('use_base_visual_mesh'),
+                'use_top_visual_mesh': LaunchConfiguration('use_top_visual_mesh'),
+                'use_wheel_visual_mesh': LaunchConfiguration('use_wheel_visual_mesh'),
+                'use_caster_visual_mesh': LaunchConfiguration('use_caster_visual_mesh'),
+                'use_lift_visual_mesh': LaunchConfiguration('use_lift_visual_mesh'),
+                'use_laser_visual_mesh': LaunchConfiguration('use_laser_visual_mesh'),
                 'localization': 'false',
                 'navigation': 'false',
             }.items(),

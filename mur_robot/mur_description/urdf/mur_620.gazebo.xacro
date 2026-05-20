@@ -14,6 +14,13 @@
 	<xacro:property name="use_simple_collisions" value="$(arg use_simple_collisions)"/>
 	<xacro:arg name="use_simple_visuals" default='false'/>
 	<xacro:property name="use_simple_visuals" value="$(arg use_simple_visuals)"/>
+	<xacro:arg name="use_high_quality_visuals" default='false'/>
+	<xacro:arg name="use_base_visual_mesh" default='false'/>
+	<xacro:arg name="use_top_visual_mesh" default='false'/>
+	<xacro:arg name="use_wheel_visual_mesh" default='false'/>
+	<xacro:arg name="use_caster_visual_mesh" default='false'/>
+	<xacro:arg name="use_lift_visual_mesh" default='false'/>
+	<xacro:arg name="use_laser_visual_mesh" default='false'/>
 	<xacro:arg name="use_lift" default='true'/>
 	<xacro:property name="use_lift" value="$(arg use_lift)"/>
 	<xacro:arg name="ur_l_xyz" default='0 0 0'/>
@@ -57,6 +64,13 @@
 		use_camera="$(arg use_camera)"
 		use_simple_collisions="$(arg use_simple_collisions)"
 		use_simple_visuals="$(arg use_simple_visuals)"
+		use_high_quality_visuals="$(arg use_high_quality_visuals)"
+		use_base_visual_mesh="$(arg use_base_visual_mesh)"
+		use_top_visual_mesh="$(arg use_top_visual_mesh)"
+		use_wheel_visual_mesh="$(arg use_wheel_visual_mesh)"
+		use_caster_visual_mesh="$(arg use_caster_visual_mesh)"
+		use_lift_visual_mesh="$(arg use_lift_visual_mesh)"
+		use_laser_visual_mesh="$(arg use_laser_visual_mesh)"
 	/>
 	<!-- Init the MiR600 macro that includes all infos that Gazebo need to function -->
 	<xacro:mir_600_gazebo tf_prefix="$(arg tf_prefix_mir)" robot_namespace="$(arg robot_namespace)" use_camera="$(arg use_camera)"/>
@@ -124,7 +138,7 @@
 
 	<!-- Init the lift macro -->
 	<xacro:if value="${use_lift}">
-		<xacro:top_lift use_simple_collisions="$(arg use_simple_collisions)" use_simple_visuals="$(arg use_simple_visuals)"/>
+		<xacro:top_lift use_simple_collisions="$(arg use_simple_collisions)" use_simple_visuals="$(arg use_simple_visuals)" use_lift_visual_mesh="$(arg use_lift_visual_mesh)"/>
 
 		<xacro:if value="${use_arms}">
 			<joint name="plattform_manipulator_joint_l" type="fixed">

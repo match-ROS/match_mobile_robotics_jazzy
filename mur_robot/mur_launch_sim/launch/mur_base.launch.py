@@ -29,6 +29,8 @@ Arguments:
   use_camera (bool)        Include D435 camera links/Gazebo sensor (default true)
   use_simple_collisions (bool) Replace most MiR collision meshes with primitives (default false)
   use_simple_visuals (bool) Replace most MiR visual meshes with primitives for RViz/GPU diagnosis (default false)
+  use_high_quality_visuals (bool) Use full-resolution MiR base/top meshes instead of simplified meshes (default false)
+  use_*_visual_mesh (bool) With use_simple_visuals=true, selectively re-enable visual mesh groups.
 """
 
 import os
@@ -74,6 +76,13 @@ def declare_args():
         DeclareLaunchArgument('use_camera', default_value='true'),
         DeclareLaunchArgument('use_simple_collisions', default_value='false'),
         DeclareLaunchArgument('use_simple_visuals', default_value='false'),
+        DeclareLaunchArgument('use_high_quality_visuals', default_value='false'),
+        DeclareLaunchArgument('use_base_visual_mesh', default_value='false'),
+        DeclareLaunchArgument('use_top_visual_mesh', default_value='false'),
+        DeclareLaunchArgument('use_wheel_visual_mesh', default_value='false'),
+        DeclareLaunchArgument('use_caster_visual_mesh', default_value='false'),
+        DeclareLaunchArgument('use_lift_visual_mesh', default_value='false'),
+        DeclareLaunchArgument('use_laser_visual_mesh', default_value='false'),
         DeclareLaunchArgument(
             'map',
             default_value=os.path.join(
@@ -508,6 +517,20 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
     use_simple_visuals = (
         LaunchConfiguration('use_simple_visuals').perform(context) == 'true'
     )
+    use_high_quality_visuals = (
+        LaunchConfiguration('use_high_quality_visuals').perform(context) == 'true'
+    )
+    visual_mesh_flags = {
+        name: LaunchConfiguration(name).perform(context) == 'true'
+        for name in (
+            'use_base_visual_mesh',
+            'use_top_visual_mesh',
+            'use_wheel_visual_mesh',
+            'use_caster_visual_mesh',
+            'use_lift_visual_mesh',
+            'use_laser_visual_mesh',
+        )
+    }
     map_yaml = LaunchConfiguration('map').perform(context)
 
     mur_description_path = get_package_share_directory('mur_description')
@@ -525,6 +548,13 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
         'use_camera': 'true' if use_camera else 'false',
         'use_simple_collisions': 'true' if use_simple_collisions else 'false',
         'use_simple_visuals': 'true' if use_simple_visuals else 'false',
+        'use_high_quality_visuals': (
+            'true' if use_high_quality_visuals else 'false'
+        ),
+        **{
+            name: 'true' if enabled else 'false'
+            for name, enabled in visual_mesh_flags.items()
+        },
     })
     robot_desc = doc.toxml()
 

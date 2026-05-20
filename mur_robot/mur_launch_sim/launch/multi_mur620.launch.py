@@ -58,6 +58,17 @@ def declare_args():
             description='Replace heavy MiR visual meshes with primitives for RViz/GPU diagnosis.',
         ),
         DeclareLaunchArgument(
+            'use_high_quality_visuals',
+            default_value='false',
+            description='Use full-resolution MiR base/top visual meshes instead of simplified meshes.',
+        ),
+        DeclareLaunchArgument('use_base_visual_mesh', default_value='false'),
+        DeclareLaunchArgument('use_top_visual_mesh', default_value='false'),
+        DeclareLaunchArgument('use_wheel_visual_mesh', default_value='false'),
+        DeclareLaunchArgument('use_caster_visual_mesh', default_value='false'),
+        DeclareLaunchArgument('use_lift_visual_mesh', default_value='false'),
+        DeclareLaunchArgument('use_laser_visual_mesh', default_value='false'),
+        DeclareLaunchArgument(
             'localization',
             default_value='true',
             description='Start one AMCL instance per robot.',
@@ -203,6 +214,15 @@ def launch_setup(context, *args, **kwargs):
                 'ground_truth': LaunchConfiguration('ground_truth'),
                 'use_simple_collisions': LaunchConfiguration('use_simple_collisions'),
                 'use_simple_visuals': LaunchConfiguration('use_simple_visuals'),
+                'use_high_quality_visuals': LaunchConfiguration(
+                    'use_high_quality_visuals'
+                ),
+                'use_base_visual_mesh': LaunchConfiguration('use_base_visual_mesh'),
+                'use_top_visual_mesh': LaunchConfiguration('use_top_visual_mesh'),
+                'use_wheel_visual_mesh': LaunchConfiguration('use_wheel_visual_mesh'),
+                'use_caster_visual_mesh': LaunchConfiguration('use_caster_visual_mesh'),
+                'use_lift_visual_mesh': LaunchConfiguration('use_lift_visual_mesh'),
+                'use_laser_visual_mesh': LaunchConfiguration('use_laser_visual_mesh'),
                 'localization': 'false',
                 'navigation': 'false',
                 'load_arm_controllers': LaunchConfiguration('load_arm_controllers'),

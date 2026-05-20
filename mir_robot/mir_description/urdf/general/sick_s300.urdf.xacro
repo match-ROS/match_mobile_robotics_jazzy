@@ -8,9 +8,9 @@
 	<xacro:property name="laser_z" value="0.185" />
 	<xacro:property name="laser_mass" value="2.0" />
 
-	<xacro:macro name="sick_s300" params="link topic use_simple_collisions:=false use_simple_visuals:=false">
+	<xacro:macro name="sick_s300" params="link topic use_simple_collisions:=false use_simple_visuals:=false use_laser_visual_mesh:=false">
 		<link name="${link}">
-			<xacro:if value="${use_simple_visuals}">
+			<xacro:if value="${use_simple_visuals and not use_laser_visual_mesh}">
 				<visual>
 					<origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
 					<geometry>
@@ -19,7 +19,7 @@
 					<xacro:insert_block name="material_black" />
 				</visual>
 			</xacro:if>
-			<xacro:unless value="${use_simple_visuals}">
+			<xacro:unless value="${use_simple_visuals and not use_laser_visual_mesh}">
 				<visual>
 					<origin xyz="0.0 0.0 0.0" rpy="${pi} 0 0" />
 					<geometry>

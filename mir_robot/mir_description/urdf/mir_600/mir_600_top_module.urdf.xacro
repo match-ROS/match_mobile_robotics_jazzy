@@ -2,14 +2,14 @@
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
 	<xacro:include filename="$(find mir_description)/urdf/general/common_properties.urdf.xacro" />
 
-	<xacro:macro name="top_module" params="use_simple_collisions:=false use_simple_visuals:=false">
+	<xacro:macro name="top_module" params="use_simple_collisions:=false use_simple_visuals:=false use_high_quality_visuals:=false use_top_visual_mesh:=false use_lift_visual_mesh:=false">
 		
 		<!-- top module -->
 		<link name="top_module">
 			<xacro:box_inertial mass="${mir_600_top_module_mass}" x="1.35" y="0.91" z="0.5">
 				<origin xyz="${mir_600_act_wheel_dx} 0 0.25" rpy="0 0 0" />
 			</xacro:box_inertial>
-			<xacro:if value="${use_simple_visuals}">
+			<xacro:if value="${use_simple_visuals and not use_top_visual_mesh}">
 				<visual>
 					<origin xyz="${mir_600_act_wheel_dx} 0 0.25" rpy="0 0 0" />
 					<geometry>
@@ -18,21 +18,36 @@
 					<xacro:insert_block name="material_white" />
 				</visual>
 			</xacro:if>
-			<xacro:unless value="${use_simple_visuals}">
+			<xacro:unless value="${use_simple_visuals and not use_top_visual_mesh}">
 				<visual>
 					<origin xyz="${mir_600_act_wheel_dx} 0 0" rpy="0 0 ${-pi * 0.5}" />
 					<geometry>
-						<mesh filename="package://mir_description/meshes/visual/mir_600_top_module.stl" scale="0.001 0.001 0.001"/>
+						<xacro:if value="${use_high_quality_visuals}">
+							<mesh filename="package://mir_description/meshes/visual/mir_600_top_module.stl" scale="0.001 0.001 0.001"/>
+						</xacro:if>
+						<xacro:unless value="${use_high_quality_visuals}">
+							<mesh filename="package://mir_description/meshes/visual/simplify_mir_600_top_module.stl" scale="0.001 0.001 0.001"/>
+						</xacro:unless>
 					</geometry>
 					<xacro:insert_block name="material_white" />
 				</visual>
 			</xacro:unless>
-			<collision>
-				<origin xyz="${mir_600_act_wheel_dx} 0 0" rpy="0 0 ${-pi * 0.5}" />
-				<geometry>
-					<mesh filename="package://mir_description/meshes/collision/mir_600_top_module.stl" scale="0.001 0.001 0.001" />
-				</geometry>
-			</collision>
+			<xacro:if value="${use_simple_collisions}">
+				<collision>
+					<origin xyz="${mir_600_act_wheel_dx} 0 0.25" rpy="0 0 0" />
+					<geometry>
+						<box size="1.35 0.91 0.5"/>
+					</geometry>
+				</collision>
+			</xacro:if>
+			<xacro:unless value="${use_simple_collisions}">
+				<collision>
+					<origin xyz="${mir_600_act_wheel_dx} 0 0" rpy="0 0 ${-pi * 0.5}" />
+					<geometry>
+						<mesh filename="package://mir_description/meshes/collision/mir_600_top_module.stl" scale="0.001 0.001 0.001" />
+					</geometry>
+				</collision>
+			</xacro:unless>
 		</link>
 
 		<gazebo reference="top_module">
@@ -55,7 +70,7 @@
 			<xacro:box_inertial mass="${mir_600_lift_mass}" x="0.2" y="0.2" z="0.3">
 				<origin xyz="0 0 0.15" rpy="0 0 0" />
 			</xacro:box_inertial>
-			<xacro:if value="${use_simple_visuals}">
+			<xacro:if value="${use_simple_visuals and not use_lift_visual_mesh}">
 				<visual>
 					<origin xyz="0 0 0.15" rpy="0 0 0" />
 					<geometry>
@@ -64,7 +79,7 @@
 					<xacro:insert_block name="material_white" />
 				</visual>
 			</xacro:if>
-			<xacro:unless value="${use_simple_visuals}">
+			<xacro:unless value="${use_simple_visuals and not use_lift_visual_mesh}">
 				<visual>
 					<origin xyz="0 0 0" rpy="${pi * 0.5} 0 ${pi * 0.0}" />
 					<geometry>
@@ -111,7 +126,7 @@
 			<xacro:box_inertial mass="${mir_600_lift_mass}" x="0.2" y="0.2" z="0.3">
 				<origin xyz="0 0 0.15" rpy="0 0 0" />
 			</xacro:box_inertial>
-			<xacro:if value="${use_simple_visuals}">
+			<xacro:if value="${use_simple_visuals and not use_lift_visual_mesh}">
 				<visual>
 					<origin xyz="0 0 0.15" rpy="0 0 0" />
 					<geometry>
@@ -120,7 +135,7 @@
 					<xacro:insert_block name="material_white" />
 				</visual>
 			</xacro:if>
-			<xacro:unless value="${use_simple_visuals}">
+			<xacro:unless value="${use_simple_visuals and not use_lift_visual_mesh}">
 				<visual>
 					<origin xyz="0 0 0" rpy="${pi * 0.5} 0 ${pi * 0.0}" />
 					<geometry>
