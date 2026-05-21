@@ -4,6 +4,5 @@ source install/setup.bash
 clear
 #ros2 launch mur_launch_sim multi_mur620.launch.py 
 # Fall B: ohne Gazebo GUI
-ros2 launch mur_launch_sim multi_mur_base.launch.py \
-  gz_gui:=true launch_rviz:=true use_high_quality_visuals:=false
+ros2 launch mur_launch_sim multi_mur620.launch.py  launch_rviz:=true launch_moveit:=true 
 

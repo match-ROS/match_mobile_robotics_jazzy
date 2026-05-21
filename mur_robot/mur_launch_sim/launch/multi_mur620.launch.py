@@ -16,6 +16,7 @@ from launch.actions import (
     SetEnvironmentVariable,
     TimerAction,
 )
+from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
@@ -85,6 +86,14 @@ def declare_args():
         DeclareLaunchArgument('launch_rviz', default_value='false'),
         DeclareLaunchArgument('launch_servo', default_value='false'),
         DeclareLaunchArgument('rviz_delay', default_value='14.0'),
+        DeclareLaunchArgument(
+            'rviz_config',
+            default_value=os.path.join(
+                get_package_share_directory('mur_launch_sim'),
+                'rviz',
+                'multi_mur620.rviz',
+            ),
+        ),
         DeclareLaunchArgument('ur_type', default_value='ur10e'),
     ]
 
@@ -231,7 +240,7 @@ def launch_setup(context, *args, **kwargs):
                 ),
                 'launch_jparse_idk': LaunchConfiguration('launch_jparse_idk'),
                 'launch_moveit': LaunchConfiguration('launch_moveit'),
-                'launch_rviz': LaunchConfiguration('launch_rviz'),
+                'launch_rviz': 'false',
                 'launch_servo': LaunchConfiguration('launch_servo'),
                 'rviz_delay': LaunchConfiguration('rviz_delay'),
                 'ur_type': LaunchConfiguration('ur_type'),
@@ -266,6 +275,22 @@ def launch_setup(context, *args, **kwargs):
                     ],
                 )
             )
+
+    actions.append(
+        TimerAction(
+            period=float(LaunchConfiguration('rviz_delay').perform(context)),
+            condition=IfCondition(LaunchConfiguration('launch_rviz')),
+            actions=[
+                Node(
+                    package='rviz2',
+                    executable='rviz2',
+                    name='rviz2_multi_mur620',
+                    arguments=['-d', LaunchConfiguration('rviz_config')],
+                    output='screen',
+                ),
+            ],
+        )
+    )
 
     return actions
 
