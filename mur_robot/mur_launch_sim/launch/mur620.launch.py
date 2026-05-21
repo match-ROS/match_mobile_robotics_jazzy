@@ -88,6 +88,7 @@ def generate_launch_description():
         DeclareLaunchArgument('launch_servo', default_value='false'),
         DeclareLaunchArgument('auto_switch_arm_controllers', default_value='true'),
         DeclareLaunchArgument('launch_jparse_idk', default_value='true'),
+        DeclareLaunchArgument('publish_tf_alias', default_value='true'),
         DeclareLaunchArgument('ur_type', default_value='ur10e'),
     ]
 
@@ -287,6 +288,7 @@ def generate_launch_description():
             'rviz_delay': LaunchConfiguration('rviz_delay'),
             'rviz_config': LaunchConfiguration('rviz_config'),
             'controller_namespace': LaunchConfiguration('robot_name'),
+            'publish_tf_alias': LaunchConfiguration('publish_tf_alias'),
         }.items(),
     )
 

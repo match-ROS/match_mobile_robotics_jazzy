@@ -6,6 +6,7 @@ not have to create every full model at once.
 """
 
 import os
+import re
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
@@ -26,6 +27,18 @@ ROBOT_POSES = [
     ('mur620a', 44.0, 44.0, 0.07, 0.0),
     ('mur620b', 46.0, 44.0, 0.07, 0.0),
 ]
+
+
+def parse_robot_selection(value):
+    known_robots = [robot[0] for robot in ROBOT_POSES]
+    names = [name for name in re.split(r'[\s,;]+', value.strip()) if name]
+
+    if not names:
+        return []
+    if any(name.lower() == 'all' for name in names):
+        return known_robots
+
+    return [name for name in names if name in known_robots]
 
 
 def declare_args():
@@ -80,15 +93,15 @@ def declare_args():
         DeclareLaunchArgument(
             'launch_moveit',
             default_value='false',
-            description='Start MoveIt for the robot selected by moveit_robot.',
+            description='Start MoveIt for the robots selected by moveit_robot.',
         ),
         DeclareLaunchArgument(
             'moveit_robot',
             default_value=ROBOT_POSES[0][0],
             description=(
-                'Robot name that owns the active MoveIt/RViz planning scene. '
-                'Only one MoveIt instance is launched to avoid duplicate global '
-                'base_footprint TF aliases.'
+                'Comma or space separated robot names that should launch MoveIt. '
+                'Use "all" for every robot. The first selected robot owns RViz '
+                'and the global MoveIt base_footprint TF alias.'
             ),
         ),
         DeclareLaunchArgument('launch_rviz', default_value='false'),
@@ -155,7 +168,8 @@ def launch_setup(context, *args, **kwargs):
     )
     start_moveit = LaunchConfiguration('launch_moveit').perform(context).lower() == 'true'
     start_rviz = LaunchConfiguration('launch_rviz').perform(context).lower() == 'true'
-    moveit_robot = LaunchConfiguration('moveit_robot').perform(context)
+    moveit_robots = parse_robot_selection(LaunchConfiguration('moveit_robot').perform(context))
+    primary_moveit_robot = moveit_robots[0] if moveit_robots else None
     spawn_interval = float(LaunchConfiguration('spawn_interval').perform(context))
     mur_launch_sim_path = get_package_share_directory('mur_launch_sim')
     mir_gazebo_path = get_package_share_directory('mir_gazebo')
@@ -216,8 +230,9 @@ def launch_setup(context, *args, **kwargs):
         ])
 
     for index, (robot_name, x, y, z, yaw) in enumerate(ROBOT_POSES):
-        robot_uses_moveit = start_moveit and robot_name == moveit_robot
-        robot_launches_rviz = start_rviz and robot_uses_moveit
+        robot_uses_moveit = start_moveit and robot_name in moveit_robots
+        robot_is_primary_moveit = robot_name == primary_moveit_robot
+        robot_launches_rviz = start_rviz and robot_uses_moveit and robot_is_primary_moveit
         robot = IncludeLaunchDescription(
             PythonLaunchDescriptionSource(mur620_launch),
             launch_arguments={
@@ -255,6 +270,7 @@ def launch_setup(context, *args, **kwargs):
                 'launch_moveit': 'true' if robot_uses_moveit else 'false',
                 'launch_rviz': 'true' if robot_launches_rviz else 'false',
                 'rviz_config': LaunchConfiguration('rviz_config'),
+                'publish_tf_alias': 'true' if robot_is_primary_moveit else 'false',
                 'launch_servo': LaunchConfiguration('launch_servo'),
                 'rviz_delay': LaunchConfiguration('rviz_delay'),
                 'ur_type': LaunchConfiguration('ur_type'),
