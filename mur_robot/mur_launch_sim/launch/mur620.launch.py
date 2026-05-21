@@ -89,6 +89,9 @@ def generate_launch_description():
         DeclareLaunchArgument('auto_switch_arm_controllers', default_value='true'),
         DeclareLaunchArgument('launch_jparse_idk', default_value='true'),
         DeclareLaunchArgument('publish_tf_alias', default_value='true'),
+        DeclareLaunchArgument('tf_topic', default_value='/tf'),
+        DeclareLaunchArgument('tf_static_topic', default_value='/tf_static'),
+        DeclareLaunchArgument('virtual_joint_parent_frame', default_value=''),
         DeclareLaunchArgument('ur_type', default_value='ur10e'),
     ]
 
@@ -289,6 +292,9 @@ def generate_launch_description():
             'rviz_config': LaunchConfiguration('rviz_config'),
             'controller_namespace': LaunchConfiguration('robot_name'),
             'publish_tf_alias': LaunchConfiguration('publish_tf_alias'),
+            'tf_topic': LaunchConfiguration('tf_topic'),
+            'tf_static_topic': LaunchConfiguration('tf_static_topic'),
+            'virtual_joint_parent_frame': LaunchConfiguration('virtual_joint_parent_frame'),
         }.items(),
     )
 

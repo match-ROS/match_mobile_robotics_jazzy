@@ -41,6 +41,38 @@ def parse_robot_selection(value):
     return [name for name in names if name in known_robots]
 
 
+def rviz_config_for_robot(source_config, robot_name):
+    target_config = os.path.join('/tmp', f'multi_mur620_{robot_name}.rviz')
+    with open(source_config, 'r', encoding='utf-8') as source:
+        contents = source.read()
+
+    default_robot = ROBOT_POSES[0][0]
+    contents = contents.replace(
+        f'Move Group Namespace: {default_robot}',
+        f'Move Group Namespace: {robot_name}',
+    )
+    for old_topic in (
+        'Planning Scene Topic: monitored_planning_scene',
+        f'Planning Scene Topic: /{default_robot}/monitored_planning_scene',
+    ):
+        contents = contents.replace(
+            old_topic,
+            f'Planning Scene Topic: /{robot_name}/monitored_planning_scene',
+        )
+    for old_topic in (
+        'Trajectory Topic: display_planned_path',
+        f'Trajectory Topic: /{default_robot}/display_planned_path',
+    ):
+        contents = contents.replace(
+            old_topic,
+            f'Trajectory Topic: /{robot_name}/display_planned_path',
+        )
+    with open(target_config, 'w', encoding='utf-8') as target:
+        target.write(contents)
+
+    return target_config
+
+
 def declare_args():
     mir_gazebo_path = get_package_share_directory('mir_gazebo')
     return [
@@ -100,8 +132,9 @@ def declare_args():
             default_value=ROBOT_POSES[0][0],
             description=(
                 'Comma or space separated robot names that should launch MoveIt. '
-                'Use "all" for every robot. The first selected robot owns RViz '
-                'and the global MoveIt base_footprint TF alias.'
+                'Use "all" for every robot. RViz is launched once per selected '
+                'robot when launch_rviz is true. Each MoveIt instance gets an '
+                'isolated TF view so their unprefixed planning frames do not collide.'
             ),
         ),
         DeclareLaunchArgument('launch_rviz', default_value='false'),
@@ -169,10 +202,10 @@ def launch_setup(context, *args, **kwargs):
     start_moveit = LaunchConfiguration('launch_moveit').perform(context).lower() == 'true'
     start_rviz = LaunchConfiguration('launch_rviz').perform(context).lower() == 'true'
     moveit_robots = parse_robot_selection(LaunchConfiguration('moveit_robot').perform(context))
-    primary_moveit_robot = moveit_robots[0] if moveit_robots else None
     spawn_interval = float(LaunchConfiguration('spawn_interval').perform(context))
     mur_launch_sim_path = get_package_share_directory('mur_launch_sim')
     mir_gazebo_path = get_package_share_directory('mir_gazebo')
+    rviz_config = LaunchConfiguration('rviz_config').perform(context)
     mur620_launch = os.path.join(mur_launch_sim_path, 'launch', 'mur620.launch.py')
     gz_sim_launch = os.path.join(
         get_package_share_directory('ros_gz_sim'),
@@ -231,8 +264,9 @@ def launch_setup(context, *args, **kwargs):
 
     for index, (robot_name, x, y, z, yaw) in enumerate(ROBOT_POSES):
         robot_uses_moveit = start_moveit and robot_name in moveit_robots
-        robot_is_primary_moveit = robot_name == primary_moveit_robot
-        robot_launches_rviz = start_rviz and robot_uses_moveit and robot_is_primary_moveit
+        robot_launches_rviz = start_rviz and robot_uses_moveit
+        moveit_tf_topic = f'/{robot_name}/moveit_tf'
+        moveit_tf_static_topic = f'/{robot_name}/moveit_tf_static'
         robot = IncludeLaunchDescription(
             PythonLaunchDescriptionSource(mur620_launch),
             launch_arguments={
@@ -269,14 +303,40 @@ def launch_setup(context, *args, **kwargs):
                 'launch_jparse_idk': LaunchConfiguration('launch_jparse_idk'),
                 'launch_moveit': 'true' if robot_uses_moveit else 'false',
                 'launch_rviz': 'true' if robot_launches_rviz else 'false',
-                'rviz_config': LaunchConfiguration('rviz_config'),
-                'publish_tf_alias': 'true' if robot_is_primary_moveit else 'false',
+                'rviz_config': rviz_config_for_robot(rviz_config, robot_name),
+                'publish_tf_alias': 'false' if robot_uses_moveit else 'true',
+                'tf_topic': moveit_tf_topic if robot_uses_moveit else '/tf',
+                'tf_static_topic': (
+                    moveit_tf_static_topic if robot_uses_moveit else '/tf_static'
+                ),
+                'virtual_joint_parent_frame': (
+                    f'{robot_name}/base_footprint' if robot_uses_moveit else ''
+                ),
                 'launch_servo': LaunchConfiguration('launch_servo'),
                 'rviz_delay': LaunchConfiguration('rviz_delay'),
                 'ur_type': LaunchConfiguration('ur_type'),
             }.items(),
         )
         actions.append(TimerAction(period=index * spawn_interval, actions=[robot]))
+        if robot_uses_moveit:
+            actions.append(
+                TimerAction(
+                    period=index * spawn_interval + 1.0,
+                    actions=[
+                        Node(
+                            package='mur_launch_sim',
+                            executable='moveit_tf_republisher.py',
+                            name=f'{robot_name}_moveit_tf_republisher',
+                            arguments=[
+                                '--robot-name', robot_name,
+                                '--tf-topic', moveit_tf_topic,
+                                '--tf-static-topic', moveit_tf_static_topic,
+                            ],
+                            output='screen',
+                        )
+                    ],
+                )
+            )
         if start_localization:
             actions.append(
                 TimerAction(

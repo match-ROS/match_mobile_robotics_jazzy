@@ -95,6 +95,14 @@ for robot in $ROBOTS; do
   echo "-- Current TF for MoveIt base"
   timeout 7 ros2 run tf2_ros tf2_echo map "${robot}/base_footprint" || true
   timeout 7 ros2 run tf2_ros tf2_echo "${robot}/base_footprint" "${robot}/UR10_l/tool0" || true
+
+  echo "-- Private MoveIt TF"
+  run ros2 topic info "/${robot}/moveit_tf" --verbose
+  run ros2 topic info "/${robot}/moveit_tf_static" --verbose
+  timeout 7 ros2 run tf2_ros tf2_echo "${robot}/base_footprint" base_footprint \
+    --ros-args -r /tf:="/${robot}/moveit_tf" -r /tf_static:="/${robot}/moveit_tf_static" || true
+  timeout 7 ros2 run tf2_ros tf2_echo base_footprint UR10_l/tool0 \
+    --ros-args -r /tf:="/${robot}/moveit_tf" -r /tf_static:="/${robot}/moveit_tf_static" || true
 done
 
 section "Recent MoveIt/RViz Logs"
@@ -110,11 +118,13 @@ find /home/rosmatch/.ros/log -maxdepth 2 -type f \
     done
 
 section "RViz Checks"
-echo "For namespace mur620a, MotionPlanning should use:"
-echo "  Move Group Namespace: mur620a"
-echo "  Planning Scene Topic: monitored_planning_scene"
-echo "  Robot Description: robot_description"
-echo "  Planned Path Trajectory Topic: display_planned_path"
+for robot in $ROBOTS; do
+  echo "For namespace ${robot}, MotionPlanning should use:"
+  echo "  Move Group Namespace: ${robot}"
+  echo "  Planning Scene Topic: /${robot}/monitored_planning_scene"
+  echo "  Robot Description: robot_description"
+  echo "  Planned Path Trajectory Topic: /${robot}/display_planned_path"
+done
 
 section "Done"
 echo "Diagnostic log written to: $LOG_FILE"

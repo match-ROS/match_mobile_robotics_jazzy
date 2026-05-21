@@ -709,7 +709,7 @@ Visualization Manager:
         Show Trail: false
         State Display Time: 3x
         Trail Step Size: 1
-        Trajectory Topic: display_planned_path
+        Trajectory Topic: /mur620a/display_planned_path
         Use Sim Time: true
       Planning Metrics:
         Payload: 1
@@ -730,7 +730,7 @@ Visualization Manager:
         Show Workspace: false
         Start State Alpha: 1
         Start State Color: 0; 255; 0
-      Planning Scene Topic: monitored_planning_scene
+      Planning Scene Topic: /mur620a/monitored_planning_scene
       Robot Description: robot_description
       Scene Geometry:
         Scene Alpha: 0.8999999761581421

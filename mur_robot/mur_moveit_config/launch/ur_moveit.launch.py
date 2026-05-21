@@ -233,6 +233,24 @@ def declare_arguments():
                     "MoveIt's unprefixed planning frame"
                 ),
             ),
+            DeclareLaunchArgument(
+                "tf_topic",
+                default_value="/tf",
+                description="TF topic used by MoveIt and its RViz instance",
+            ),
+            DeclareLaunchArgument(
+                "tf_static_topic",
+                default_value="/tf_static",
+                description="Static TF topic used by MoveIt and its RViz instance",
+            ),
+            DeclareLaunchArgument(
+                "virtual_joint_parent_frame",
+                default_value="",
+                description=(
+                    "Parent frame for MoveIt's fixed virtual joint. Empty uses "
+                    "<controller_namespace>/base_footprint."
+                ),
+            ),
         ]
     )
 
@@ -253,6 +271,15 @@ def launch_setup(context, *args, **kwargs):
     )
     controller_namespace = LaunchConfiguration("controller_namespace").perform(context)
     publish_tf_alias = LaunchConfiguration("publish_tf_alias")
+    tf_topic = LaunchConfiguration("tf_topic")
+    tf_static_topic = LaunchConfiguration("tf_static_topic")
+    virtual_joint_parent_frame = LaunchConfiguration("virtual_joint_parent_frame").perform(context)
+    if not virtual_joint_parent_frame:
+        virtual_joint_parent_frame = f"{controller_namespace}/base_footprint"
+    tf_remappings = [
+        ("/tf", tf_topic),
+        ("/tf_static", tf_static_topic),
+    ]
 
     robot_xacro_file, robot_xacro_mappings = robot_description_source(controller_namespace)
     moveit_config = (
@@ -263,7 +290,7 @@ def launch_setup(context, *args, **kwargs):
             {
                 "prefix": "UR10",
                 "model_name": "mur620",
-                "virtual_joint_parent_frame": f"{controller_namespace}/base_footprint",
+                "virtual_joint_parent_frame": virtual_joint_parent_frame,
             },
         )
         .to_moveit_configs()
@@ -293,6 +320,7 @@ def launch_setup(context, *args, **kwargs):
                 "default_workspace_bounds": 100.0,
             },
         ],
+        remappings=tf_remappings,
     )
 
     servo_yaml = load_yaml("ur_moveit_config", "config/ur_servo.yaml")
@@ -309,6 +337,7 @@ def launch_setup(context, *args, **kwargs):
                 "use_sim_time": use_sim_time,
             },
         ],
+        remappings=tf_remappings,
         output="screen",
     )
 
@@ -326,6 +355,7 @@ def launch_setup(context, *args, **kwargs):
                 "use_sim_time": use_sim_time,
             },
         ],
+        remappings=tf_remappings,
     )
 
     moveit_tf_alias = Node(
@@ -351,6 +381,7 @@ def launch_setup(context, *args, **kwargs):
             "--child-frame-id",
             "base_footprint",
         ],
+        remappings=tf_remappings,
         output="screen",
     )
 

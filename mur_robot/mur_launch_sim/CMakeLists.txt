@@ -74,11 +74,13 @@ install(TARGETS
 
 install(PROGRAMS
   scripts/ground_truth_from_pose_tf.py
+  scripts/fake_localization_from_ground_truth.py
   scripts/jparse_simple_goal.py
   scripts/jparse_move_action_server.py
   scripts/laserscan_frame_republisher.py
   scripts/lift_effort_position_controller.py
   scripts/moveit_move_to_home.py  # Replace with the path to your Python node
+  scripts/moveit_tf_republisher.py
   scripts/moveit_trajectory_controller_proxy.py
   scripts/publish_moveit_descriptions.py
   scripts/test_forward_velocity_controller.py
