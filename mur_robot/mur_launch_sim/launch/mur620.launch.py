@@ -81,6 +81,10 @@ def generate_launch_description():
         DeclareLaunchArgument('launch_moveit', default_value='true'),
         DeclareLaunchArgument('launch_rviz', default_value='false'),
         DeclareLaunchArgument('rviz_delay', default_value='10.0'),
+        DeclareLaunchArgument(
+            'rviz_config',
+            default_value=os.path.join(mur_moveit_path, 'config', 'mur620a.rviz'),
+        ),
         DeclareLaunchArgument('launch_servo', default_value='false'),
         DeclareLaunchArgument('auto_switch_arm_controllers', default_value='true'),
         DeclareLaunchArgument('launch_jparse_idk', default_value='true'),
@@ -281,6 +285,7 @@ def generate_launch_description():
             'launch_servo': LaunchConfiguration('launch_servo'),
             'launch_rviz': LaunchConfiguration('launch_rviz'),
             'rviz_delay': LaunchConfiguration('rviz_delay'),
+            'rviz_config': LaunchConfiguration('rviz_config'),
             'controller_namespace': LaunchConfiguration('robot_name'),
         }.items(),
     )

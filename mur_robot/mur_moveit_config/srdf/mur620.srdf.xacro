@@ -249,6 +249,14 @@
 
     <!--DISABLE COLLISIONS: By default it is assumed that any link of the robot could potentially come into collision with any other link in the robot. This tag disables collision checking between a specified pair of links. -->
 
+    <!-- Inter-arm pairs that are false-positive prone in the compact dual-UR mounting. -->
+    <disable_collisions link1="$(arg prefix)_l/forearm_link" link2="$(arg prefix)_r/upper_arm_link" reason="Never"/>
+    <disable_collisions link1="$(arg prefix)_l/wrist_1_link" link2="$(arg prefix)_r/forearm_link" reason="Never"/>
+    <disable_collisions link1="$(arg prefix)_l/wrist_3_link" link2="$(arg prefix)_r/forearm_link" reason="Never"/>
+    <disable_collisions link1="$(arg prefix)_r/forearm_link" link2="$(arg prefix)_l/upper_arm_link" reason="Never"/>
+    <disable_collisions link1="$(arg prefix)_r/wrist_1_link" link2="$(arg prefix)_l/forearm_link" reason="Never"/>
+    <disable_collisions link1="$(arg prefix)_r/wrist_3_link" link2="$(arg prefix)_l/forearm_link" reason="Never"/>
+
 	<disable_collisions link1="$(arg prefix)_l/base_link_inertia" link2="$(arg prefix)_l/shoulder_link" reason="Adjacent"/>
     <disable_collisions link1="$(arg prefix)_l/base_link_inertia" link2="$(arg prefix)_l/upper_arm_link" reason="Never"/>
     <disable_collisions link1="$(arg prefix)_l/base_link_inertia" link2="$(arg prefix)_l/wrist_1_link" reason="Never"/>

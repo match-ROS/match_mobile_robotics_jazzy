@@ -1,0 +1,1585 @@
+Writing diagnostic log to: /home/rosmatch/colcon_ws/src/match_mobile_robotics_jazzy/logs/check_multi_mur620_moveit_20260521_121827.log
+Workspace: /home/rosmatch/colcon_ws
+ROS_DOMAIN_ID: 62
+Robots: mur620a mur620b
+
+== Processes ==
+168740 /usr/bin/python3 /opt/ros/jazzy/bin/ros2 launch mur_launch_sim multi_mur620.launch.py launch_rviz:=true launch_moveit:=true
+168986 /opt/ros/jazzy/lib/robot_state_publisher/robot_state_publisher --ros-args -r __node:=mur620a_rsp -r __ns:=/mur620a --params-file /tmp/launch_params_9hi6pzxy --params-file /tmp/launch_params_uhbssrxl --params-file /tmp/launch_params_xdnb2xxw
+168987 /opt/ros/jazzy/lib/robot_state_publisher/robot_state_publisher --ros-args -r __node:=mur620a_global_rsp --params-file /tmp/launch_params_4jwrggya --params-file /tmp/launch_params_4_bfq8ua --params-file /tmp/launch_params_iewskhs3 -r /tf:=unused_tf -r /tf_static:=unused_tf_static
+169642 /opt/ros/jazzy/lib/moveit_ros_move_group/move_group --ros-args -r __ns:=/mur620a --params-file /tmp/launch_params_81_96zwq --params-file /tmp/launch_params_ys8bnsou --params-file /tmp/launch_params_p9356t_s --params-file /tmp/launch_params_a_02lpjm
+171237 /opt/ros/jazzy/lib/robot_state_publisher/robot_state_publisher --ros-args -r __node:=mur620b_rsp -r __ns:=/mur620b --params-file /tmp/launch_params_1h7rftcm --params-file /tmp/launch_params_43jrni9d --params-file /tmp/launch_params_g5xmpfui
+171238 /opt/ros/jazzy/lib/robot_state_publisher/robot_state_publisher --ros-args -r __node:=mur620b_global_rsp --params-file /tmp/launch_params_uhi2d4rn --params-file /tmp/launch_params_k098rvh6 --params-file /tmp/launch_params_g9cjtu3g -r /tf:=unused_tf -r /tf_static:=unused_tf_static
+171654 /opt/ros/jazzy/lib/rviz2/rviz2 -d /home/rosmatch/colcon_ws/install/mur_launch_sim/share/mur_launch_sim/rviz/multi_mur620.rviz --ros-args -r __node:=rviz2_multi_mur620
+171780 /opt/ros/jazzy/lib/moveit_ros_move_group/move_group --ros-args -r __ns:=/mur620b --params-file /tmp/launch_params_75wl56n_ --params-file /tmp/launch_params_3w7x0muk --params-file /tmp/launch_params_bz3i2bps --params-file /tmp/launch_params_92h4xtks
+
+ 168887  168821  251  3.8       02:13 gz sim server
+ 168888  168821 71.0  3.1       02:13 gz sim gui
+ 169642  168740 46.1  1.0       02:10 /opt/ros/jazzy/lib/moveit_ros_move_group/move_group --ros-args -r __ns:=/mur620a --params-file /tmp/launch_params_81_96zwq --params-file /tmp/launch_params_ys8bnsou --params-file /tmp/launch_params_p9356t_s --params-file /tmp/launch_params_a_02lpjm
+ 171654  168740 36.2  1.9       01:59 /opt/ros/jazzy/lib/rviz2/rviz2 -d /home/rosmatch/colcon_ws/install/mur_launch_sim/share/mur_launch_sim/rviz/multi_mur620.rviz --ros-args -r __node:=rviz2_multi_mur620
+ 171780  168740 33.1  1.0       01:58 /opt/ros/jazzy/lib/moveit_ros_move_group/move_group --ros-args -r __ns:=/mur620b --params-file /tmp/launch_params_75wl56n_ --params-file /tmp/launch_params_3w7x0muk --params-file /tmp/launch_params_bz3i2bps --params-file /tmp/launch_params_92h4xtks
+ 171237  168740  8.3  0.1       02:00 /opt/ros/jazzy/lib/robot_state_publisher/robot_state_publisher --ros-args -r __node:=mur620b_rsp -r __ns:=/mur620b --params-file /tmp/launch_params_1h7rftcm --params-file /tmp/launch_params_43jrni9d --params-file /tmp/launch_params_g5xmpfui
+ 168986  168740  7.8  0.1       02:12 /opt/ros/jazzy/lib/robot_state_publisher/robot_state_publisher --ros-args -r __node:=mur620a_rsp -r __ns:=/mur620a --params-file /tmp/launch_params_9hi6pzxy --params-file /tmp/launch_params_uhbssrxl --params-file /tmp/launch_params_xdnb2xxw
+ 168987  168740  7.2  0.1       02:12 /opt/ros/jazzy/lib/robot_state_publisher/robot_state_publisher --ros-args -r __node:=mur620a_global_rsp --params-file /tmp/launch_params_4jwrggya --params-file /tmp/launch_params_4_bfq8ua --params-file /tmp/launch_params_iewskhs3 -r /tf:=unused_tf -r /tf_static:=unused_tf_static
+ 171238  168740  7.1  0.1       02:00 /opt/ros/jazzy/lib/robot_state_publisher/robot_state_publisher --ros-args -r __node:=mur620b_global_rsp --params-file /tmp/launch_params_uhi2d4rn --params-file /tmp/launch_params_k098rvh6 --params-file /tmp/launch_params_g9cjtu3g -r /tf:=unused_tf -r /tf_static:=unused_tf_static
+ 168821  168818  0.0  0.1       02:13 gz sim scale.world -v 4 -r
+ 168818  168740  0.0  0.0       02:13 /bin/sh -c ruby /opt/ros/jazzy/opt/gz_tools_vendor/bin/gz sim scale.world -v 4 -r --force-version 8
+
+== Core Graph ==
+
+$ ros2 node list --no-daemon
+
+$ ros2 topic list --no-daemon
+/clock
+/mur620b/f_scan
+/mur620b/forward_velocity_controller_l/commands
+/mur620b/jparse_velocity_controller_l/debug_twist
+/mur620b/jparse_velocity_controller_l/singular_values
+/mur620b/scan_merged_raw
+/parameter_events
+/rosout
+/tf
+/tf_static
+
+$ ros2 action list --no-daemon
+usage: ros2 [-h] [--use-python-default-buffering]
+            Call `ros2 <command> -h` for more detailed usage. ...
+ros2: error: unrecognized arguments: --no-daemon
+
+== MoveIt Topics ==
+
+$ ros2 topic info /mur620a/monitored_planning_scene --verbose
+Unknown topic '/mur620a/monitored_planning_scene'
+
+$ ros2 topic info /mur620a/display_planned_path --verbose
+Unknown topic '/mur620a/display_planned_path'
+
+$ ros2 topic info /mur620b/monitored_planning_scene --verbose
+Type: moveit_msgs/msg/PlanningScene
+
+Publisher count: 1
+
+Node name: move_group_private_101204271894736
+Node namespace: /mur620b
+Topic type: moveit_msgs/msg/PlanningScene
+Topic type hash: RIHS01_0f58540ad5eab4b9ea827d53b763c793d8cabd202b3b301fcee25afa4ce1bd80
+Endpoint type: PUBLISHER
+GID: 01.0f.f6.e2.04.9f.65.3d.00.00.00.00.00.00.57.03
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Subscription count: 0
+
+
+$ ros2 topic info /mur620b/display_planned_path --verbose
+Type: moveit_msgs/msg/DisplayTrajectory
+
+Publisher count: 2
+
+Node name: move_group
+Node namespace: /mur620b
+Topic type: moveit_msgs/msg/DisplayTrajectory
+Topic type hash: RIHS01_dd351cbd6d9986eb019306910ec09236a136a02dbc0b3465707cb62f2d56e22b
+Endpoint type: PUBLISHER
+GID: 01.0f.f6.e2.04.9f.65.3d.00.00.00.00.00.00.61.03
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: TRANSIENT_LOCAL
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: move_group
+Node namespace: /mur620b
+Topic type: moveit_msgs/msg/DisplayTrajectory
+Topic type hash: RIHS01_dd351cbd6d9986eb019306910ec09236a136a02dbc0b3465707cb62f2d56e22b
+Endpoint type: PUBLISHER
+GID: 01.0f.f6.e2.04.9f.65.3d.00.00.00.00.00.00.9d.03
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Subscription count: 0
+
+
+$ ros2 topic info /monitored_planning_scene --verbose
+Type: moveit_msgs/msg/PlanningScene
+
+Publisher count: 0
+
+Subscription count: 1
+
+Node name: rviz2_multi_mur620_private_139211393045664
+Node namespace: /
+Topic type: moveit_msgs/msg/PlanningScene
+Topic type hash: RIHS01_0f58540ad5eab4b9ea827d53b763c793d8cabd202b3b301fcee25afa4ce1bd80
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.86.9e.da.d2.00.00.00.00.00.01.bc.04
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+
+$ ros2 topic info /display_planned_path --verbose
+Type: moveit_msgs/msg/DisplayTrajectory
+
+Publisher count: 0
+
+Subscription count: 1
+
+Node name: rviz2_multi_mur620
+Node namespace: /
+Topic type: moveit_msgs/msg/DisplayTrajectory
+Topic type hash: RIHS01_dd351cbd6d9986eb019306910ec09236a136a02dbc0b3465707cb62f2d56e22b
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.86.9e.da.d2.00.00.00.00.00.01.bd.04
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+
+== MoveIt mur620a ==
+-- Nodes
+-- MoveIt action
+
+$ ros2 action info /mur620a/move_action
+Action: /mur620a/move_action
+Action clients: 2
+    /rviz2_multi_mur620
+    /rviz2_multi_mur620
+Action servers: 1
+    /mur620a/move_group
+-- Robot descriptions
+robot_description chars: 73037
+robot_description_semantic chars: 44346
+-- MoveIt core params
+
+$ ros2 param get /mur620a/move_group planning_pipelines
+String values are: ['ompl']
+
+$ ros2 param get /mur620a/move_group default_planning_pipeline
+String value is: ompl
+
+$ ros2 param get /mur620a/move_group robot_description_kinematics.UR_arm_l.kinematics_solver
+String value is: kdl_kinematics_plugin/KDLKinematicsPlugin
+
+$ ros2 param get /mur620a/move_group robot_description_kinematics.UR_arm_r.kinematics_solver
+String value is: kdl_kinematics_plugin/KDLKinematicsPlugin
+
+$ ros2 param get /mur620a/move_group robot_description_planning.joint_limits.UR10_l/shoulder_pan_joint.max_velocity
+Double value is: 2.09439510239
+-- Controllers
+[INFO] [1779358733.293997624] [_ros2cli_183932]: waiting for service /mur620a/controller_manager/list_controllers to become available...
+lift_controller_l                  position_controllers/JointGroupPositionController      inactive
+joint_state_broadcaster            joint_state_broadcaster/JointStateBroadcaster          active  
+joint_trajectory_controller_lift_l joint_trajectory_controller/JointTrajectoryController  inactive
+lift_effort_controller_l           effort_controllers/JointGroupEffortController          active  
+forward_velocity_controller_r      velocity_controllers/JointGroupVelocityController      inactive
+joint_trajectory_controller_l      joint_trajectory_controller/JointTrajectoryController  inactive
+forward_velocity_controller_l      velocity_controllers/JointGroupVelocityController      active  
+joint_trajectory_controller_r      joint_trajectory_controller/JointTrajectoryController  active  
+joint_trajectory_controller_lift_r joint_trajectory_controller/JointTrajectoryController  inactive
+lift_controller_r                  position_controllers/JointGroupPositionController      inactive
+mobile_base_controller             diff_drive_controller/DiffDriveController              active  
+lift_effort_controller_r           effort_controllers/JointGroupEffortController          active  
+-- Joint states
+
+$ ros2 topic info /mur620a/joint_states --verbose
+Type: sensor_msgs/msg/JointState
+
+Publisher count: 1
+
+Node name: joint_state_broadcaster
+Node namespace: /mur620a
+Topic type: sensor_msgs/msg/JointState
+Topic type hash: RIHS01_a13ee3a330e346c9d87b5aa18d24e11690752bd33a0350f11c5882bc9179260e
+Endpoint type: PUBLISHER
+GID: 01.0f.f6.e2.b7.93.55.ca.00.00.00.00.00.02.85.03
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: TRANSIENT_LOCAL
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Subscription count: 8
+
+Node name: mur620a_rsp
+Node namespace: /mur620a
+Topic type: sensor_msgs/msg/JointState
+Topic type hash: RIHS01_a13ee3a330e346c9d87b5aa18d24e11690752bd33a0350f11c5882bc9179260e
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.1a.94.0f.ed.00.00.00.00.00.00.18.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620a_lift_effort_position_controller_l
+Node namespace: /
+Topic type: sensor_msgs/msg/JointState
+Topic type hash: RIHS01_a13ee3a330e346c9d87b5aa18d24e11690752bd33a0350f11c5882bc9179260e
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.1d.94.d4.54.00.00.00.00.00.00.16.04
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620a_lift_effort_position_controller_r
+Node namespace: /
+Topic type: sensor_msgs/msg/JointState
+Topic type hash: RIHS01_a13ee3a330e346c9d87b5aa18d24e11690752bd33a0350f11c5882bc9179260e
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.1e.94.27.bc.00.00.00.00.00.00.16.04
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620a_jparse_velocity_controller_l
+Node namespace: /
+Topic type: sensor_msgs/msg/JointState
+Topic type hash: RIHS01_a13ee3a330e346c9d87b5aa18d24e11690752bd33a0350f11c5882bc9179260e
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.42.98.a8.82.00.00.00.00.00.00.19.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620a_jparse_velocity_controller_r
+Node namespace: /
+Topic type: sensor_msgs/msg/JointState
+Topic type hash: RIHS01_a13ee3a330e346c9d87b5aa18d24e11690752bd33a0350f11c5882bc9179260e
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.43.98.b4.82.00.00.00.00.00.00.19.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620a_jparse_move_l
+Node namespace: /
+Topic type: sensor_msgs/msg/JointState
+Topic type hash: RIHS01_a13ee3a330e346c9d87b5aa18d24e11690752bd33a0350f11c5882bc9179260e
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.44.98.8b.6b.00.00.00.00.00.00.15.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620a_jparse_move_r
+Node namespace: /
+Topic type: sensor_msgs/msg/JointState
+Topic type hash: RIHS01_a13ee3a330e346c9d87b5aa18d24e11690752bd33a0350f11c5882bc9179260e
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.45.98.42.65.00.00.00.00.00.00.15.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: move_group_private_107522403540768
+Node namespace: /mur620a
+Topic type: sensor_msgs/msg/JointState
+Topic type hash: RIHS01_a13ee3a330e346c9d87b5aa18d24e11690752bd33a0350f11c5882bc9179260e
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.aa.96.52.bb.00.00.00.00.00.00.55.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+A message was lost!!!
+	total count change:1
+	total count: 1---
+header:
+  stamp:
+    sec: 119
+    nanosec: 830000000
+  frame_id: base_link
+name:
+- UR10_l/elbow_joint
+- UR10_l/shoulder_lift_joint
+- UR10_l/shoulder_pan_joint
+- UR10_l/wrist_1_joint
+- UR10_l/wrist_2_joint
+- UR10_l/wrist_3_joint
+- UR10_r/elbow_joint
+- UR10_r/shoulder_lift_joint
+- UR10_r/shoulder_pan_joint
+- UR10_r/wrist_1_joint
+- UR10_r/wrist_2_joint
+- UR10_r/wrist_3_joint
+- bl_caster_rotation_joint
+- bl_caster_wheel_joint
+- br_caster_rotation_joint
+- br_caster_wheel_joint
+- fl_caster_rotation_joint
+- fl_caster_wheel_joint
+- fr_caster_rotation_joint
+- fr_caster_wheel_joint
+- left_lift_joint
+- left_wheel_joint
+- right_lift_joint
+- right_wheel_joint
+position:
+- -1.6147612737096901
+- -1.5707963282002095
+- -5.251490018635408e-16
+- -1.5707963425950497
+- 1.5707963267899905
+- -7.057510230160146e-17
+- -1.4250082672514406
+- -1.4107468810839623
+- 1.6188500525032878
+- -1.0291902581085373
+- -1.3444051384339601
+- 0.3116341462003655
+- 0.11829318971784528
+- -3.168996688863398e-07
+- 0.11733976769636544
+- -9.922402445160779e-08
+- 0.2202233276523435
+- 1.4791373262215578e-06
+- 0.20557394632905354
+- 1.996732009937303e-06
+- 2.8015756644831916e-12
+- -2.8860261696361108e-12
+- 0.0004014945471416654
+- 1.614769007861157e-12
+velocity:
+- -4.628166946907264e-11
+- -1.1697541373034692e-11
+- -3.686287386450715e-18
+- -1.3189166078730885e-10
+- 6.938893903907228e-18
+- -3.469446951953614e-18
+- 0.027204232744160353
+- 0.022039102799509075
+- -0.2094395150621494
+- 0.07427275966781757
+- 0.03113806671552792
+- 0.04286246697927342
+- -0.0007843788709976872
+- -4.183578745150379e-09
+- -0.0009326236630417088
+- -1.744303701912281e-09
+- -0.0002190205411104917
+- -1.2107389073517244e-08
+- -0.0002811085528303879
+- 1.3751861724017878e-09
+- 3.188768693540567e-14
+- -1.338161352559819e-13
+- -1.3279308208602458e-14
+- 6.512364432442741e-13
+effort:
+- 42.46067900178327
+- 42.460679016198974
+- 5.122915169137286e-08
+- 3.240008735227395
+- 4.009968953083561e-10
+- 4.223888166308215e-14
+- 38.98525654231192
+- 26.01543404248391
+- 0.03284828227309056
+- 1.5264005656301436
+- -0.13546972905262114
+- 7.852333293399778e-06
+- .nan
+- .nan
+- .nan
+- .nan
+- .nan
+- .nan
+- .nan
+- .nan
+- 334.2192000011287
+- .nan
+- 334.2076001289086
+- .nan
+---
+-- Current TF for MoveIt base
+[INFO] [1779358743.223781920] [tf2_echo]: Waiting for transform map ->  mur620a/base_footprint: Invalid frame ID "map" passed to canTransform argument target_frame - frame does not exist
+[INFO] [1779358745.201060793] [tf2_echo]: Waiting for transform map ->  mur620a/base_footprint: Could not find a connection between 'map' and 'mur620a/base_footprint' because they are not part of the same tree.Tf has two or more unconnected trees.
+At time 122.310000000
+- Translation: [44.000, 44.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000 -0.000  0.000 44.000
+  0.000  1.000  0.000 44.000
+  0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 123.60000000
+- Translation: [44.000, 44.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000 -0.000  0.000 44.000
+  0.000  1.000  0.000 44.000
+  0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 123.840000000
+- Translation: [44.000, 44.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000 -0.000  0.000 44.000
+  0.000  1.000  0.000 44.000
+  0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 124.670000000
+- Translation: [44.000, 44.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000 -0.000  0.000 44.000
+  0.000  1.000  0.000 44.000
+  0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+[INFO] [1779358749.993944829] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[INFO] [1779358750.247305808] [tf2_echo]: Waiting for transform mur620a/base_footprint ->  mur620a/UR10_l/tool0: Invalid frame ID "mur620a/base_footprint" passed to canTransform argument target_frame - frame does not exist
+[INFO] [1779358752.211985205] [tf2_echo]: Waiting for transform mur620a/base_footprint ->  mur620a/UR10_l/tool0: Invalid frame ID "mur620a/base_footprint" passed to canTransform argument target_frame - frame does not exist
+At time 128.330000000
+- Translation: [-0.137, 0.492, 1.544]
+- Rotation: in Quaternion (xyzw) [0.707, 0.707, 0.016, 0.016]
+- Rotation: in RPY (radian) [3.098, 0.000, 1.571]
+- Rotation: in RPY (degree) [177.481, 0.000, 90.000]
+- Matrix:
+ -0.000  0.999  0.044 -0.137
+  1.000  0.000 -0.000  0.492
+ -0.000  0.044 -0.999  1.544
+  0.000  0.000  0.000  1.000
+At time 129.130000000
+- Translation: [-0.137, 0.492, 1.544]
+- Rotation: in Quaternion (xyzw) [0.707, 0.707, 0.016, 0.016]
+- Rotation: in RPY (radian) [3.098, 0.000, 1.571]
+- Rotation: in RPY (degree) [177.481, 0.000, 90.000]
+- Matrix:
+ -0.000  0.999  0.044 -0.137
+  1.000  0.000 -0.000  0.492
+ -0.000  0.044 -0.999  1.544
+  0.000  0.000  0.000  1.000
+At time 129.930000000
+- Translation: [-0.137, 0.492, 1.544]
+- Rotation: in Quaternion (xyzw) [0.707, 0.707, 0.016, 0.016]
+- Rotation: in RPY (radian) [3.098, 0.000, 1.571]
+- Rotation: in RPY (degree) [177.481, 0.000, 90.000]
+- Matrix:
+ -0.000  0.999  0.044 -0.137
+  1.000  0.000 -0.000  0.492
+ -0.000  0.044 -0.999  1.544
+  0.000  0.000  0.000  1.000
+[INFO] [1779358756.999393053] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+
+== MoveIt mur620b ==
+-- Nodes
+-- MoveIt action
+
+$ ros2 action info /mur620b/move_action
+Action: /mur620b/move_action
+Action clients: 0
+Action servers: 1
+    /mur620b/move_group
+-- Robot descriptions
+robot_description chars: 72888
+robot_description_semantic chars: 44346
+-- MoveIt core params
+
+$ ros2 param get /mur620b/move_group planning_pipelines
+String values are: ['ompl']
+
+$ ros2 param get /mur620b/move_group default_planning_pipeline
+String value is: ompl
+
+$ ros2 param get /mur620b/move_group robot_description_kinematics.UR_arm_l.kinematics_solver
+String value is: kdl_kinematics_plugin/KDLKinematicsPlugin
+
+$ ros2 param get /mur620b/move_group robot_description_kinematics.UR_arm_r.kinematics_solver
+String value is: kdl_kinematics_plugin/KDLKinematicsPlugin
+
+$ ros2 param get /mur620b/move_group robot_description_planning.joint_limits.UR10_l/shoulder_pan_joint.max_velocity
+Double value is: 2.09439510239
+-- Controllers
+[INFO] [1779358778.384785518] [_ros2cli_187649]: waiting for service /mur620b/controller_manager/list_controllers to become available...
+joint_trajectory_controller_lift_l joint_trajectory_controller/JointTrajectoryController  inactive
+forward_velocity_controller_r      velocity_controllers/JointGroupVelocityController      active  
+joint_trajectory_controller_l      joint_trajectory_controller/JointTrajectoryController  inactive
+lift_controller_l                  position_controllers/JointGroupPositionController      inactive
+lift_controller_r                  position_controllers/JointGroupPositionController      inactive
+joint_trajectory_controller_lift_r joint_trajectory_controller/JointTrajectoryController  inactive
+lift_effort_controller_l           effort_controllers/JointGroupEffortController          active  
+lift_effort_controller_r           effort_controllers/JointGroupEffortController          active  
+mobile_base_controller             diff_drive_controller/DiffDriveController              active  
+forward_velocity_controller_l      velocity_controllers/JointGroupVelocityController      active  
+joint_trajectory_controller_r      joint_trajectory_controller/JointTrajectoryController  inactive
+joint_state_broadcaster            joint_state_broadcaster/JointStateBroadcaster          active  
+-- Joint states
+
+$ ros2 topic info /mur620b/joint_states --verbose
+Type: sensor_msgs/msg/JointState
+
+Publisher count: 1
+
+Node name: joint_state_broadcaster
+Node namespace: /mur620b
+Topic type: sensor_msgs/msg/JointState
+Topic type hash: RIHS01_a13ee3a330e346c9d87b5aa18d24e11690752bd33a0350f11c5882bc9179260e
+Endpoint type: PUBLISHER
+GID: 01.0f.f6.e2.b7.93.55.ca.00.00.00.00.00.01.18.03
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: TRANSIENT_LOCAL
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Subscription count: 8
+
+Node name: move_group_private_101204271894736
+Node namespace: /mur620b
+Topic type: sensor_msgs/msg/JointState
+Topic type hash: RIHS01_a13ee3a330e346c9d87b5aa18d24e11690752bd33a0350f11c5882bc9179260e
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.04.9f.65.3d.00.00.00.00.00.00.55.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620b_jparse_velocity_controller_l
+Node namespace: /
+Topic type: sensor_msgs/msg/JointState
+Topic type hash: RIHS01_a13ee3a330e346c9d87b5aa18d24e11690752bd33a0350f11c5882bc9179260e
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.48.a0.77.7b.00.00.00.00.00.00.19.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620b_jparse_velocity_controller_r
+Node namespace: /
+Topic type: sensor_msgs/msg/JointState
+Topic type hash: RIHS01_a13ee3a330e346c9d87b5aa18d24e11690752bd33a0350f11c5882bc9179260e
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.49.a0.e9.40.00.00.00.00.00.00.19.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620b_jparse_move_l
+Node namespace: /
+Topic type: sensor_msgs/msg/JointState
+Topic type hash: RIHS01_a13ee3a330e346c9d87b5aa18d24e11690752bd33a0350f11c5882bc9179260e
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.4a.a0.c4.31.00.00.00.00.00.00.15.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620b_jparse_move_r
+Node namespace: /
+Topic type: sensor_msgs/msg/JointState
+Topic type hash: RIHS01_a13ee3a330e346c9d87b5aa18d24e11690752bd33a0350f11c5882bc9179260e
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.4b.a0.6a.3d.00.00.00.00.00.00.15.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620b_rsp
+Node namespace: /mur620b
+Topic type: sensor_msgs/msg/JointState
+Topic type hash: RIHS01_a13ee3a330e346c9d87b5aa18d24e11690752bd33a0350f11c5882bc9179260e
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.e5.9c.06.6c.00.00.00.00.00.00.18.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620b_lift_effort_position_controller_l
+Node namespace: /
+Topic type: sensor_msgs/msg/JointState
+Topic type hash: RIHS01_a13ee3a330e346c9d87b5aa18d24e11690752bd33a0350f11c5882bc9179260e
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.e8.9c.45.d6.00.00.00.00.00.00.16.04
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620b_lift_effort_position_controller_r
+Node namespace: /
+Topic type: sensor_msgs/msg/JointState
+Topic type hash: RIHS01_a13ee3a330e346c9d87b5aa18d24e11690752bd33a0350f11c5882bc9179260e
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.e9.9c.f3.ae.00.00.00.00.00.00.16.04
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+header:
+  stamp:
+    sec: 149
+    nanosec: 624000000
+  frame_id: base_link
+name:
+- UR10_l/elbow_joint
+- UR10_l/shoulder_lift_joint
+- UR10_l/shoulder_pan_joint
+- UR10_l/wrist_1_joint
+- UR10_l/wrist_2_joint
+- UR10_l/wrist_3_joint
+- UR10_r/elbow_joint
+- UR10_r/shoulder_lift_joint
+- UR10_r/shoulder_pan_joint
+- UR10_r/wrist_1_joint
+- UR10_r/wrist_2_joint
+- UR10_r/wrist_3_joint
+- bl_caster_rotation_joint
+- bl_caster_wheel_joint
+- br_caster_rotation_joint
+- br_caster_wheel_joint
+- fl_caster_rotation_joint
+- fl_caster_wheel_joint
+- fr_caster_rotation_joint
+- fr_caster_wheel_joint
+- left_lift_joint
+- left_wheel_joint
+- right_lift_joint
+- right_wheel_joint
+position:
+- -1.6147053836376708
+- -1.5707963284950304
+- 4.622823998308072e-17
+- -1.5707963458992722
+- 1.5707963267900027
+- -4.119157850435815e-18
+- -1.614721398130922
+- -1.5707963284950195
+- 3.1415926535900023
+- -1.5707963463816323
+- -1.5707963267900027
+- 1.0238535906271669e-16
+- 0.1478862607446117
+- 3.528700419061962e-08
+- 0.14195014555854682
+- -4.857816009720062e-08
+- 0.2279922642833034
+- 1.3397109758234935e-07
+- 0.2189513944526238
+- -1.40874809446351e-07
+- 4.2747899198608175e-12
+- -1.9148476402915097e-16
+- 4.109766180417481e-12
+- -4.286937303131619e-17
+velocity:
+- -4.62971397330314e-11
+- -1.1784451886542868e-11
+- -3.686287386450715e-18
+- -1.3189427675031062e-10
+- 6.938893903907228e-18
+- -4.336808689942018e-18
+- -4.0817918489644e-11
+- -1.173992760644671e-11
+- -2.168404344971009e-19
+- -1.3531642473196825e-10
+- -2.6020852139652106e-17
+- 4.9873299934333204e-18
+- 0.0003278885810490352
+- 3.496678155356925e-10
+- 0.00028777317459744074
+- -7.148869014123038e-10
+- 0.000501711938733312
+- 2.3425389180514733e-09
+- 0.00044179040303244066
+- -2.1390273627873435e-09
+- 3.1976157832680485e-14
+- 3.0357660829594124e-18
+- 3.128920733619367e-14
+- 8.673617379884035e-19
+effort:
+- 42.4608334044967
+- 42.460833462635115
+- 4.6404730436169555e-08
+- 3.2400667637228797
+- 4.5641929895844777e-10
+- 6.346903939913642e-15
+- 42.539391286046694
+- 42.53939134424701
+- 4.6464254604763346e-08
+- 3.318652248439499
+- -4.72327155238666e-10
+- -6.350293554891228e-15
+- .nan
+- .nan
+- .nan
+- .nan
+- .nan
+- .nan
+- .nan
+- .nan
+- 334.2192000031906
+- .nan
+- 334.2191999939101
+- .nan
+---
+-- Current TF for MoveIt base
+[INFO] [1779358784.078392916] [tf2_echo]: Waiting for transform map ->  mur620b/base_footprint: Invalid frame ID "map" passed to canTransform argument target_frame - frame does not exist
+At time 151.324000000
+- Translation: [46.000, 44.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000 -0.000  0.000 46.000
+  0.000  1.000  0.000 44.000
+  0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 152.24000000
+- Translation: [46.000, 44.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000 -0.000  0.000 46.000
+  0.000  1.000  0.000 44.000
+  0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 152.824000000
+- Translation: [46.000, 44.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000 -0.000  0.000 46.000
+  0.000  1.000  0.000 44.000
+  0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 153.604000000
+- Translation: [46.000, 44.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000 -0.000  0.000 46.000
+  0.000  1.000  0.000 44.000
+  0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 154.404000000
+- Translation: [46.000, 44.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000 -0.000  0.000 46.000
+  0.000  1.000  0.000 44.000
+  0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+[INFO] [1779358790.835006599] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[INFO] [1779358791.078181714] [tf2_echo]: Waiting for transform mur620b/base_footprint ->  mur620b/UR10_l/tool0: Invalid frame ID "mur620b/base_footprint" passed to canTransform argument target_frame - frame does not exist
+At time 156.424000000
+- Translation: [-0.137, 0.492, 1.544]
+- Rotation: in Quaternion (xyzw) [0.707, 0.707, 0.016, 0.016]
+- Rotation: in RPY (radian) [3.098, 0.000, 1.571]
+- Rotation: in RPY (degree) [177.484, 0.000, 90.000]
+- Matrix:
+ -0.000  0.999  0.044 -0.137
+  1.000  0.000 -0.000  0.492
+ -0.000  0.044 -0.999  1.544
+  0.000  0.000  0.000  1.000
+At time 157.334000000
+- Translation: [-0.137, 0.492, 1.544]
+- Rotation: in Quaternion (xyzw) [0.707, 0.707, 0.016, 0.016]
+- Rotation: in RPY (radian) [3.098, 0.000, 1.571]
+- Rotation: in RPY (degree) [177.484, 0.000, 90.000]
+- Matrix:
+ -0.000  0.999  0.044 -0.137
+  1.000  0.000 -0.000  0.492
+ -0.000  0.044 -0.999  1.544
+  0.000  0.000  0.000  1.000
+At time 158.84000000
+- Translation: [-0.137, 0.492, 1.544]
+- Rotation: in Quaternion (xyzw) [0.707, 0.707, 0.016, 0.016]
+- Rotation: in RPY (radian) [3.098, 0.000, 1.571]
+- Rotation: in RPY (degree) [177.484, 0.000, 90.000]
+- Matrix:
+ -0.000  0.999  0.044 -0.137
+  1.000  0.000 -0.000  0.492
+ -0.000  0.044 -0.999  1.544
+  0.000  0.000  0.000  1.000
+At time 158.884000000
+- Translation: [-0.137, 0.492, 1.544]
+- Rotation: in Quaternion (xyzw) [0.707, 0.707, 0.016, 0.016]
+- Rotation: in RPY (radian) [3.098, 0.000, 1.571]
+- Rotation: in RPY (degree) [177.484, 0.000, 90.000]
+- Matrix:
+ -0.000  0.999  0.044 -0.137
+  1.000  0.000 -0.000  0.492
+ -0.000  0.044 -0.999  1.544
+  0.000  0.000  0.000  1.000
+At time 159.684000000
+- Translation: [-0.137, 0.492, 1.544]
+- Rotation: in Quaternion (xyzw) [0.707, 0.707, 0.016, 0.016]
+- Rotation: in RPY (radian) [3.098, 0.000, 1.571]
+- Rotation: in RPY (degree) [177.484, 0.000, 90.000]
+- Matrix:
+ -0.000  0.999  0.044 -0.137
+  1.000  0.000 -0.000  0.492
+ -0.000  0.044 -0.999  1.544
+  0.000  0.000  0.000  1.000
+[INFO] [1779358797.839421024] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+
+== Recent MoveIt/RViz Logs ==
+---- /home/rosmatch/.ros/log/rviz2_171654_1779358588996.log
+[INFO] [1779358589.601844858] [rviz2]: Stereo is NOT SUPPORTED
+[INFO] [1779358589.601892121] [rviz2]: OpenGl version: 4.6 (GLSL 4.6)
+[INFO] [1779358589.739598364] [rviz2]: Stereo is NOT SUPPORTED
+[WARN] [1779358590.478217598] [rcl.logging_rosout]: Publisher already registered for node name: 'rviz2_multi_mur620'. If this is due to multiple nodes with the same name then all logs for the logger named 'rviz2_multi_mur620' will go out over the existing publisher. As soon as any node with that name is destructed it will unregister the publisher, preventing any further logs for that name from being published on the rosout topic.
+[ERROR] [1779358593.565183668] [rviz2_multi_mur620.moveit.ros.motion_planning_frame]: Action server: /recognize_objects not available
+[INFO] [1779358593.589780402] [rviz2_multi_mur620.moveit.ros.motion_planning_frame]: MoveGroup namespace changed: / -> . Reloading params.
+[INFO] [1779358593.597837482] [rviz2_multi_mur620.moveit.ros.motion_planning_frame]: MoveGroup namespace changed: / -> mur620a. Reloading params.
+[WARN] [1779358593.659430471] [rcl.logging_rosout]: Publisher already registered for node name: 'rviz2_multi_mur620'. If this is due to multiple nodes with the same name then all logs for the logger named 'rviz2_multi_mur620' will go out over the existing publisher. As soon as any node with that name is destructed it will unregister the publisher, preventing any further logs for that name from being published on the rosout topic.
+[INFO] [1779358593.740690447] [rviz2_multi_mur620.moveit.ros.rdf_loader]: Loaded robot model in 0.082218 seconds
+[INFO] [1779358593.740735979] [rviz2_multi_mur620.moveit.core.robot_model]: Loading robot model 'mur620'...
+[WARN] [1779358593.763596231] [rviz2_multi_mur620.moveit.ros.robot_model_loader]: No kinematics plugins defined. Fill and load kinematics.yaml!
+[INFO] [1779358594.700990782] [rviz2_multi_mur620.moveit.ros.planning_scene_monitor]: Starting planning scene monitor
+[INFO] [1779358594.708537573] [rviz2_multi_mur620.moveit.ros.planning_scene_monitor]: Listening to '/monitored_planning_scene'
+[INFO] [1779358594.737849089] [interactive_marker_display_104983148108400]: Connected on namespace: mur620a/rviz_moveit_motion_planning_display/robot_interaction_interactive_marker_topic
+[INFO] [1779358594.750244292] [rviz2_multi_mur620.moveit.ros.robot_interaction]: No active joints or end effectors found for group 'UR_arm_l'. Make sure that kinematics.yaml is loaded in this node's namespace.
+[INFO] [1779358594.775260687] [interactive_marker_display_104983148108400]: Sending request for interactive markers
+[INFO] [1779358594.786290463] [rviz2_multi_mur620.moveit.ros.planning_scene_monitor]: Stopping planning scene monitor
+[INFO] [1779358594.880732957] [rviz2]: Trying to create a map of size 1626 x 2140 using 1 swatches
+[WARN] [1779358594.909230621] [interactive_marker_display_104983148108400]: Server not available during initialization, resetting
+[INFO] [1779358594.948212462] [rviz2_multi_mur620.moveit.ros.rdf_loader]: Loaded robot model in 0.119883 seconds
+[INFO] [1779358594.948227235] [rviz2_multi_mur620.moveit.core.robot_model]: Loading robot model 'mur620'...
+[WARN] [1779358594.960408224] [rviz2_multi_mur620.moveit.ros.robot_model_loader]: No kinematics plugins defined. Fill and load kinematics.yaml!
+[INFO] [1779358595.039259358] [rviz2_multi_mur620.moveit.ros.planning_scene_monitor]: Starting planning scene monitor
+[INFO] [1779358595.041104133] [rviz2_multi_mur620.moveit.ros.planning_scene_monitor]: Listening to '/monitored_planning_scene'
+[INFO] [1779358595.082071235] [rviz2_multi_mur620.moveit.ros.robot_interaction]: No active joints or end effectors found for group 'UR_arm_l'. Make sure that kinematics.yaml is loaded in this node's namespace.
+[INFO] [1779358595.093964436] [interactive_marker_display_104983148108400]: Sending request for interactive markers
+[INFO] [1779358595.102329428] [interactive_marker_display_104983148108400]: Service response received for initialization
+[INFO] [1779358595.781080992] [rviz2_multi_mur620.moveit.ros.motion_planning_frame]: group UR_arm_l
+[INFO] [1779358595.781096096] [rviz2_multi_mur620.moveit.ros.motion_planning_frame]: Constructing new MoveGroup connection for group 'UR_arm_l' in namespace 'mur620a'
+[INFO] [1779358595.823723576] [rviz2_multi_mur620.moveit.ros.move_group_interface]: Ready to take commands for planning group UR_arm_l.
+[INFO] [1779358595.828306346] [rviz2_multi_mur620.moveit.ros.motion_planning_frame]: group UR_arm_l
+[INFO] [1779358615.911073513] [rviz2_multi_mur620.moveit.ros.planning_scene_monitor]: Stopping planning scene monitor
+[INFO] [1779358616.574705848] [interactive_marker_display_104983148108400]: Connected on namespace: mur620a/rviz_moveit_motion_planning_display/robot_interaction_interactive_marker_topic
+[INFO] [1779358616.575071813] [rviz2_multi_mur620.moveit.ros.motion_planning_frame]: MoveGroup namespace changed: / -> mur620a. Reloading params.
+[INFO] [1779358616.599314439] [interactive_marker_display_104983148108400]: Sending request for interactive markers
+[WARN] [1779358616.728746160] [interactive_marker_display_104983148108400]: Server not available during initialization, resetting
+[INFO] [1779358616.794003458] [rviz2_multi_mur620.moveit.ros.rdf_loader]: Loaded robot model in 0.128669 seconds
+[INFO] [1779358616.794019863] [rviz2_multi_mur620.moveit.core.robot_model]: Loading robot model 'mur620'...
+[WARN] [1779358616.806323114] [rviz2_multi_mur620.moveit.ros.robot_model_loader]: No kinematics plugins defined. Fill and load kinematics.yaml!
+[INFO] [1779358616.966464033] [rviz2_multi_mur620.moveit.ros.planning_scene_monitor]: Starting planning scene monitor
+[INFO] [1779358616.969388078] [rviz2_multi_mur620.moveit.ros.planning_scene_monitor]: Listening to '/monitored_planning_scene'
+[INFO] [1779358617.016399946] [rviz2_multi_mur620.moveit.ros.robot_interaction]: No active joints or end effectors found for group 'UR_arm_l'. Make sure that kinematics.yaml is loaded in this node's namespace.
+[INFO] [1779358617.024056208] [rviz2_multi_mur620.moveit.ros.motion_planning_frame]: group UR_arm_l
+[INFO] [1779358617.024068607] [rviz2_multi_mur620.moveit.ros.motion_planning_frame]: Constructing new MoveGroup connection for group 'UR_arm_l' in namespace 'mur620a'
+[INFO] [1779358617.065762502] [rviz2_multi_mur620.moveit.ros.move_group_interface]: Ready to take commands for planning group UR_arm_l.
+[INFO] [1779358617.087116852] [interactive_marker_display_104983148108400]: Sending request for interactive markers
+[INFO] [1779358617.153824710] [interactive_marker_display_104983148108400]: Service response received for initialization
+[WARN] [1779358646.906583580] [rviz2_multi_mur620.moveit.ros.motion_planning_frame]: Unable to find a random collision free configuration after 100 attempts
+[INFO] [1779358649.613634655] [rviz2_multi_mur620.moveit.ros.planning_scene_monitor]: Stopping planning scene monitor
+[INFO] [1779358650.327081285] [interactive_marker_display_104983148108400]: Connected on namespace: mur620a/rviz_moveit_motion_planning_display/robot_interaction_interactive_marker_topic
+[INFO] [1779358650.327489601] [rviz2_multi_mur620.moveit.ros.motion_planning_frame]: MoveGroup namespace changed: / -> mur620a. Reloading params.
+[INFO] [1779358650.360599002] [interactive_marker_display_104983148108400]: Sending request for interactive markers
+[WARN] [1779358650.500412950] [interactive_marker_display_104983148108400]: Server not available during initialization, resetting
+[INFO] [1779358650.576617990] [rviz2_multi_mur620.moveit.ros.rdf_loader]: Loaded robot model in 0.145489 seconds
+[INFO] [1779358650.576635887] [rviz2_multi_mur620.moveit.core.robot_model]: Loading robot model 'mur620'...
+[WARN] [1779358650.586560596] [rviz2_multi_mur620.moveit.ros.robot_model_loader]: No kinematics plugins defined. Fill and load kinematics.yaml!
+[INFO] [1779358650.650813937] [rviz2_multi_mur620.moveit.ros.planning_scene_monitor]: Starting planning scene monitor
+[INFO] [1779358650.652197495] [rviz2_multi_mur620.moveit.ros.planning_scene_monitor]: Listening to '/monitored_planning_scene'
+[INFO] [1779358650.690198803] [rviz2_multi_mur620.moveit.ros.robot_interaction]: No active joints or end effectors found for group 'UR_arm_l'. Make sure that kinematics.yaml is loaded in this node's namespace.
+[INFO] [1779358650.696004954] [rviz2_multi_mur620.moveit.ros.motion_planning_frame]: group UR_arm_l
+[INFO] [1779358650.696020301] [rviz2_multi_mur620.moveit.ros.motion_planning_frame]: Constructing new MoveGroup connection for group 'UR_arm_l' in namespace 'mur620a'
+[INFO] [1779358650.721121085] [rviz2_multi_mur620.moveit.ros.move_group_interface]: Ready to take commands for planning group UR_arm_l.
+[INFO] [1779358650.769843224] [interactive_marker_display_104983148108400]: Sending request for interactive markers
+[INFO] [1779358650.843140093] [interactive_marker_display_104983148108400]: Service response received for initialization
+[WARN] [1779358656.558075420] [rviz2_multi_mur620.moveit.ros.motion_planning_frame]: Unable to find a random collision free configuration after 100 attempts
+[INFO] [1779358657.713816352] [rviz2_multi_mur620.moveit.ros.move_group_interface]: Plan and Execute request accepted
+[INFO] [1779358657.763187465] [rviz2_multi_mur620.moveit.ros.move_group_interface]: Plan and Execute request aborted
+[ERROR] [1779358657.764006491] [rviz2_multi_mur620.moveit.ros.move_group_interface]: MoveGroupInterface::move() failed or timeout reached
+[WARN] [1779358662.574424130] [rviz2_multi_mur620.moveit.ros.motion_planning_frame]: Unable to find a random collision free configuration after 100 attempts
+[INFO] [1779358663.940707326] [rviz2_multi_mur620.moveit.ros.move_group_interface]: Plan and Execute request accepted
+[INFO] [1779358668.952935689] [rviz2_multi_mur620.moveit.ros.move_group_interface]: Plan and Execute request aborted
+[ERROR] [1779358668.953008634] [rviz2_multi_mur620.moveit.ros.move_group_interface]: MoveGroupInterface::move() failed or timeout reached
+[INFO] [1779358717.187487755] [rviz2_multi_mur620.moveit.ros.planning_scene_monitor]: Stopping planning scene monitor
+[INFO] [1779358717.854279917] [interactive_marker_display_104983148108400]: Connected on namespace: mur620a/rviz_moveit_motion_planning_display/robot_interaction_interactive_marker_topic
+[INFO] [1779358717.854697518] [rviz2_multi_mur620.moveit.ros.motion_planning_frame]: MoveGroup namespace changed: / -> mur620a. Reloading params.
+[INFO] [1779358717.882289056] [interactive_marker_display_104983148108400]: Sending request for interactive markers
+[WARN] [1779358718.029734618] [interactive_marker_display_104983148108400]: Server not available during initialization, resetting
+[INFO] [1779358718.105800294] [rviz2_multi_mur620.moveit.ros.rdf_loader]: Loaded robot model in 0.144399 seconds
+[INFO] [1779358718.105827928] [rviz2_multi_mur620.moveit.core.robot_model]: Loading robot model 'mur620'...
+[WARN] [1779358718.124329740] [rviz2_multi_mur620.moveit.ros.robot_model_loader]: No kinematics plugins defined. Fill and load kinematics.yaml!
+[INFO] [1779358718.236905935] [rviz2_multi_mur620.moveit.ros.planning_scene_monitor]: Starting planning scene monitor
+[INFO] [1779358718.238644062] [rviz2_multi_mur620.moveit.ros.planning_scene_monitor]: Listening to '/monitored_planning_scene'
+[INFO] [1779358718.288894627] [rviz2_multi_mur620.moveit.ros.robot_interaction]: No active joints or end effectors found for group 'UR_arm_l'. Make sure that kinematics.yaml is loaded in this node's namespace.
+[INFO] [1779358718.370892999] [interactive_marker_display_104983148108400]: Sending request for interactive markers
+[INFO] [1779358718.440975619] [interactive_marker_display_104983148108400]: Service response received for initialization
+[INFO] [1779358718.834579419] [rviz2_multi_mur620.moveit.ros.motion_planning_frame]: group UR_arm_l
+[INFO] [1779358718.834607905] [rviz2_multi_mur620.moveit.ros.motion_planning_frame]: Constructing new MoveGroup connection for group 'UR_arm_l' in namespace 'mur620a'
+[INFO] [1779358718.876915822] [rviz2_multi_mur620.moveit.ros.move_group_interface]: Ready to take commands for planning group UR_arm_l.
+[INFO] [1779358723.436506351] [rviz2_multi_mur620.moveit.ros.robot_interaction]: No active joints or end effectors found for group 'UR_arm_r'. Make sure that kinematics.yaml is loaded in this node's namespace.
+[INFO] [1779358723.437374243] [rviz2_multi_mur620.moveit.ros.motion_planning_frame]: group UR_arm_r
+[INFO] [1779358723.437391629] [rviz2_multi_mur620.moveit.ros.motion_planning_frame]: Constructing new MoveGroup connection for group 'UR_arm_r' in namespace 'mur620a'
+[INFO] [1779358723.484124086] [rviz2_multi_mur620.moveit.ros.move_group_interface]: Ready to take commands for planning group UR_arm_r.
+[INFO] [1779358731.537548254] [rviz2_multi_mur620.moveit.ros.move_group_interface]: MoveGroup action client/server ready
+[INFO] [1779358731.538475012] [rviz2_multi_mur620.moveit.ros.move_group_interface]: Planning request accepted
+[INFO] [1779358731.592897080] [rviz2_multi_mur620.moveit.ros.move_group_interface]: Planning request complete!
+[INFO] [1779358731.593212724] [rviz2_multi_mur620.moveit.ros.move_group_interface]: time taken to generate plan: 0.0246733 seconds
+[INFO] [1779358732.436430594] [rviz2_multi_mur620.moveit.ros.move_group_interface]: Execute request accepted
+[INFO] [1779358755.333817377] [rviz2_multi_mur620.moveit.ros.move_group_interface]: Execute request success!
+---- /home/rosmatch/.ros/log/move_group_169642_1779358577539.log
+[WARN] [1779358595.827165191] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/UR10_r/wrist_3_link' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/UR10_r/wrist_3_link' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358595.827176249] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/UR10_r/ft_frame' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/UR10_r/ft_frame' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358595.827187499] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/base_link' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/base_link' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358595.827198830] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/surface' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/surface' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358595.827215181] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/back_laser_link' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/back_laser_link' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358595.827227039] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/front_laser_link' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/front_laser_link' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358595.827238224] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/imu_link' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/imu_link' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358595.827249508] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/camera_color_frame' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/camera_color_frame' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358595.827260653] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/camera_link' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/camera_link' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358595.827272137] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/camera_color_optical_frame' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/camera_color_optical_frame' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358595.827283481] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/camera_depth_frame' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/camera_depth_frame' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358595.827294814] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/camera_depth_optical_frame' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/camera_depth_optical_frame' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358595.827306019] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/camera_infra1_frame' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/camera_infra1_frame' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358595.827317237] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/camera_infra1_optical_frame' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/camera_infra1_optical_frame' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358595.827328586] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/camera_infra2_frame' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/camera_infra2_frame' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358595.827342635] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/camera_infra2_optical_frame' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/camera_infra2_optical_frame' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358595.827358922] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/camera_bottom_screw_frame' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/camera_bottom_screw_frame' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358595.827380325] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/imu_frame' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/imu_frame' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358595.827392703] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/left_lift_bottom' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/left_lift_bottom' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358595.827404013] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/top_module' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/top_module' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358595.827415224] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/left_lift_top' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/left_lift_top' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358595.827426234] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/right_lift_top' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/right_lift_top' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358595.827437437] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/right_lift_bottom' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/right_lift_bottom' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358595.827448441] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/us_1_frame' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/us_1_frame' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358595.827459534] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/us_2_frame' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/us_2_frame' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358617.023276331] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/UR10_l/base_link' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/UR10_l/base_link' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358617.023314273] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/UR10_l/base_ideal' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/UR10_l/base_ideal' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358617.023320507] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/UR10_l/base' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/UR10_l/base' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358617.023325756] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/UR10_l/base_link_inertia' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/UR10_l/base_link_inertia' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358617.023331190] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/UR10_l/tool0' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/UR10_l/tool0' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358617.023336138] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/UR10_l/flange' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/UR10_l/flange' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358617.023341454] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/UR10_l/wrist_3_link' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/UR10_l/wrist_3_link' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358617.023346846] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/UR10_l/ft_frame' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/UR10_l/ft_frame' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358617.023352649] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/UR10_r/base_link' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/UR10_r/base_link' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358617.023357549] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/UR10_r/base_ideal' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/UR10_r/base_ideal' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358617.023362274] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/UR10_r/base' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/UR10_r/base' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358617.023366901] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/UR10_r/base_link_inertia' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/UR10_r/base_link_inertia' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358617.023403579] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/UR10_r/tool0' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/UR10_r/tool0' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358617.023409159] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/UR10_r/flange' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/UR10_r/flange' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358617.023413806] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/UR10_r/wrist_3_link' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/UR10_r/wrist_3_link' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358617.023418482] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/UR10_r/ft_frame' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/UR10_r/ft_frame' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358617.023437779] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/left_lift_top' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/left_lift_top' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358617.023442344] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620a/right_lift_top' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620a/right_lift_top' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[INFO] [1779358657.713393185] [mur620a.moveit.moveit.ros.move_group.move_action]: MoveGroupMoveAction: Received request
+[INFO] [1779358657.714008774] [mur620a.moveit.moveit.ros.move_group.move_action]: executing..
+[INFO] [1779358657.718416919] [mur620a.moveit.moveit.ros.move_group.move_action]: Combined planning and execution request received for MoveGroup action. Forwarding to planning and execution pipeline.
+[INFO] [1779358657.718543857] [mur620a.moveit.moveit.ros.plan_execution]: Planning attempt 1 of at most 1
+[INFO] [1779358657.718628991] [mur620a.moveit.moveit.ros.move_group.capability]: Using planning pipeline 'ompl'
+[INFO] [1779358657.719039574] [mur620a.move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[INFO] [1779358657.719064498] [mur620a.move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[INFO] [1779358657.719069328] [mur620a.move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[INFO] [1779358657.719097646] [mur620a.move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[INFO] [1779358657.719873743] [mur620a.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'UR_arm_l' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[INFO] [1779358657.719990203] [mur620a.move_group]: Calling Planner 'OMPL'
+[INFO] [1779358657.741195234] [mur620a.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'UR10_l/shoulder_pan_joint', actual value: -3.252109, desired value: -3.252032, tolerance_above: 0.000100, tolerance_below: 0.000100
+[INFO] [1779358657.741241235] [mur620a.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'UR10_l/shoulder_lift_joint', actual value: 2.228277, desired value: 2.228377, tolerance_above: 0.000100, tolerance_below: 0.000100
+[INFO] [1779358657.741248600] [mur620a.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'UR10_l/elbow_joint', actual value: -1.450854, desired value: -1.450876, tolerance_above: 0.000100, tolerance_below: 0.000100
+[INFO] [1779358657.741254322] [mur620a.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'UR10_l/wrist_1_joint', actual value: -5.480966, desired value: -5.480875, tolerance_above: 0.000100, tolerance_below: 0.000100
+[INFO] [1779358657.741259212] [mur620a.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'UR10_l/wrist_2_joint', actual value: -4.499864, desired value: -4.499838, tolerance_above: 0.000100, tolerance_below: 0.000100
+[INFO] [1779358657.741264171] [mur620a.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'UR10_l/wrist_3_joint', actual value: 3.473518, desired value: 3.473494, tolerance_above: 0.000100, tolerance_below: 0.000100
+[INFO] [1779358657.741300616] [mur620a.moveit.moveit.core.moveit_collision_detection_fcl]: Found a contact between 'base_link' (type 'Robot link') and 'UR10_l/wrist_2_link' (type 'Robot link'), which constitutes a collision. Contact information is not stored.
+[INFO] [1779358657.741307977] [mur620a.moveit.moveit.core.moveit_collision_detection_fcl]: Collision checking is considered complete (collision was found and 0 contacts are stored)
+[ERROR] [1779358657.761160588] [mur620a.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - UR_arm_l/UR_arm_l: Unable to sample any valid states for goal tree
+[ERROR] [1779358657.761507082] [mur620a.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - UR_arm_l/UR_arm_l: Unable to sample any valid states for goal tree
+[ERROR] [1779358657.761590413] [mur620a.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - UR_arm_l/UR_arm_l: Unable to sample any valid states for goal tree
+[ERROR] [1779358657.761646698] [mur620a.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - UR_arm_l/UR_arm_l: Unable to sample any valid states for goal tree
+[WARN] [1779358657.761738307] [mur620a.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/tools/multiplan/src/ParallelPlan.cpp:138 - ParallelPlan::solve(): Unable to find solution by any of the threads in 0.041690 seconds
+[ERROR] [1779358657.761897884] [mur620a.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - UR_arm_l/UR_arm_l: Insufficient states in sampleable goal region
+[ERROR] [1779358657.761961992] [mur620a.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - UR_arm_l/UR_arm_l: Insufficient states in sampleable goal region
+[ERROR] [1779358657.762010103] [mur620a.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - UR_arm_l/UR_arm_l: Insufficient states in sampleable goal region
+[ERROR] [1779358657.762116495] [mur620a.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - UR_arm_l/UR_arm_l: Insufficient states in sampleable goal region
+[WARN] [1779358657.762171299] [mur620a.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/tools/multiplan/src/ParallelPlan.cpp:138 - ParallelPlan::solve(): Unable to find solution by any of the threads in 0.000351 seconds
+[ERROR] [1779358657.762257844] [mur620a.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - UR_arm_l/UR_arm_l: Insufficient states in sampleable goal region
+[ERROR] [1779358657.762287395] [mur620a.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - UR_arm_l/UR_arm_l: Insufficient states in sampleable goal region
+[WARN] [1779358657.762329410] [mur620a.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/tools/multiplan/src/ParallelPlan.cpp:138 - ParallelPlan::solve(): Unable to find solution by any of the threads in 0.000113 seconds
+[ERROR] [1779358657.762414553] [mur620a.moveit.moveit.planners.ompl.model_based_planning_context]: Unable to solve the planning problem
+[ERROR] [1779358657.762468651] [mur620a.move_group]: Planner 'OMPL' failed with error code FAILURE
+[INFO] [1779358657.762538448] [mur620a.moveit.moveit.ros.move_group.move_action]: FAILURE
+[INFO] [1779358663.940445577] [mur620a.moveit.moveit.ros.move_group.move_action]: MoveGroupMoveAction: Received request
+[INFO] [1779358663.940662969] [mur620a.moveit.moveit.ros.move_group.move_action]: executing..
+[INFO] [1779358663.951078569] [mur620a.moveit.moveit.ros.move_group.move_action]: Combined planning and execution request received for MoveGroup action. Forwarding to planning and execution pipeline.
+[INFO] [1779358663.951165266] [mur620a.moveit.moveit.ros.plan_execution]: Planning attempt 1 of at most 1
+[INFO] [1779358663.951266434] [mur620a.moveit.moveit.ros.move_group.capability]: Using planning pipeline 'ompl'
+[INFO] [1779358663.951512471] [mur620a.move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[INFO] [1779358663.951526141] [mur620a.move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[INFO] [1779358663.951531160] [mur620a.move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[INFO] [1779358663.951551560] [mur620a.move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[INFO] [1779358663.951806337] [mur620a.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'UR_arm_l' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[INFO] [1779358663.951841815] [mur620a.move_group]: Calling Planner 'OMPL'
+[ERROR] [1779358668.952533395] [mur620a.moveit.moveit.planners.ompl.model_based_planning_context]: Unable to solve the planning problem
+[ERROR] [1779358668.952656847] [mur620a.move_group]: Planner 'OMPL' failed with error code FAILURE
+[INFO] [1779358668.952698303] [mur620a.moveit.moveit.ros.move_group.move_action]: FAILURE
+[INFO] [1779358731.537990741] [mur620a.moveit.moveit.ros.move_group.move_action]: MoveGroupMoveAction: Received request
+[INFO] [1779358731.538159300] [mur620a.moveit.moveit.ros.move_group.move_action]: executing..
+[INFO] [1779358731.551947580] [mur620a.moveit.moveit.ros.move_group.move_action]: Planning request received for MoveGroup action. Forwarding to planning pipeline.
+[INFO] [1779358731.552007892] [mur620a.moveit.moveit.ros.move_group.capability]: Using planning pipeline 'ompl'
+[INFO] [1779358731.552257763] [mur620a.move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[INFO] [1779358731.552299717] [mur620a.move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[INFO] [1779358731.552316424] [mur620a.move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[INFO] [1779358731.552391969] [mur620a.move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[INFO] [1779358731.552751059] [mur620a.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'UR_arm_r' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[INFO] [1779358731.552831204] [mur620a.move_group]: Calling Planner 'OMPL'
+[INFO] [1779358731.577888259] [mur620a.move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[INFO] [1779358731.588073596] [mur620a.move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[INFO] [1779358731.592189198] [mur620a.move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[WARN] [1779358731.592458914] [mur620a.moveit.moveit.ros.planning_pipeline]: The planner plugin did not fill out the 'planner_id' field of the MotionPlanResponse. Setting it to the planner ID name of the MotionPlanRequest assuming that the planner plugin does warn you if it does not use the requested planner.
+[INFO] [1779358731.592606818] [mur620a.moveit.moveit.ros.move_group.move_action]: Motion plan was computed successfully.
+[INFO] [1779358732.436401352] [mur620a.moveit.moveit.ros.move_group.clear_octomap_service]: Execution request received
+[INFO] [1779358732.436517158] [mur620a.moveit.moveit.plugins.simple_controller_manager]: Returned 4 controllers in list
+[INFO] [1779358732.436558887] [mur620a.moveit.moveit.plugins.simple_controller_manager]: Returned 4 controllers in list
+[INFO] [1779358732.436851877] [mur620a.moveit.moveit.ros.trajectory_execution_manager]: Validating trajectory with allowed_start_tolerance 0.01
+[INFO] [1779358732.446363723] [mur620a.moveit.moveit.ros.trajectory_execution_manager]: Starting trajectory execution ...
+[INFO] [1779358732.446483421] [mur620a.moveit.moveit.plugins.simple_controller_manager]: Returned 4 controllers in list
+[INFO] [1779358732.446531951] [mur620a.moveit.moveit.plugins.simple_controller_manager]: Returned 4 controllers in list
+[INFO] [1779358732.447154647] [moveit.simple_controller_manager.follow_joint_trajectory_controller_handle]: sending trajectory to /mur620a/moveit_joint_trajectory_controller_r
+[INFO] [1779358732.450409644] [moveit.simple_controller_manager.follow_joint_trajectory_controller_handle]: /mur620a/moveit_joint_trajectory_controller_r started execution
+[INFO] [1779358732.450433225] [moveit.simple_controller_manager.follow_joint_trajectory_controller_handle]: Goal request accepted!
+[INFO] [1779358755.321613206] [moveit.simple_controller_manager.follow_joint_trajectory_controller_handle]: Controller '/mur620a/moveit_joint_trajectory_controller_r' successfully finished
+[INFO] [1779358755.333137688] [mur620a.moveit.moveit.ros.trajectory_execution_manager]: Completed trajectory execution with status SUCCEEDED ...
+[INFO] [1779358755.333339309] [mur620a.moveit.moveit.ros.move_group.clear_octomap_service]: Execution completed: SUCCEEDED
+---- /home/rosmatch/.ros/log/move_group_171780_1779358589630.log
+[INFO] [1779358589.666193637] [mur620b.moveit.moveit.ros.rdf_loader]: Loaded robot model in 0 seconds
+[INFO] [1779358589.666261566] [mur620b.moveit.moveit.core.robot_model]: Loading robot model 'mur620'...
+[INFO] [1779358590.096352736] [mur620b.moveit.moveit.kinematics.kdl_kinematics_plugin]: Joint weights for group 'UR_arm_l': 1 1 1 1 1 1
+[INFO] [1779358590.096792875] [mur620b.moveit.moveit.kinematics.kdl_kinematics_plugin]: Joint weights for group 'UR_arm_r': 1 1 1 1 1 1
+[INFO] [1779358590.097213841] [mur620b.moveit.moveit.kinematics.kdl_kinematics_plugin]: Joint weights for group 'UR_arm_lift_l': 1 1 1 1 1 1 1
+[INFO] [1779358590.097547291] [mur620b.moveit.moveit.kinematics.kdl_kinematics_plugin]: Joint weights for group 'UR_arm_lift_r': 1 1 1 1 1 1 1
+[INFO] [1779358591.075864911] [mur620b.moveit.moveit.ros.planning_scene_monitor]: Publishing maintained planning scene on 'monitored_planning_scene'
+[INFO] [1779358591.076109269] [mur620b.moveit.moveit.ros.moveit_cpp]: Listening to 'joint_states' for joint states
+[INFO] [1779358591.077500929] [mur620b.moveit.moveit.ros.current_state_monitor]: Listening to joint states on topic 'joint_states'
+[INFO] [1779358591.079555513] [mur620b.moveit.moveit.ros.planning_scene_monitor]: Listening to '/mur620b/attached_collision_object' for attached collision objects
+[INFO] [1779358591.079599267] [mur620b.moveit.moveit.ros.planning_scene_monitor]: Stopping existing planning scene publisher.
+[INFO] [1779358591.079951354] [mur620b.moveit.moveit.ros.planning_scene_monitor]: Stopped publishing maintained planning scene.
+[INFO] [1779358591.084686984] [mur620b.moveit.moveit.ros.planning_scene_monitor]: Publishing maintained planning scene on 'monitored_planning_scene'
+[INFO] [1779358591.084843600] [mur620b.moveit.moveit.ros.planning_scene_monitor]: Starting planning scene monitor
+[INFO] [1779358591.088688416] [mur620b.moveit.moveit.ros.planning_scene_monitor]: Listening to '/mur620b/planning_scene'
+[INFO] [1779358591.088733949] [mur620b.moveit.moveit.ros.planning_scene_monitor]: Starting world geometry update monitor for collision objects, attached objects, octomap updates.
+[INFO] [1779358591.090404420] [mur620b.moveit.moveit.ros.planning_scene_monitor]: Listening to 'collision_object'
+[INFO] [1779358591.091900986] [mur620b.moveit.moveit.ros.planning_scene_monitor]: Listening to 'planning_scene_world' for planning scene world geometry
+[WARN] [1779358591.092146784] [mur620b.moveit.moveit.ros.occupancy_map_monitor]: Resolution not specified for Octomap. Assuming resolution = 0.1 instead
+[ERROR] [1779358591.092169767] [mur620b.moveit.moveit.ros.occupancy_map_monitor]: No 3D sensor plugin(s) defined for octomap updates
+[INFO] [1779358595.506847366] [mur620b.moveit.moveit.ros.planning_pipeline]: Successfully loaded planner 'OMPL'
+[INFO] [1779358595.507689427] [mur620b.move_group]: Try loading adapter 'default_planning_request_adapters/ResolveConstraintFrames'
+[INFO] [1779358595.508500374] [mur620b.move_group]: Loaded adapter 'default_planning_request_adapters/ResolveConstraintFrames'
+[INFO] [1779358595.508520660] [mur620b.move_group]: Try loading adapter 'default_planning_request_adapters/ValidateWorkspaceBounds'
+[INFO] [1779358595.509005756] [mur620b.move_group]: Loaded adapter 'default_planning_request_adapters/ValidateWorkspaceBounds'
+[INFO] [1779358595.509020565] [mur620b.move_group]: Try loading adapter 'default_planning_request_adapters/CheckStartStateBounds'
+[INFO] [1779358595.509050497] [mur620b.move_group]: Loaded adapter 'default_planning_request_adapters/CheckStartStateBounds'
+[INFO] [1779358595.509053744] [mur620b.move_group]: Try loading adapter 'default_planning_request_adapters/CheckStartStateCollision'
+[INFO] [1779358595.509063127] [mur620b.move_group]: Loaded adapter 'default_planning_request_adapters/CheckStartStateCollision'
+[INFO] [1779358595.509905390] [mur620b.move_group]: Try loading adapter 'default_planning_response_adapters/AddTimeOptimalParameterization'
+[INFO] [1779358595.512666315] [mur620b.move_group]: Loaded adapter 'default_planning_response_adapters/AddTimeOptimalParameterization'
+[INFO] [1779358595.512699623] [mur620b.move_group]: Try loading adapter 'default_planning_response_adapters/ValidateSolution'
+[INFO] [1779358595.515354447] [mur620b.move_group]: Loaded adapter 'default_planning_response_adapters/ValidateSolution'
+[INFO] [1779358595.515398324] [mur620b.move_group]: Try loading adapter 'default_planning_response_adapters/DisplayMotionPath'
+[INFO] [1779358595.516808986] [mur620b.move_group]: Loaded adapter 'default_planning_response_adapters/DisplayMotionPath'
+[INFO] [1779358595.639173839] [mur620b.moveit.moveit.plugins.simple_controller_manager]: Added FollowJointTrajectory controller for /mur620b/moveit_joint_trajectory_controller_l
+[INFO] [1779358595.648480934] [mur620b.moveit.moveit.plugins.simple_controller_manager]: Added FollowJointTrajectory controller for /mur620b/moveit_joint_trajectory_controller_r
+[INFO] [1779358595.656553716] [mur620b.moveit.moveit.plugins.simple_controller_manager]: Added FollowJointTrajectory controller for /mur620b/moveit_joint_trajectory_controller_lift_l
+[INFO] [1779358595.664243001] [mur620b.moveit.moveit.plugins.simple_controller_manager]: Added FollowJointTrajectory controller for /mur620b/moveit_joint_trajectory_controller_lift_r
+[INFO] [1779358595.664527401] [mur620b.moveit.moveit.plugins.simple_controller_manager]: Returned 4 controllers in list
+[INFO] [1779358595.664577700] [mur620b.moveit.moveit.plugins.simple_controller_manager]: Returned 4 controllers in list
+[INFO] [1779358595.667442028] [mur620b.moveit.moveit.ros.trajectory_execution_manager]: Trajectory execution is managing controllers
+[INFO] [1779358595.667483195] [mur620b.move_group]: MoveGroup debug mode is ON
+[INFO] [1779358595.721389969] [mur620b.moveit.moveit.ros.move_group.executable]: 
+
+********************************************************
+* MoveGroup using: 
+*     - apply_planning_scene_service
+*     - clear_octomap_service
+*     - get_group_urdf
+*     - load_geometry_from_file
+*     - CartesianPathService
+*     - execute_trajectory_action
+*     - get_planning_scene_service
+*     - kinematics_service
+*     - move_action
+*     - motion_plan_service
+*     - query_planners_service
+*     - state_validation_service
+*     - save_geometry_to_file
+********************************************************
+
+[INFO] [1779358595.721456829] [mur620b.moveit.moveit.ros.move_group.context]: MoveGroup context using pipeline ompl
+[INFO] [1779358595.721466738] [mur620b.moveit.moveit.ros.move_group.context]: MoveGroup context initialization complete
+---- /home/rosmatch/.ros/log/move_group_132580_1779358151795.log
+[WARN] [1779358189.685679411] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620b/UR10_r/flange' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620b/UR10_r/flange' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358189.685686334] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620b/UR10_r/wrist_3_link' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620b/UR10_r/wrist_3_link' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358189.685694283] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620b/UR10_r/ft_frame' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620b/UR10_r/ft_frame' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358189.685714233] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620b/left_lift_top' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620b/left_lift_top' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358189.685718792] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620b/right_lift_top' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620b/right_lift_top' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[INFO] [1779358189.685791895] [mur620a.moveit.moveit.ros.move_group.move_action]: Combined planning and execution request received for MoveGroup action. Forwarding to planning and execution pipeline.
+[INFO] [1779358189.685856960] [mur620a.moveit.moveit.ros.plan_execution]: Planning attempt 1 of at most 1
+[INFO] [1779358189.685917961] [mur620a.moveit.moveit.ros.move_group.capability]: Using planning pipeline 'ompl'
+[INFO] [1779358189.686347282] [mur620a.move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[INFO] [1779358189.686378735] [mur620a.move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[INFO] [1779358189.686386452] [mur620a.move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[INFO] [1779358189.686415706] [mur620a.move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[INFO] [1779358189.689768308] [mur620a.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'UR_arm_all' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[INFO] [1779358189.691402273] [mur620a.move_group]: Calling Planner 'OMPL'
+[ERROR] [1779358194.692821594] [mur620a.moveit.moveit.planners.ompl.model_based_planning_context]: Unable to solve the planning problem
+[ERROR] [1779358194.692886459] [mur620a.move_group]: Planner 'OMPL' failed with error code FAILURE
+[INFO] [1779358194.692919184] [mur620a.moveit.moveit.ros.move_group.move_action]: FAILURE
+[INFO] [1779358203.738153247] [mur620a.moveit.moveit.ros.move_group.move_action]: MoveGroupMoveAction: Received request
+[INFO] [1779358203.738379389] [mur620a.moveit.moveit.ros.move_group.move_action]: executing..
+[WARN] [1779358203.749410796] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620b/UR10_l/base_link' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620b/UR10_l/base_link' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358203.749466931] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620b/UR10_l/base_ideal' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620b/UR10_l/base_ideal' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358203.749474054] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620b/UR10_l/base' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620b/UR10_l/base' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358203.749479669] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620b/UR10_l/base_link_inertia' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620b/UR10_l/base_link_inertia' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358203.749485882] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620b/UR10_l/tool0' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620b/UR10_l/tool0' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358203.749492928] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620b/UR10_l/flange' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620b/UR10_l/flange' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358203.749499540] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620b/UR10_l/wrist_3_link' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620b/UR10_l/wrist_3_link' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358203.749507564] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620b/UR10_l/ft_frame' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620b/UR10_l/ft_frame' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358203.749515282] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620b/UR10_r/base_link' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620b/UR10_r/base_link' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358203.749522000] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620b/UR10_r/base_ideal' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620b/UR10_r/base_ideal' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358203.749529549] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620b/UR10_r/base' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620b/UR10_r/base' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358203.749537823] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620b/UR10_r/base_link_inertia' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620b/UR10_r/base_link_inertia' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358203.749580586] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620b/UR10_r/tool0' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620b/UR10_r/tool0' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358203.749588030] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620b/UR10_r/flange' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620b/UR10_r/flange' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358203.749594542] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620b/UR10_r/wrist_3_link' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620b/UR10_r/wrist_3_link' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358203.749601451] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620b/UR10_r/ft_frame' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620b/UR10_r/ft_frame' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358203.749629967] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620b/left_lift_top' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620b/left_lift_top' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[WARN] [1779358203.749637485] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Unable to transform object from frame 'mur620b/right_lift_top' to planning frame'base_footprint' (Could not find a connection between 'base_footprint' and 'mur620b/right_lift_top' because they are not part of the same tree.Tf has two or more unconnected trees.)
+[INFO] [1779358203.749757256] [mur620a.moveit.moveit.ros.move_group.move_action]: Planning request received for MoveGroup action. Forwarding to planning pipeline.
+[INFO] [1779358203.749773981] [mur620a.moveit.moveit.ros.move_group.capability]: Using planning pipeline 'ompl'
+[INFO] [1779358203.750098593] [mur620a.move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[INFO] [1779358203.750140814] [mur620a.move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[INFO] [1779358203.750151222] [mur620a.move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[INFO] [1779358203.750197717] [mur620a.move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[INFO] [1779358203.750681854] [mur620a.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'UR_arm_all' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[INFO] [1779358203.750752265] [mur620a.move_group]: Calling Planner 'OMPL'
+[ERROR] [1779358208.750989634] [mur620a.moveit.moveit.planners.ompl.model_based_planning_context]: Unable to solve the planning problem
+[ERROR] [1779358208.751084522] [mur620a.move_group]: Planner 'OMPL' failed with error code FAILURE
+[ERROR] [1779358208.751095909] [mur620a.moveit.moveit.ros.move_group.move_action]: Generating a plan with planning pipeline failed.
+[INFO] [1779358208.751110682] [mur620a.moveit.moveit.ros.move_group.move_action]: FAILURE
+[INFO] [1779358215.926931394] [mur620a.moveit.moveit.ros.move_group.move_action]: MoveGroupMoveAction: Received request
+[INFO] [1779358215.927103598] [mur620a.moveit.moveit.ros.move_group.move_action]: executing..
+[INFO] [1779358215.932342955] [mur620a.moveit.moveit.ros.move_group.move_action]: Planning request received for MoveGroup action. Forwarding to planning pipeline.
+[INFO] [1779358215.932386481] [mur620a.moveit.moveit.ros.move_group.capability]: Using planning pipeline 'ompl'
+[INFO] [1779358215.932549653] [mur620a.move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[INFO] [1779358215.932572580] [mur620a.move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[INFO] [1779358215.932578537] [mur620a.move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[INFO] [1779358215.932605622] [mur620a.move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[INFO] [1779358215.932906049] [mur620a.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'UR_arm_all' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[INFO] [1779358215.932952904] [mur620a.move_group]: Calling Planner 'OMPL'
+[ERROR] [1779358220.934465105] [mur620a.moveit.moveit.planners.ompl.model_based_planning_context]: Unable to solve the planning problem
+[ERROR] [1779358220.934683471] [mur620a.move_group]: Planner 'OMPL' failed with error code FAILURE
+[ERROR] [1779358220.934724294] [mur620a.moveit.moveit.ros.move_group.move_action]: Generating a plan with planning pipeline failed.
+[INFO] [1779358220.934778005] [mur620a.moveit.moveit.ros.move_group.move_action]: FAILURE
+[INFO] [1779358222.392875497] [mur620a.moveit.moveit.ros.move_group.move_action]: MoveGroupMoveAction: Received request
+[INFO] [1779358222.393056781] [mur620a.moveit.moveit.ros.move_group.move_action]: executing..
+[INFO] [1779358222.398829899] [mur620a.moveit.moveit.ros.move_group.move_action]: Planning request received for MoveGroup action. Forwarding to planning pipeline.
+[INFO] [1779358222.398889115] [mur620a.moveit.moveit.ros.move_group.capability]: Using planning pipeline 'ompl'
+[INFO] [1779358222.399117381] [mur620a.move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[INFO] [1779358222.399143740] [mur620a.move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[INFO] [1779358222.399151849] [mur620a.move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[INFO] [1779358222.399181390] [mur620a.move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[INFO] [1779358222.399568060] [mur620a.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'UR_arm_all' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[INFO] [1779358222.399607251] [mur620a.move_group]: Calling Planner 'OMPL'
+[ERROR] [1779358227.400061552] [mur620a.moveit.moveit.planners.ompl.model_based_planning_context]: Unable to solve the planning problem
+[ERROR] [1779358227.400188458] [mur620a.move_group]: Planner 'OMPL' failed with error code FAILURE
+[ERROR] [1779358227.400207392] [mur620a.moveit.moveit.ros.move_group.move_action]: Generating a plan with planning pipeline failed.
+[INFO] [1779358227.400226611] [mur620a.moveit.moveit.ros.move_group.move_action]: FAILURE
+[INFO] [1779358240.021985147] [mur620a.moveit.moveit.ros.move_group.move_action]: MoveGroupMoveAction: Received request
+[INFO] [1779358240.022139918] [mur620a.moveit.moveit.ros.move_group.move_action]: executing..
+[INFO] [1779358240.028360879] [mur620a.moveit.moveit.ros.move_group.move_action]: Combined planning and execution request received for MoveGroup action. Forwarding to planning and execution pipeline.
+[INFO] [1779358240.028445190] [mur620a.moveit.moveit.ros.plan_execution]: Planning attempt 1 of at most 1
+[INFO] [1779358240.028532041] [mur620a.moveit.moveit.ros.move_group.capability]: Using planning pipeline 'ompl'
+[INFO] [1779358240.028795348] [mur620a.move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[INFO] [1779358240.028816150] [mur620a.move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[INFO] [1779358240.028821385] [mur620a.move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[INFO] [1779358240.028842366] [mur620a.move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[INFO] [1779358240.029071314] [mur620a.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'UR_arm_l' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[INFO] [1779358240.029115960] [mur620a.move_group]: Calling Planner 'OMPL'
+[ERROR] [1779358245.029483274] [mur620a.moveit.moveit.planners.ompl.model_based_planning_context]: Unable to solve the planning problem
+[ERROR] [1779358245.029597553] [mur620a.move_group]: Planner 'OMPL' failed with error code FAILURE
+[INFO] [1779358245.029638208] [mur620a.moveit.moveit.ros.move_group.move_action]: FAILURE
+[INFO] [1779358246.823810766] [mur620a.moveit.moveit.ros.move_group.move_action]: MoveGroupMoveAction: Received request
+[INFO] [1779358246.824059647] [mur620a.moveit.moveit.ros.move_group.move_action]: executing..
+[INFO] [1779358246.824868132] [mur620a.moveit.moveit.ros.move_group.move_action]: Planning request received for MoveGroup action. Forwarding to planning pipeline.
+[INFO] [1779358246.824896655] [mur620a.moveit.moveit.ros.move_group.capability]: Using planning pipeline 'ompl'
+[INFO] [1779358246.825190925] [mur620a.move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[INFO] [1779358246.825208682] [mur620a.move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[INFO] [1779358246.825214798] [mur620a.move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[INFO] [1779358246.825248796] [mur620a.move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[INFO] [1779358246.825554629] [mur620a.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'UR_arm_l' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[INFO] [1779358246.825598261] [mur620a.move_group]: Calling Planner 'OMPL'
+[ERROR] [1779358251.826224871] [mur620a.moveit.moveit.planners.ompl.model_based_planning_context]: Unable to solve the planning problem
+[ERROR] [1779358251.826301402] [mur620a.move_group]: Planner 'OMPL' failed with error code FAILURE
+[ERROR] [1779358251.826314595] [mur620a.moveit.moveit.ros.move_group.move_action]: Generating a plan with planning pipeline failed.
+[INFO] [1779358251.826325689] [mur620a.moveit.moveit.ros.move_group.move_action]: FAILURE
+[INFO] [1779358304.482971846] [mur620a.moveit.moveit.ros.move_group.move_action]: MoveGroupMoveAction: Received request
+[INFO] [1779358304.483134441] [mur620a.moveit.moveit.ros.move_group.move_action]: executing..
+[INFO] [1779358304.494064067] [mur620a.moveit.moveit.ros.move_group.move_action]: Combined planning and execution request received for MoveGroup action. Forwarding to planning and execution pipeline.
+[INFO] [1779358304.494143434] [mur620a.moveit.moveit.ros.plan_execution]: Planning attempt 1 of at most 1
+[INFO] [1779358304.494216454] [mur620a.moveit.moveit.ros.move_group.capability]: Using planning pipeline 'ompl'
+[INFO] [1779358304.494482907] [mur620a.move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[INFO] [1779358304.494498428] [mur620a.move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[INFO] [1779358304.494506042] [mur620a.move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[INFO] [1779358304.494533754] [mur620a.move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[INFO] [1779358304.494894984] [mur620a.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'UR_arm_l' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[INFO] [1779358304.494959554] [mur620a.move_group]: Calling Planner 'OMPL'
+[ERROR] [1779358309.495877044] [mur620a.moveit.moveit.planners.ompl.model_based_planning_context]: Unable to solve the planning problem
+[ERROR] [1779358309.495973236] [mur620a.move_group]: Planner 'OMPL' failed with error code FAILURE
+[INFO] [1779358309.495997670] [mur620a.moveit.moveit.ros.move_group.move_action]: FAILURE
+[INFO] [1779358567.494945754] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+---- /home/rosmatch/.ros/log/move_group_134746_1779358163910.log
+[INFO] [1779358164.069503345] [mur620b.moveit.moveit.ros.rdf_loader]: Loaded robot model in 0 seconds
+[INFO] [1779358164.069580811] [mur620b.moveit.moveit.core.robot_model]: Loading robot model 'mur620'...
+[INFO] [1779358164.293950241] [mur620b.moveit.moveit.kinematics.kdl_kinematics_plugin]: Joint weights for group 'UR_arm_l': 1 1 1 1 1 1
+[INFO] [1779358164.294237785] [mur620b.moveit.moveit.kinematics.kdl_kinematics_plugin]: Joint weights for group 'UR_arm_r': 1 1 1 1 1 1
+[INFO] [1779358164.294489106] [mur620b.moveit.moveit.kinematics.kdl_kinematics_plugin]: Joint weights for group 'UR_arm_lift_l': 1 1 1 1 1 1 1
+[INFO] [1779358164.294654073] [mur620b.moveit.moveit.kinematics.kdl_kinematics_plugin]: Joint weights for group 'UR_arm_lift_r': 1 1 1 1 1 1 1
+[INFO] [1779358165.070117275] [mur620b.moveit.moveit.ros.planning_scene_monitor]: Publishing maintained planning scene on 'monitored_planning_scene'
+[INFO] [1779358165.070347276] [mur620b.moveit.moveit.ros.moveit_cpp]: Listening to 'joint_states' for joint states
+[INFO] [1779358165.071554455] [mur620b.moveit.moveit.ros.current_state_monitor]: Listening to joint states on topic 'joint_states'
+[INFO] [1779358165.073533094] [mur620b.moveit.moveit.ros.planning_scene_monitor]: Listening to '/mur620b/attached_collision_object' for attached collision objects
+[INFO] [1779358165.073633145] [mur620b.moveit.moveit.ros.planning_scene_monitor]: Stopping existing planning scene publisher.
+[INFO] [1779358165.074235748] [mur620b.moveit.moveit.ros.planning_scene_monitor]: Stopped publishing maintained planning scene.
+[INFO] [1779358165.075775913] [mur620b.moveit.moveit.ros.planning_scene_monitor]: Publishing maintained planning scene on 'monitored_planning_scene'
+[INFO] [1779358165.075897298] [mur620b.moveit.moveit.ros.planning_scene_monitor]: Starting planning scene monitor
+[INFO] [1779358165.077514712] [mur620b.moveit.moveit.ros.planning_scene_monitor]: Listening to '/mur620b/planning_scene'
+[INFO] [1779358165.077544316] [mur620b.moveit.moveit.ros.planning_scene_monitor]: Starting world geometry update monitor for collision objects, attached objects, octomap updates.
+[INFO] [1779358165.081070421] [mur620b.moveit.moveit.ros.planning_scene_monitor]: Listening to 'collision_object'
+[INFO] [1779358165.082974414] [mur620b.moveit.moveit.ros.planning_scene_monitor]: Listening to 'planning_scene_world' for planning scene world geometry
+[WARN] [1779358165.083212885] [mur620b.moveit.moveit.ros.occupancy_map_monitor]: Resolution not specified for Octomap. Assuming resolution = 0.1 instead
+[ERROR] [1779358165.083231277] [mur620b.moveit.moveit.ros.occupancy_map_monitor]: No 3D sensor plugin(s) defined for octomap updates
+[INFO] [1779358169.553267667] [mur620b.moveit.moveit.ros.planning_pipeline]: Successfully loaded planner 'OMPL'
+[INFO] [1779358169.554014282] [mur620b.move_group]: Try loading adapter 'default_planning_request_adapters/ResolveConstraintFrames'
+[INFO] [1779358169.554673914] [mur620b.move_group]: Loaded adapter 'default_planning_request_adapters/ResolveConstraintFrames'
+[INFO] [1779358169.554688861] [mur620b.move_group]: Try loading adapter 'default_planning_request_adapters/ValidateWorkspaceBounds'
+[INFO] [1779358169.555234067] [mur620b.move_group]: Loaded adapter 'default_planning_request_adapters/ValidateWorkspaceBounds'
+[INFO] [1779358169.555250264] [mur620b.move_group]: Try loading adapter 'default_planning_request_adapters/CheckStartStateBounds'
+[INFO] [1779358169.555278914] [mur620b.move_group]: Loaded adapter 'default_planning_request_adapters/CheckStartStateBounds'
+[INFO] [1779358169.555281995] [mur620b.move_group]: Try loading adapter 'default_planning_request_adapters/CheckStartStateCollision'
+[INFO] [1779358169.555288750] [mur620b.move_group]: Loaded adapter 'default_planning_request_adapters/CheckStartStateCollision'
+[INFO] [1779358169.556358191] [mur620b.move_group]: Try loading adapter 'default_planning_response_adapters/AddTimeOptimalParameterization'
+[INFO] [1779358169.558227787] [mur620b.move_group]: Loaded adapter 'default_planning_response_adapters/AddTimeOptimalParameterization'
+[INFO] [1779358169.558256772] [mur620b.move_group]: Try loading adapter 'default_planning_response_adapters/ValidateSolution'
+[INFO] [1779358169.561023127] [mur620b.move_group]: Loaded adapter 'default_planning_response_adapters/ValidateSolution'
+[INFO] [1779358169.561063516] [mur620b.move_group]: Try loading adapter 'default_planning_response_adapters/DisplayMotionPath'
+[INFO] [1779358169.562273745] [mur620b.move_group]: Loaded adapter 'default_planning_response_adapters/DisplayMotionPath'
+[INFO] [1779358169.700242751] [mur620b.moveit.moveit.plugins.simple_controller_manager]: Added FollowJointTrajectory controller for /mur620b/moveit_joint_trajectory_controller_l
+[INFO] [1779358169.708700993] [mur620b.moveit.moveit.plugins.simple_controller_manager]: Added FollowJointTrajectory controller for /mur620b/moveit_joint_trajectory_controller_r
+[INFO] [1779358169.716758610] [mur620b.moveit.moveit.plugins.simple_controller_manager]: Added FollowJointTrajectory controller for /mur620b/moveit_joint_trajectory_controller_lift_l
+[INFO] [1779358169.723882909] [mur620b.moveit.moveit.plugins.simple_controller_manager]: Added FollowJointTrajectory controller for /mur620b/moveit_joint_trajectory_controller_lift_r
+[INFO] [1779358169.724161809] [mur620b.moveit.moveit.plugins.simple_controller_manager]: Returned 4 controllers in list
+[INFO] [1779358169.724198751] [mur620b.moveit.moveit.plugins.simple_controller_manager]: Returned 4 controllers in list
+[INFO] [1779358169.725343731] [mur620b.moveit.moveit.ros.trajectory_execution_manager]: Trajectory execution is managing controllers
+[INFO] [1779358169.725375518] [mur620b.move_group]: MoveGroup debug mode is ON
+[INFO] [1779358169.772997017] [mur620b.moveit.moveit.ros.move_group.executable]: 
+
+********************************************************
+* MoveGroup using: 
+*     - apply_planning_scene_service
+*     - clear_octomap_service
+*     - get_group_urdf
+*     - load_geometry_from_file
+*     - CartesianPathService
+*     - execute_trajectory_action
+*     - get_planning_scene_service
+*     - kinematics_service
+*     - move_action
+*     - motion_plan_service
+*     - query_planners_service
+*     - state_validation_service
+*     - save_geometry_to_file
+********************************************************
+
+[INFO] [1779358169.773071857] [mur620b.moveit.moveit.ros.move_group.context]: MoveGroup context using pipeline ompl
+[INFO] [1779358169.773083150] [mur620b.moveit.moveit.ros.move_group.context]: MoveGroup context initialization complete
+[INFO] [1779358567.495034858] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+---- /home/rosmatch/.ros/log/rviz2_134604_1779358163262.log
+[INFO] [1779358163.892588237] [rviz2]: Stereo is NOT SUPPORTED
+[INFO] [1779358163.892649145] [rviz2]: OpenGl version: 4.6 (GLSL 4.6)
+[INFO] [1779358164.024379037] [rviz2]: Stereo is NOT SUPPORTED
+[WARN] [1779358164.097976901] [rcl.logging_rosout]: Publisher already registered for node name: 'rviz2_multi_mur620'. If this is due to multiple nodes with the same name then all logs for the logger named 'rviz2_multi_mur620' will go out over the existing publisher. As soon as any node with that name is destructed it will unregister the publisher, preventing any further logs for that name from being published on the rosout topic.
+[ERROR] [1779358167.150909456] [rviz2_multi_mur620.moveit.ros.motion_planning_frame]: Action server: /recognize_objects not available
+[INFO] [1779358167.293918516] [rviz2_multi_mur620.moveit.ros.motion_planning_frame]: MoveGroup namespace changed: / -> . Reloading params.
+[INFO] [1779358167.309913776] [rviz2_multi_mur620.moveit.ros.motion_planning_frame]: MoveGroup namespace changed: / -> mur620a. Reloading params.
+[WARN] [1779358167.401605238] [rcl.logging_rosout]: Publisher already registered for node name: 'rviz2_multi_mur620'. If this is due to multiple nodes with the same name then all logs for the logger named 'rviz2_multi_mur620' will go out over the existing publisher. As soon as any node with that name is destructed it will unregister the publisher, preventing any further logs for that name from being published on the rosout topic.
+[INFO] [1779358167.589558747] [rviz2_multi_mur620.moveit.ros.rdf_loader]: Loaded robot model in 0.192674 seconds
+[INFO] [1779358167.589604884] [rviz2_multi_mur620.moveit.core.robot_model]: Loading robot model 'mur620'...
+[WARN] [1779358167.626873086] [rviz2_multi_mur620.moveit.ros.robot_model_loader]: No kinematics plugins defined. Fill and load kinematics.yaml!
+[INFO] [1779358168.365583288] [rviz2_multi_mur620.moveit.ros.planning_scene_monitor]: Starting planning scene monitor
+[INFO] [1779358168.366833367] [rviz2_multi_mur620.moveit.ros.planning_scene_monitor]: Listening to '/monitored_planning_scene'
+[INFO] [1779358168.425211409] [interactive_marker_display_101078756937392]: Connected on namespace: mur620a/rviz_moveit_motion_planning_display/robot_interaction_interactive_marker_topic
+[INFO] [1779358168.437445238] [rviz2_multi_mur620.moveit.ros.robot_interaction]: No active joints or end effectors found for group 'UR_arm_all'. Make sure that kinematics.yaml is loaded in this node's namespace.
+[INFO] [1779358168.438310784] [rviz2_multi_mur620.moveit.ros.robot_interaction]: No active joints or end effectors found for group 'UR_arm_all'. Make sure that kinematics.yaml is loaded in this node's namespace.
+[INFO] [1779358168.464131847] [interactive_marker_display_101078756937392]: Sending request for interactive markers
+[INFO] [1779358168.480626301] [rviz2_multi_mur620.moveit.ros.planning_scene_monitor]: Stopping planning scene monitor
+[INFO] [1779358168.553379321] [rviz2]: Trying to create a map of size 1626 x 2140 using 1 swatches
+[WARN] [1779358168.563239329] [interactive_marker_display_101078756937392]: Server not available during initialization, resetting
+[INFO] [1779358168.666873254] [rviz2_multi_mur620.moveit.ros.rdf_loader]: Loaded robot model in 0.149137 seconds
+[INFO] [1779358168.666898364] [rviz2_multi_mur620.moveit.core.robot_model]: Loading robot model 'mur620'...
+[WARN] [1779358168.680866247] [rviz2_multi_mur620.moveit.ros.robot_model_loader]: No kinematics plugins defined. Fill and load kinematics.yaml!
+[INFO] [1779358168.757091675] [rviz2_multi_mur620.moveit.ros.planning_scene_monitor]: Starting planning scene monitor
+[INFO] [1779358168.758241483] [rviz2_multi_mur620.moveit.ros.planning_scene_monitor]: Listening to '/monitored_planning_scene'
+[INFO] [1779358168.802028302] [rviz2_multi_mur620.moveit.ros.robot_interaction]: No active joints or end effectors found for group 'UR_arm_all'. Make sure that kinematics.yaml is loaded in this node's namespace.
+[INFO] [1779358168.811941973] [rviz2_multi_mur620.moveit.ros.motion_planning_frame]: group UR_arm_all
+[INFO] [1779358168.811959333] [rviz2_multi_mur620.moveit.ros.motion_planning_frame]: Constructing new MoveGroup connection for group 'UR_arm_all' in namespace 'mur620a'
+[INFO] [1779358168.815553985] [interactive_marker_display_101078756937392]: Sending request for interactive markers
+[INFO] [1779358168.836036029] [interactive_marker_display_101078756937392]: Service response received for initialization
+[INFO] [1779358168.857089610] [rviz2_multi_mur620.moveit.ros.move_group_interface]: Ready to take commands for planning group UR_arm_all.
+[INFO] [1779358168.858503571] [rviz2_multi_mur620.moveit.ros.motion_planning_frame]: group UR_arm_all
+[INFO] [1779358168.863453343] [rviz2_multi_mur620.moveit.ros.motion_planning_frame]: group UR_arm_all
+[INFO] [1779358189.676047865] [rviz2_multi_mur620.moveit.ros.move_group_interface]: Plan and Execute request accepted
+[INFO] [1779358194.693105254] [rviz2_multi_mur620.moveit.ros.move_group_interface]: Plan and Execute request aborted
+[ERROR] [1779358194.694160773] [rviz2_multi_mur620.moveit.ros.move_group_interface]: MoveGroupInterface::move() failed or timeout reached
+[INFO] [1779358203.737670101] [rviz2_multi_mur620.moveit.ros.move_group_interface]: MoveGroup action client/server ready
+[INFO] [1779358203.738406017] [rviz2_multi_mur620.moveit.ros.move_group_interface]: Planning request accepted
+[INFO] [1779358208.751320738] [rviz2_multi_mur620.moveit.ros.move_group_interface]: Planning request aborted
+[ERROR] [1779358208.752357888] [rviz2_multi_mur620.moveit.ros.move_group_interface]: MoveGroupInterface::plan() failed or timeout reached
+[INFO] [1779358215.926667375] [rviz2_multi_mur620.moveit.ros.move_group_interface]: MoveGroup action client/server ready
+[INFO] [1779358215.927821000] [rviz2_multi_mur620.moveit.ros.move_group_interface]: Planning request accepted
+[INFO] [1779358220.935466229] [rviz2_multi_mur620.moveit.ros.move_group_interface]: Planning request aborted
+[ERROR] [1779358220.936013332] [rviz2_multi_mur620.moveit.ros.move_group_interface]: MoveGroupInterface::plan() failed or timeout reached
+[INFO] [1779358222.392610156] [rviz2_multi_mur620.moveit.ros.move_group_interface]: MoveGroup action client/server ready
+[INFO] [1779358222.393104011] [rviz2_multi_mur620.moveit.ros.move_group_interface]: Planning request accepted
+[INFO] [1779358227.400600546] [rviz2_multi_mur620.moveit.ros.move_group_interface]: Planning request aborted
+[ERROR] [1779358227.401595154] [rviz2_multi_mur620.moveit.ros.move_group_interface]: MoveGroupInterface::plan() failed or timeout reached
+[INFO] [1779358236.441950555] [rviz2_multi_mur620.moveit.ros.robot_interaction]: No active joints or end effectors found for group 'UR_arm_l'. Make sure that kinematics.yaml is loaded in this node's namespace.
+[INFO] [1779358236.442648372] [rviz2_multi_mur620.moveit.ros.motion_planning_frame]: group UR_arm_l
+[INFO] [1779358236.442663743] [rviz2_multi_mur620.moveit.ros.motion_planning_frame]: Constructing new MoveGroup connection for group 'UR_arm_l' in namespace 'mur620a'
+[INFO] [1779358236.500018926] [rviz2_multi_mur620.moveit.ros.move_group_interface]: Ready to take commands for planning group UR_arm_l.
+[INFO] [1779358240.022167311] [rviz2_multi_mur620.moveit.ros.move_group_interface]: Plan and Execute request accepted
+[INFO] [1779358245.031578586] [rviz2_multi_mur620.moveit.ros.move_group_interface]: Plan and Execute request aborted
+[ERROR] [1779358245.031673978] [rviz2_multi_mur620.moveit.ros.move_group_interface]: MoveGroupInterface::move() failed or timeout reached
+[INFO] [1779358246.823547119] [rviz2_multi_mur620.moveit.ros.move_group_interface]: MoveGroup action client/server ready
+[INFO] [1779358246.823979461] [rviz2_multi_mur620.moveit.ros.move_group_interface]: Planning request accepted
+[INFO] [1779358251.826519931] [rviz2_multi_mur620.moveit.ros.move_group_interface]: Planning request aborted
+[ERROR] [1779358251.826994168] [rviz2_multi_mur620.moveit.ros.move_group_interface]: MoveGroupInterface::plan() failed or timeout reached
+[INFO] [1779358304.483108081] [rviz2_multi_mur620.moveit.ros.move_group_interface]: Plan and Execute request accepted
+[INFO] [1779358309.496191817] [rviz2_multi_mur620.moveit.ros.move_group_interface]: Plan and Execute request aborted
+[ERROR] [1779358309.497210061] [rviz2_multi_mur620.moveit.ros.move_group_interface]: MoveGroupInterface::move() failed or timeout reached
+---- /home/rosmatch/.ros/log/rviz2_92858_1779357745010.log
+[INFO] [1779357745.612415185] [rviz2]: Stereo is NOT SUPPORTED
+[INFO] [1779357745.612488538] [rviz2]: OpenGl version: 4.6 (GLSL 4.6)
+[INFO] [1779357745.730426230] [rviz2]: Stereo is NOT SUPPORTED
+[WARN] [1779357745.959038490] [rcl.logging_rosout]: Publisher already registered for node name: 'rviz2_multi_mur620'. If this is due to multiple nodes with the same name then all logs for the logger named 'rviz2_multi_mur620' will go out over the existing publisher. As soon as any node with that name is destructed it will unregister the publisher, preventing any further logs for that name from being published on the rosout topic.
+[ERROR] [1779357749.007003230] [rviz2_multi_mur620.moveit.ros.motion_planning_frame]: Action server: /recognize_objects not available
+[INFO] [1779357749.035818145] [rviz2_multi_mur620.moveit.ros.motion_planning_frame]: MoveGroup namespace changed: / -> . Reloading params.
+[INFO] [1779357749.053134025] [rviz2_multi_mur620.moveit.ros.motion_planning_frame]: MoveGroup namespace changed: / -> mur620a. Reloading params.
+[WARN] [1779357749.128222828] [rcl.logging_rosout]: Publisher already registered for node name: 'rviz2_multi_mur620'. If this is due to multiple nodes with the same name then all logs for the logger named 'rviz2_multi_mur620' will go out over the existing publisher. As soon as any node with that name is destructed it will unregister the publisher, preventing any further logs for that name from being published on the rosout topic.
+[INFO] [1779357749.853584998] [rviz2]: Trying to create a map of size 1626 x 2140 using 1 swatches
+[ERROR] [1779357759.229705024] [rviz2_multi_mur620]: Could not find parameter robot_description_semantic and did not receive robot_description_semantic via std_msgs::msg::String subscription within 10.000000 seconds.
+[ERROR] [1779357759.236415382] [rviz2_multi_mur620.moveit.ros.rdf_loader]: Unable to parse SRDF
+[ERROR] [1779357759.274199905] [rviz2_multi_mur620.moveit.ros.planning_scene_monitor]: Robot model not loaded
+[INFO] [1779357768.278820801] [rviz2_multi_mur620.moveit.ros.motion_planning_frame]: MoveGroup namespace changed: / -> mur620a. Reloading params.
+[ERROR] [1779357769.446915668] [rviz2_multi_mur620.moveit.ros.rdf_loader]: Unable to parse SRDF
+[ERROR] [1779357769.486603631] [rviz2_multi_mur620.moveit.ros.planning_scene_monitor]: Robot model not loaded
+[ERROR] [1779357779.677722992] [rviz2_multi_mur620.moveit.ros.rdf_loader]: Unable to parse SRDF
+[ERROR] [1779357779.708775801] [rviz2_multi_mur620.moveit.ros.planning_scene_monitor]: Robot model not loaded
+[INFO] [1779358144.552314867] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+---- /home/rosmatch/.ros/log/rviz2_33951_1779357229407.log
+[INFO] [1779357230.042991873] [rviz2]: Stereo is NOT SUPPORTED
+[INFO] [1779357230.043089264] [rviz2]: OpenGl version: 4.6 (GLSL 4.6)
+[INFO] [1779357230.176117241] [rviz2]: Stereo is NOT SUPPORTED
+[ERROR] [1779357528.630761450] [moveit_3401690751.moveit.ros.motion_planning_frame]: Action server: /recognize_objects not available
+[INFO] [1779357528.678565698] [moveit_3401690751.moveit.ros.motion_planning_frame]: MoveGroup namespace changed: / -> . Reloading params.
+[ERROR] [1779357538.855241897] [rviz]: Could not find parameter robot_description_semantic and did not receive robot_description_semantic via std_msgs::msg::String subscription within 10.000000 seconds.
+[ERROR] [1779357538.862981267] [moveit_3401690751.moveit.ros.rdf_loader]: Unable to parse SRDF
+[ERROR] [1779357538.902557176] [moveit_3401690751.moveit.ros.planning_scene_monitor]: Robot model not loaded
+[INFO] [1779357543.926003542] [moveit_3401690751.moveit.ros.motion_planning_frame]: MoveGroup namespace changed: / -> mur620a. Reloading params.
+[ERROR] [1779357554.084302161] [moveit_3401690751.moveit.ros.rdf_loader]: Unable to parse SRDF
+[ERROR] [1779357554.133247352] [moveit_3401690751.moveit.ros.planning_scene_monitor]: Robot model not loaded
+---- /home/rosmatch/.ros/log/rviz2_15830_1779357097521.log
+[INFO] [1779357098.053217552] [rviz2]: Stereo is NOT SUPPORTED
+[INFO] [1779357098.053267251] [rviz2]: OpenGl version: 4.6 (GLSL 4.6)
+[INFO] [1779357098.193512381] [rviz2]: Stereo is NOT SUPPORTED
+[INFO] [1779357098.469510718] [rviz2]: Trying to create a map of size 1626 x 2140 using 1 swatches
+[INFO] [1779357131.119833486] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+---- /home/rosmatch/.ros/log/move_group_10466_1779357060911.log
+[INFO] [1779357060.934849365] [mur620a.moveit.moveit.ros.rdf_loader]: Loaded robot model in 0 seconds
+[INFO] [1779357060.934916053] [mur620a.moveit.moveit.core.robot_model]: Loading robot model 'mur620'...
+[INFO] [1779357061.141348220] [mur620a.moveit.moveit.kinematics.kdl_kinematics_plugin]: Joint weights for group 'UR_arm_l': 1 1 1 1 1 1
+[INFO] [1779357061.141556719] [mur620a.moveit.moveit.kinematics.kdl_kinematics_plugin]: Joint weights for group 'UR_arm_r': 1 1 1 1 1 1
+[INFO] [1779357061.141733225] [mur620a.moveit.moveit.kinematics.kdl_kinematics_plugin]: Joint weights for group 'UR_arm_lift_l': 1 1 1 1 1 1 1
+[INFO] [1779357061.141916798] [mur620a.moveit.moveit.kinematics.kdl_kinematics_plugin]: Joint weights for group 'UR_arm_lift_r': 1 1 1 1 1 1 1
+[INFO] [1779357062.386103290] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Publishing maintained planning scene on 'monitored_planning_scene'
+[INFO] [1779357062.386236037] [mur620a.moveit.moveit.ros.moveit_cpp]: Listening to 'joint_states' for joint states
+[INFO] [1779357062.387094193] [mur620a.moveit.moveit.ros.current_state_monitor]: Listening to joint states on topic 'joint_states'
+[INFO] [1779357062.387498592] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Listening to '/mur620a/attached_collision_object' for attached collision objects
+[INFO] [1779357062.387510857] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Stopping existing planning scene publisher.
+[INFO] [1779357062.387701477] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Stopped publishing maintained planning scene.
+[INFO] [1779357062.387967470] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Publishing maintained planning scene on 'monitored_planning_scene'
+[INFO] [1779357062.388024496] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Starting planning scene monitor
+[INFO] [1779357062.388293033] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Listening to '/mur620a/planning_scene'
+[INFO] [1779357062.388320293] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Starting world geometry update monitor for collision objects, attached objects, octomap updates.
+[INFO] [1779357062.388903785] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Listening to 'collision_object'
+[INFO] [1779357062.389441366] [mur620a.moveit.moveit.ros.planning_scene_monitor]: Listening to 'planning_scene_world' for planning scene world geometry
+[WARN] [1779357062.390004057] [mur620a.moveit.moveit.ros.occupancy_map_monitor]: Resolution not specified for Octomap. Assuming resolution = 0.1 instead
+[ERROR] [1779357062.390020946] [mur620a.moveit.moveit.ros.occupancy_map_monitor]: No 3D sensor plugin(s) defined for octomap updates
+[INFO] [1779357065.667608698] [mur620a.moveit.moveit.ros.planning_pipeline]: Successfully loaded planner 'OMPL'
+[INFO] [1779357065.668412171] [mur620a.move_group]: Try loading adapter 'default_planning_request_adapters/ResolveConstraintFrames'
+[INFO] [1779357065.669568939] [mur620a.move_group]: Loaded adapter 'default_planning_request_adapters/ResolveConstraintFrames'
+[INFO] [1779357065.669584079] [mur620a.move_group]: Try loading adapter 'default_planning_request_adapters/ValidateWorkspaceBounds'
+[INFO] [1779357065.669816409] [mur620a.move_group]: Loaded adapter 'default_planning_request_adapters/ValidateWorkspaceBounds'
+[INFO] [1779357065.669822942] [mur620a.move_group]: Try loading adapter 'default_planning_request_adapters/CheckStartStateBounds'
+[INFO] [1779357065.669842567] [mur620a.move_group]: Loaded adapter 'default_planning_request_adapters/CheckStartStateBounds'
+[INFO] [1779357065.669845701] [mur620a.move_group]: Try loading adapter 'default_planning_request_adapters/CheckStartStateCollision'
+[INFO] [1779357065.669855037] [mur620a.move_group]: Loaded adapter 'default_planning_request_adapters/CheckStartStateCollision'
+[INFO] [1779357065.670500716] [mur620a.move_group]: Try loading adapter 'default_planning_response_adapters/AddTimeOptimalParameterization'
+[INFO] [1779357065.674909781] [mur620a.move_group]: Loaded adapter 'default_planning_response_adapters/AddTimeOptimalParameterization'
+[INFO] [1779357065.674938072] [mur620a.move_group]: Try loading adapter 'default_planning_response_adapters/ValidateSolution'
+[INFO] [1779357065.679151715] [mur620a.move_group]: Loaded adapter 'default_planning_response_adapters/ValidateSolution'
+[INFO] [1779357065.679169993] [mur620a.move_group]: Try loading adapter 'default_planning_response_adapters/DisplayMotionPath'
+[INFO] [1779357065.679788874] [mur620a.move_group]: Loaded adapter 'default_planning_response_adapters/DisplayMotionPath'
+[INFO] [1779357065.749792226] [mur620a.moveit.moveit.plugins.simple_controller_manager]: Added FollowJointTrajectory controller for /mur620a/moveit_joint_trajectory_controller_l
+[INFO] [1779357065.752248537] [mur620a.moveit.moveit.plugins.simple_controller_manager]: Added FollowJointTrajectory controller for /mur620a/moveit_joint_trajectory_controller_r
+[INFO] [1779357065.755952343] [mur620a.moveit.moveit.plugins.simple_controller_manager]: Added FollowJointTrajectory controller for /mur620a/moveit_joint_trajectory_controller_lift_l
+[INFO] [1779357065.760004083] [mur620a.moveit.moveit.plugins.simple_controller_manager]: Added FollowJointTrajectory controller for /mur620a/moveit_joint_trajectory_controller_lift_r
+[INFO] [1779357065.760300135] [mur620a.moveit.moveit.plugins.simple_controller_manager]: Returned 4 controllers in list
+[INFO] [1779357065.760352460] [mur620a.moveit.moveit.plugins.simple_controller_manager]: Returned 4 controllers in list
+[INFO] [1779357065.761179363] [mur620a.moveit.moveit.ros.trajectory_execution_manager]: Trajectory execution is managing controllers
+[INFO] [1779357065.761233114] [mur620a.move_group]: MoveGroup debug mode is ON
+[INFO] [1779357065.785807992] [mur620a.moveit.moveit.ros.move_group.executable]: 
+
+********************************************************
+* MoveGroup using: 
+*     - apply_planning_scene_service
+*     - clear_octomap_service
+*     - get_group_urdf
+*     - load_geometry_from_file
+*     - CartesianPathService
+*     - execute_trajectory_action
+*     - get_planning_scene_service
+*     - kinematics_service
+*     - move_action
+*     - motion_plan_service
+*     - query_planners_service
+*     - state_validation_service
+*     - save_geometry_to_file
+********************************************************
+
+[INFO] [1779357065.785846472] [mur620a.moveit.moveit.ros.move_group.context]: MoveGroup context using pipeline ompl
+[INFO] [1779357065.785852344] [mur620a.moveit.moveit.ros.move_group.context]: MoveGroup context initialization complete
+[INFO] [1779357066.632344446] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+
+== RViz Checks ==
+For namespace mur620a, MotionPlanning should use:
+  Move Group Namespace: mur620a
+  Planning Scene Topic: monitored_planning_scene
+  Robot Description: robot_description
+  Planned Path Trajectory Topic: display_planned_path
+
+== Done ==
+Diagnostic log written to: /home/rosmatch/colcon_ws/src/match_mobile_robotics_jazzy/logs/check_multi_mur620_moveit_20260521_121827.log

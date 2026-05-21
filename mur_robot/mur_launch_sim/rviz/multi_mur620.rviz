@@ -709,8 +709,8 @@ Visualization Manager:
         Show Trail: false
         State Display Time: 3x
         Trail Step Size: 1
-        Trajectory Topic: /display_planned_path
-        Use Sim Time: false
+        Trajectory Topic: display_planned_path
+        Use Sim Time: true
       Planning Metrics:
         Payload: 1
         Show Joint Torques: false
@@ -724,13 +724,13 @@ Visualization Manager:
         Goal State Color: 250; 128; 0
         Interactive Marker Size: 0
         Joint Violation Color: 255; 0; 255
-        Planning Group: ""
+        Planning Group: UR_arm_l
         Query Goal State: true
         Query Start State: false
         Show Workspace: false
         Start State Alpha: 1
         Start State Color: 0; 255; 0
-      Planning Scene Topic: /monitored_planning_scene
+      Planning Scene Topic: monitored_planning_scene
       Robot Description: robot_description
       Scene Geometry:
         Scene Alpha: 0.8999999761581421

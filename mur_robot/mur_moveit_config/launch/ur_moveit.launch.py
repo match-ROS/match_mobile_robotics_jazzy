@@ -316,7 +316,7 @@ def launch_setup(context, *args, **kwargs):
         package="rviz2",
         condition=IfCondition(launch_rviz),
         executable="rviz2",
-        name="rviz2_mur620a_moveit",
+        name=f"rviz2_{controller_namespace}_moveit",
         output="log",
         arguments=["-d", rviz_config, "--ros-args", "--log-level", "warn"],
         parameters=[

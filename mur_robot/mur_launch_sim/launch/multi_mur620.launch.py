@@ -16,7 +16,6 @@ from launch.actions import (
     SetEnvironmentVariable,
     TimerAction,
 )
-from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
@@ -81,7 +80,16 @@ def declare_args():
         DeclareLaunchArgument(
             'launch_moveit',
             default_value='false',
-            description='Start one MoveIt instance per robot. Keep false unless needed.',
+            description='Start MoveIt for the robot selected by moveit_robot.',
+        ),
+        DeclareLaunchArgument(
+            'moveit_robot',
+            default_value=ROBOT_POSES[0][0],
+            description=(
+                'Robot name that owns the active MoveIt/RViz planning scene. '
+                'Only one MoveIt instance is launched to avoid duplicate global '
+                'base_footprint TF aliases.'
+            ),
         ),
         DeclareLaunchArgument('launch_rviz', default_value='false'),
         DeclareLaunchArgument('launch_servo', default_value='false'),
@@ -145,6 +153,9 @@ def launch_setup(context, *args, **kwargs):
     start_localization = (
         LaunchConfiguration('localization').perform(context).lower() == 'true'
     )
+    start_moveit = LaunchConfiguration('launch_moveit').perform(context).lower() == 'true'
+    start_rviz = LaunchConfiguration('launch_rviz').perform(context).lower() == 'true'
+    moveit_robot = LaunchConfiguration('moveit_robot').perform(context)
     spawn_interval = float(LaunchConfiguration('spawn_interval').perform(context))
     mur_launch_sim_path = get_package_share_directory('mur_launch_sim')
     mir_gazebo_path = get_package_share_directory('mir_gazebo')
@@ -205,6 +216,8 @@ def launch_setup(context, *args, **kwargs):
         ])
 
     for index, (robot_name, x, y, z, yaw) in enumerate(ROBOT_POSES):
+        robot_uses_moveit = start_moveit and robot_name == moveit_robot
+        robot_launches_rviz = start_rviz and robot_uses_moveit
         robot = IncludeLaunchDescription(
             PythonLaunchDescriptionSource(mur620_launch),
             launch_arguments={
@@ -239,8 +252,9 @@ def launch_setup(context, *args, **kwargs):
                     'auto_switch_arm_controllers'
                 ),
                 'launch_jparse_idk': LaunchConfiguration('launch_jparse_idk'),
-                'launch_moveit': LaunchConfiguration('launch_moveit'),
-                'launch_rviz': 'false',
+                'launch_moveit': 'true' if robot_uses_moveit else 'false',
+                'launch_rviz': 'true' if robot_launches_rviz else 'false',
+                'rviz_config': LaunchConfiguration('rviz_config'),
                 'launch_servo': LaunchConfiguration('launch_servo'),
                 'rviz_delay': LaunchConfiguration('rviz_delay'),
                 'ur_type': LaunchConfiguration('ur_type'),
@@ -276,21 +290,21 @@ def launch_setup(context, *args, **kwargs):
                 )
             )
 
-    actions.append(
-        TimerAction(
-            period=float(LaunchConfiguration('rviz_delay').perform(context)),
-            condition=IfCondition(LaunchConfiguration('launch_rviz')),
-            actions=[
-                Node(
-                    package='rviz2',
-                    executable='rviz2',
-                    name='rviz2_multi_mur620',
-                    arguments=['-d', LaunchConfiguration('rviz_config')],
-                    output='screen',
-                ),
-            ],
+    if start_rviz and not start_moveit:
+        actions.append(
+            TimerAction(
+                period=float(LaunchConfiguration('rviz_delay').perform(context)),
+                actions=[
+                    Node(
+                        package='rviz2',
+                        executable='rviz2',
+                        name='rviz2_multi_mur620',
+                        arguments=['-d', LaunchConfiguration('rviz_config')],
+                        output='screen',
+                    ),
+                ],
+            )
         )
-    )
 
     return actions
 
