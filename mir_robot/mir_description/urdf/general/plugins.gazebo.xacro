@@ -14,7 +14,7 @@
 	</xacro:macro>
 
 
-	<xacro:macro name="gazebo_sim_sensors" params="robot_namespace">
+	<xacro:macro name="gazebo_sim_sensors" params="robot_namespace use_lidar:=true">
 		<gazebo>
 			<xacro:if value="${robot_namespace == 'mur620a'}">
 				<plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
@@ -23,19 +23,21 @@
 				</plugin>
 			</xacro:if>
 		</gazebo>
-		
-		<xacro:sick_s300_gazebo
-			link="front_laser_link"
-			topic="${robot_namespace}/f_scan"
-			robot_namespace="${robot_namespace}"
-			tf_prefix=""
-		/>
-		<xacro:sick_s300_gazebo
-			link="back_laser_link"
-			topic="${robot_namespace}/b_scan"
-			robot_namespace="${robot_namespace}"
-			tf_prefix=""
-		/>
+
+		<xacro:if value="${use_lidar == 'true'}">
+			<xacro:sick_s300_gazebo
+				link="front_laser_link"
+				topic="${robot_namespace}/f_scan"
+				robot_namespace="${robot_namespace}"
+				tf_prefix=""
+			/>
+			<xacro:sick_s300_gazebo
+				link="back_laser_link"
+				topic="${robot_namespace}/b_scan"
+				robot_namespace="${robot_namespace}"
+				tf_prefix=""
+			/>
+		</xacro:if>
 
 	</xacro:macro>
 

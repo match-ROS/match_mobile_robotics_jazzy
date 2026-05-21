@@ -9,7 +9,7 @@
 
 	<xacro:property name="imu_standard_deviation" value="0.00017" />
 
-	<xacro:macro name="mir_600_gazebo" params="tf_prefix robot_namespace use_camera:=true">
+	<xacro:macro name="mir_600_gazebo" params="tf_prefix robot_namespace use_camera:=true use_lidar:=true">
 
 		<!-- Predefine some values that are necessary later. It is important to differenciate between empty and not empty robot_namespace and tf_prefix -->
 		<xacro:if value="${robot_namespace == ''}">
@@ -54,10 +54,12 @@
 		<!-- Add transmissions to wheels -->
 		<xacro:mir_600_wheel_transmissions/>
 
-		<!-- Add Gazebo xacro for the laser scanner to work in Gazebo -->
-		<!-- Please match there macro calls with the sick_s300 xacro calls in the mir_600.urdf.xacro file-->
-		<xacro:sick_s300_gazebo link="front_laser_link" robot_namespace="${robot_namespace_slashed}" topic="${tf_prefix_slashed}f_scan" tf_prefix="${tf_prefix_slashed}"/>
-		<xacro:sick_s300_gazebo link="back_laser_link" robot_namespace="${robot_namespace_slashed}" topic="${tf_prefix_slashed}b_scan" tf_prefix="${tf_prefix_slashed}"/>
+		<xacro:if value="${use_lidar == 'true'}">
+			<!-- Add Gazebo xacro for the laser scanner to work in Gazebo -->
+			<!-- Please match there macro calls with the sick_s300 xacro calls in the mir_600.urdf.xacro file-->
+			<xacro:sick_s300_gazebo link="front_laser_link" robot_namespace="${robot_namespace_slashed}" topic="${tf_prefix_slashed}f_scan" tf_prefix="${tf_prefix_slashed}"/>
+			<xacro:sick_s300_gazebo link="back_laser_link" robot_namespace="${robot_namespace_slashed}" topic="${tf_prefix_slashed}b_scan" tf_prefix="${tf_prefix_slashed}"/>
+		</xacro:if>
 
 		<xacro:if value="${use_camera}">
 			<!-- Settings for the camera of the robot to work in the simulation environment-->

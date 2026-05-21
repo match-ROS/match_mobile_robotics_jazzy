@@ -118,6 +118,11 @@ def declare_args():
             default_value='true',
             description='Start one AMCL instance per robot.',
         ),
+        DeclareLaunchArgument(
+            'fake_localization',
+            default_value='false',
+            description='Use Gazebo ground truth for map->odom instead of AMCL and disable lidar.',
+        ),
         DeclareLaunchArgument('navigation', default_value='false'),
         DeclareLaunchArgument('load_arm_controllers', default_value='true'),
         DeclareLaunchArgument('auto_switch_arm_controllers', default_value='true'),
@@ -132,9 +137,16 @@ def declare_args():
             default_value=ROBOT_POSES[0][0],
             description=(
                 'Comma or space separated robot names that should launch MoveIt. '
-                'Use "all" for every robot. RViz is launched once per selected '
-                'robot when launch_rviz is true. Each MoveIt instance gets an '
-                'isolated TF view so their unprefixed planning frames do not collide.'
+                'Use "all" for every robot. When launch_rviz is true, RViz is '
+                'launched for the first selected robot only.'
+            ),
+        ),
+        DeclareLaunchArgument(
+            'isolate_moveit_tf',
+            default_value='false',
+            description=(
+                'Experimental: give each MoveIt instance private TF topics. '
+                'Leave false for the normal shared /tf tree and one RViz.'
             ),
         ),
         DeclareLaunchArgument('launch_rviz', default_value='false'),
@@ -199,9 +211,17 @@ def launch_setup(context, *args, **kwargs):
     start_localization = (
         LaunchConfiguration('localization').perform(context).lower() == 'true'
     )
+    start_fake_localization = (
+        LaunchConfiguration('fake_localization').perform(context).lower() == 'true'
+    )
+    start_amcl = start_localization and not start_fake_localization
     start_moveit = LaunchConfiguration('launch_moveit').perform(context).lower() == 'true'
     start_rviz = LaunchConfiguration('launch_rviz').perform(context).lower() == 'true'
+    isolate_moveit_tf = (
+        LaunchConfiguration('isolate_moveit_tf').perform(context).lower() == 'true'
+    )
     moveit_robots = parse_robot_selection(LaunchConfiguration('moveit_robot').perform(context))
+    primary_moveit_robot = moveit_robots[0] if moveit_robots else None
     spawn_interval = float(LaunchConfiguration('spawn_interval').perform(context))
     mur_launch_sim_path = get_package_share_directory('mur_launch_sim')
     mir_gazebo_path = get_package_share_directory('mir_gazebo')
@@ -264,9 +284,14 @@ def launch_setup(context, *args, **kwargs):
 
     for index, (robot_name, x, y, z, yaw) in enumerate(ROBOT_POSES):
         robot_uses_moveit = start_moveit and robot_name in moveit_robots
-        robot_launches_rviz = start_rviz and robot_uses_moveit
-        moveit_tf_topic = f'/{robot_name}/moveit_tf'
-        moveit_tf_static_topic = f'/{robot_name}/moveit_tf_static'
+        robot_is_primary_moveit = robot_name == primary_moveit_robot
+        robot_launches_rviz = (
+            start_rviz and robot_uses_moveit and robot_is_primary_moveit
+        )
+        moveit_tf_topic = f'/{robot_name}/moveit_tf' if isolate_moveit_tf else '/tf'
+        moveit_tf_static_topic = (
+            f'/{robot_name}/moveit_tf_static' if isolate_moveit_tf else '/tf_static'
+        )
         robot = IncludeLaunchDescription(
             PythonLaunchDescriptionSource(mur620_launch),
             launch_arguments={
@@ -279,10 +304,10 @@ def launch_setup(context, *args, **kwargs):
                 'Y': str(yaw),
                 'use_sim_time': LaunchConfiguration('use_sim_time'),
                 'include_gz': 'false',
-                'lidar_bridge': LaunchConfiguration('lidar_bridge'),
+                'lidar_bridge': 'false' if start_fake_localization else LaunchConfiguration('lidar_bridge'),
                 'load_controllers': LaunchConfiguration('load_controllers'),
-                'laser_merger': LaunchConfiguration('laser_merger'),
-                'ground_truth': LaunchConfiguration('ground_truth'),
+                'laser_merger': 'false' if start_fake_localization else LaunchConfiguration('laser_merger'),
+                'ground_truth': 'true' if start_fake_localization else LaunchConfiguration('ground_truth'),
                 'use_simple_collisions': LaunchConfiguration('use_simple_collisions'),
                 'use_simple_visuals': LaunchConfiguration('use_simple_visuals'),
                 'use_high_quality_visuals': LaunchConfiguration(
@@ -295,6 +320,7 @@ def launch_setup(context, *args, **kwargs):
                 'use_lift_visual_mesh': LaunchConfiguration('use_lift_visual_mesh'),
                 'use_laser_visual_mesh': LaunchConfiguration('use_laser_visual_mesh'),
                 'localization': 'false',
+                'fake_localization': 'true' if start_fake_localization else 'false',
                 'navigation': 'false',
                 'load_arm_controllers': LaunchConfiguration('load_arm_controllers'),
                 'auto_switch_arm_controllers': LaunchConfiguration(
@@ -304,11 +330,13 @@ def launch_setup(context, *args, **kwargs):
                 'launch_moveit': 'true' if robot_uses_moveit else 'false',
                 'launch_rviz': 'true' if robot_launches_rviz else 'false',
                 'rviz_config': rviz_config_for_robot(rviz_config, robot_name),
-                'publish_tf_alias': 'false' if robot_uses_moveit else 'true',
-                'tf_topic': moveit_tf_topic if robot_uses_moveit else '/tf',
-                'tf_static_topic': (
-                    moveit_tf_static_topic if robot_uses_moveit else '/tf_static'
+                'publish_tf_alias': (
+                    'false' if (robot_uses_moveit and isolate_moveit_tf)
+                    else 'true' if robot_is_primary_moveit
+                    else 'false'
                 ),
+                'tf_topic': moveit_tf_topic,
+                'tf_static_topic': moveit_tf_static_topic,
                 'virtual_joint_parent_frame': (
                     f'{robot_name}/base_footprint' if robot_uses_moveit else ''
                 ),
@@ -318,7 +346,7 @@ def launch_setup(context, *args, **kwargs):
             }.items(),
         )
         actions.append(TimerAction(period=index * spawn_interval, actions=[robot]))
-        if robot_uses_moveit:
+        if robot_uses_moveit and isolate_moveit_tf:
             actions.append(
                 TimerAction(
                     period=index * spawn_interval + 1.0,
@@ -337,7 +365,7 @@ def launch_setup(context, *args, **kwargs):
                     ],
                 )
             )
-        if start_localization:
+        if start_amcl:
             actions.append(
                 TimerAction(
                     period=index * spawn_interval + 3.0,

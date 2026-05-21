@@ -90,6 +90,11 @@ def declare_args():
             default_value='true',
             description='Start one AMCL instance per robot.',
         ),
+        DeclareLaunchArgument(
+            'fake_localization',
+            default_value='false',
+            description='Use Gazebo ground truth for map->odom instead of AMCL and disable lidar.',
+        ),
         DeclareLaunchArgument('navigation', default_value='false'),
     ]
 
@@ -141,6 +146,10 @@ def launch_setup(context, *args, **kwargs):
     start_localization = (
         LaunchConfiguration('localization').perform(context).lower() == 'true'
     )
+    start_fake_localization = (
+        LaunchConfiguration('fake_localization').perform(context).lower() == 'true'
+    )
+    start_amcl = start_localization and not start_fake_localization
     spawn_interval = float(LaunchConfiguration('spawn_interval').perform(context))
     mur_launch_sim_path = get_package_share_directory('mur_launch_sim')
     mir_gazebo_path = get_package_share_directory('mir_gazebo')
@@ -213,11 +222,11 @@ def launch_setup(context, *args, **kwargs):
                 'Y': str(yaw),
                 'use_sim_time': LaunchConfiguration('use_sim_time'),
                 'include_gz': 'false',
-                'lidar_bridge': LaunchConfiguration('lidar_bridge'),
+                'lidar_bridge': 'false' if start_fake_localization else LaunchConfiguration('lidar_bridge'),
                 'load_controllers': LaunchConfiguration('load_controllers'),
                 'load_lift_controllers': 'false',
-                'laser_merger': LaunchConfiguration('laser_merger'),
-                'ground_truth': LaunchConfiguration('ground_truth'),
+                'laser_merger': 'false' if start_fake_localization else LaunchConfiguration('laser_merger'),
+                'ground_truth': 'true' if start_fake_localization else LaunchConfiguration('ground_truth'),
                 'use_arms': 'false',
                 'use_camera': 'false',
                 'use_simple_collisions': LaunchConfiguration('use_simple_collisions'),
@@ -232,11 +241,12 @@ def launch_setup(context, *args, **kwargs):
                 'use_lift_visual_mesh': LaunchConfiguration('use_lift_visual_mesh'),
                 'use_laser_visual_mesh': LaunchConfiguration('use_laser_visual_mesh'),
                 'localization': 'false',
+                'fake_localization': 'true' if start_fake_localization else 'false',
                 'navigation': 'false',
             }.items(),
         )
         actions.append(TimerAction(period=index * spawn_interval, actions=[robot]))
-        if start_localization:
+        if start_amcl:
             actions.append(
                 TimerAction(
                     period=index * spawn_interval + 3.0,

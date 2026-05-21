@@ -21,6 +21,7 @@
 	<xacro:arg name="use_caster_visual_mesh" default='false'/>
 	<xacro:arg name="use_lift_visual_mesh" default='false'/>
 	<xacro:arg name="use_laser_visual_mesh" default='false'/>
+	<xacro:arg name="use_lidar" default='true'/>
 	<xacro:arg name="use_lift" default='true'/>
 	<xacro:property name="use_lift" value="$(arg use_lift)"/>
 	<xacro:arg name="ur_l_xyz" default='0 0 0'/>
@@ -73,13 +74,13 @@
 		use_laser_visual_mesh="$(arg use_laser_visual_mesh)"
 	/>
 	<!-- Init the MiR600 macro that includes all infos that Gazebo need to function -->
-	<xacro:mir_600_gazebo tf_prefix="$(arg tf_prefix_mir)" robot_namespace="$(arg robot_namespace)" use_camera="$(arg use_camera)"/>
+	<xacro:mir_600_gazebo tf_prefix="$(arg tf_prefix_mir)" robot_namespace="$(arg robot_namespace)" use_camera="$(arg use_camera)" use_lidar="$(arg use_lidar)"/>
 	<!-- Init the plugins that run the MiR in Gazebo -->
 	<xacro:controller_plugin_gazebo
 		robot_namespace="$(arg robot_namespace)"
 		controllers_file="$(arg simulation_controllers)"
 	/>
-	<xacro:gazebo_sim_sensors robot_namespace="$(arg robot_namespace)"/>
+	<xacro:gazebo_sim_sensors robot_namespace="$(arg robot_namespace)" use_lidar="$(arg use_lidar)"/>
 	<xacro:mir_robot_ros2_control/>
 
 

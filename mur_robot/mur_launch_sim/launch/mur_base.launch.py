@@ -23,6 +23,7 @@ Arguments:
   load_lift_controllers (bool) Spawn lift controllers/holding loops (default true)
   laser_merger (bool)      Merge front/back scans to /<robot_name>/scan (default true)
   localization (bool)      Start map_server and AMCL (default false)
+  fake_localization (bool) Publish map->odom from ground truth instead of AMCL (default false)
   navigation (bool)        Start Nav2 planner/controller/BT navigator (default false)
   ground_truth (bool)      Publish Gazebo model pose as ground truth topics (default true)
   use_arms (bool)          Include UR arm links/controllers in robot_description (default true)
@@ -70,6 +71,7 @@ def declare_args():
         DeclareLaunchArgument('load_lift_controllers', default_value='true'),
         DeclareLaunchArgument('laser_merger', default_value='true'),
         DeclareLaunchArgument('localization', default_value='false'),
+        DeclareLaunchArgument('fake_localization', default_value='false'),
         DeclareLaunchArgument('navigation', default_value='false'),
         DeclareLaunchArgument('ground_truth', default_value='true'),
         DeclareLaunchArgument('use_arms', default_value='true'),
@@ -94,13 +96,14 @@ def declare_args():
     ]
 
 
-def make_controller_config(robot_name, source_yaml):
+def make_controller_config(robot_name, source_yaml, *, enable_odom_tf=True):
     with open(source_yaml, 'r', encoding='utf-8') as config_file:
         config = yaml.safe_load(config_file)
 
     mobile_params = config['mobile_base_controller']['ros__parameters']
     mobile_params['odom_frame_id'] = f'{robot_name}/odom'
     mobile_params['base_frame_id'] = f'{robot_name}/base_footprint'
+    mobile_params['enable_odom_tf'] = enable_odom_tf
     mobile_params['tf_frame_prefix_enable'] = False
     mobile_params['tf_frame_prefix'] = ''
 
@@ -507,8 +510,18 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
     )
     laser_merger = LaunchConfiguration('laser_merger').perform(context) == 'true'
     localization = LaunchConfiguration('localization').perform(context) == 'true'
+    fake_localization = (
+        LaunchConfiguration('fake_localization').perform(context) == 'true'
+    )
     navigation = LaunchConfiguration('navigation').perform(context) == 'true'
     ground_truth = LaunchConfiguration('ground_truth').perform(context) == 'true'
+    effective_ground_truth = ground_truth or fake_localization
+    effective_lidar_bridge = lidar_bridge and not fake_localization
+    effective_laser_merger = laser_merger and not fake_localization
+    use_lidar = (
+        (effective_lidar_bridge or effective_laser_merger or localization or navigation)
+        and not fake_localization
+    )
     use_arms = LaunchConfiguration('use_arms').perform(context) == 'true'
     use_camera = LaunchConfiguration('use_camera').perform(context) == 'true'
     use_simple_collisions = (
@@ -537,7 +550,11 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
     mir_description_path = get_package_share_directory('mir_description')
     xacro_file = os.path.join(mur_description_path, 'urdf', 'mur_620.gazebo.xacro')
     base_controllers_yaml = os.path.join(mir_description_path, 'config', 'mur_controllers.yaml')
-    controllers_yaml = make_controller_config(robot_name, base_controllers_yaml)
+    controllers_yaml = make_controller_config(
+        robot_name,
+        base_controllers_yaml,
+        enable_odom_tf=not fake_localization,
+    )
     doc = xacro.process_file(xacro_file, mappings={
         'use_sim': 'true',
         'tf_prefix': robot_name,
@@ -551,6 +568,7 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
         'use_high_quality_visuals': (
             'true' if use_high_quality_visuals else 'false'
         ),
+        'use_lidar': 'true' if use_lidar else 'false',
         **{
             name: 'true' if enabled else 'false'
             for name, enabled in visual_mesh_flags.items()
@@ -591,7 +609,7 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
             )
         )
 
-    if ground_truth:
+    if effective_ground_truth:
         gz_pose_topic = f'/world/{world}/pose/info'
         nodes.append(
             Node(
@@ -729,7 +747,7 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
                 ),
             ])
 
-    if lidar_bridge:
+    if effective_lidar_bridge:
         nodes.append(
             Node(
                 package='ros_gz_bridge',
@@ -773,7 +791,7 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
             ),
         ])
 
-    if laser_merger:
+    if effective_laser_merger:
         nodes.append(
             Node(
                 package='ira_laser_tools',
@@ -812,7 +830,49 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
             )
         )
 
-    if localization:
+    if fake_localization:
+        nodes.append(
+            Node(
+                package='mur_launch_sim',
+                executable='fake_localization_from_ground_truth.py',
+                name=f'{robot_name}_fake_localization',
+                parameters=[{
+                    'robot_name': robot_name,
+                    'global_frame_id': 'map',
+                    'odom_frame_id': f'{robot_name}/odom',
+                    'base_frame_id': f'{robot_name}/base_footprint',
+                    'ground_truth_odom_topic': f'/{robot_name}/ground_truth/odom',
+                    'use_sim_time': use_sim_time,
+                }],
+                output='screen',
+            )
+        )
+
+    if localization and fake_localization:
+        localization_yaml = make_localization_config(
+            robot_name, map_yaml, use_sim_time, x, y, Y
+        )
+        nodes.extend([
+            Node(
+                package='nav2_map_server',
+                executable='map_server',
+                name='map_server',
+                parameters=[localization_yaml],
+                output='screen',
+            ),
+            Node(
+                package='nav2_lifecycle_manager',
+                executable='lifecycle_manager',
+                name='lifecycle_manager_map',
+                parameters=[{
+                    'use_sim_time': use_sim_time,
+                    'autostart': True,
+                    'node_names': ['map_server'],
+                }],
+                output='screen',
+            ),
+        ])
+    elif localization:
         localization_yaml = make_localization_config(
             robot_name, map_yaml, use_sim_time, x, y, Y
         )
