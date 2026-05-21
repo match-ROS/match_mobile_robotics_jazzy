@@ -13,6 +13,7 @@ import argparse
 import copy
 
 import rclpy
+from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile, ReliabilityPolicy
 from tf2_msgs.msg import TFMessage
@@ -131,15 +132,18 @@ def main():
     parser.add_argument("--robot-name", required=True)
     parser.add_argument("--tf-topic", required=True)
     parser.add_argument("--tf-static-topic", required=True)
-    args = parser.parse_args()
+    args, _ = parser.parse_known_args()
 
     rclpy.init()
     node = MoveItTfRepublisher(args.robot_name, args.tf_topic, args.tf_static_topic)
     try:
         rclpy.spin(node)
+    except (ExternalShutdownException, KeyboardInterrupt):
+        pass
     finally:
         node.destroy_node()
-        rclpy.shutdown()
+        if rclpy.ok():
+            rclpy.shutdown()
 
 
 if __name__ == "__main__":

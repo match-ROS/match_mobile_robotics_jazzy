@@ -1,0 +1,1865 @@
+Writing diagnostic log to: /home/rosmatch/colcon_ws/src/match_mobile_robotics_jazzy/logs/check_multi_mur620_moveit_20260521_153819.log
+Workspace: /home/rosmatch/colcon_ws
+ROS_DOMAIN_ID: 62
+Robots: mur620a mur620b
+
+== Processes ==
+1627796 /usr/bin/python3 /opt/ros/jazzy/bin/ros2 launch mur_launch_sim multi_mur620.launch.py launch_moveit:=true launch_rviz:=true moveit_robot:=all fake_localization:=true
+1627936 /opt/ros/jazzy/lib/ros_gz_bridge/parameter_bridge /clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock --ros-args -r __node:=clock_bridge
+1627937 /opt/ros/jazzy/lib/nav2_map_server/map_server --ros-args -r __node:=map_server --params-file /tmp/launch_params_tn4jq1b1
+1628175 /home/rosmatch/colcon_ws/install/mur_launch_sim/lib/mur_launch_sim/gz_ground_truth_publisher --ros-args -r __node:=mur620a_ground_truth --params-file /tmp/launch_params_gcc_0e8m
+1628182 python3 /home/rosmatch/colcon_ws/install/mur_launch_sim/lib/mur_launch_sim/fake_localization_from_ground_truth.py --ros-args -r __node:=mur620a_fake_localization --params-file /tmp/launch_params_2oxrzysd
+1629090 /opt/ros/jazzy/lib/moveit_ros_move_group/move_group --ros-args -r __ns:=/mur620a --params-file /tmp/launch_params_fvjanf2h --params-file /tmp/launch_params_scwh118h --params-file /tmp/launch_params_9d0ohqs4 --params-file /tmp/launch_params_0v1qnj3y -r /tf:=/mur620a/moveit_tf -r /tf_static:=/mur620a/moveit_tf_static
+1632114 /home/rosmatch/colcon_ws/install/mur_launch_sim/lib/mur_launch_sim/gz_ground_truth_publisher --ros-args -r __node:=mur620b_ground_truth --params-file /tmp/launch_params_wxd665m0
+1632120 python3 /home/rosmatch/colcon_ws/install/mur_launch_sim/lib/mur_launch_sim/fake_localization_from_ground_truth.py --ros-args -r __node:=mur620b_fake_localization --params-file /tmp/launch_params_w0rhqzkr
+1632862 /opt/ros/jazzy/lib/moveit_ros_move_group/move_group --ros-args -r __ns:=/mur620b --params-file /tmp/launch_params_sfpr7ulj --params-file /tmp/launch_params_nhy228ac --params-file /tmp/launch_params_ip_86_3v --params-file /tmp/launch_params_v9lnevrt -r /tf:=/mur620b/moveit_tf -r /tf_static:=/mur620b/moveit_tf_static
+1638033 rviz2
+1628014 1627938  204  3.5       02:16 gz sim server
+1628015 1627938 66.7  3.1       02:16 gz sim gui
+1628182 1627796 33.7  0.2       02:15 python3 /home/rosmatch/colcon_ws/install/mur_launch_sim/lib/mur_launch_sim/fake_localization_from_ground_truth.py --ros-args -r __node:=mur620a_fake_localization --params-file /tmp/launch_params_2oxrzysd
+1632120 1627796 33.6  0.2       02:03 python3 /home/rosmatch/colcon_ws/install/mur_launch_sim/lib/mur_launch_sim/fake_localization_from_ground_truth.py --ros-args -r __node:=mur620b_fake_localization --params-file /tmp/launch_params_w0rhqzkr
+1632862 1627796 31.8  0.9       02:01 /opt/ros/jazzy/lib/moveit_ros_move_group/move_group --ros-args -r __ns:=/mur620b --params-file /tmp/launch_params_sfpr7ulj --params-file /tmp/launch_params_nhy228ac --params-file /tmp/launch_params_ip_86_3v --params-file /tmp/launch_params_v9lnevrt -r /tf:=/mur620b/moveit_tf -r /tf_static:=/mur620b/moveit_tf_static
+1629090 1627796 30.9  0.9       02:13 /opt/ros/jazzy/lib/moveit_ros_move_group/move_group --ros-args -r __ns:=/mur620a --params-file /tmp/launch_params_fvjanf2h --params-file /tmp/launch_params_scwh118h --params-file /tmp/launch_params_9d0ohqs4 --params-file /tmp/launch_params_0v1qnj3y -r /tf:=/mur620a/moveit_tf -r /tf_static:=/mur620a/moveit_tf_static
+1627936 1627796 16.4  0.2       02:16 /opt/ros/jazzy/lib/ros_gz_bridge/parameter_bridge /clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock --ros-args -r __node:=clock_bridge
+1638033   70687 12.9  1.7       01:37 rviz2
+1632114 1627796  9.0  0.1       02:03 /home/rosmatch/colcon_ws/install/mur_launch_sim/lib/mur_launch_sim/gz_ground_truth_publisher --ros-args -r __node:=mur620b_ground_truth --params-file /tmp/launch_params_wxd665m0
+1628175 1627796  8.9  0.1       02:15 /home/rosmatch/colcon_ws/install/mur_launch_sim/lib/mur_launch_sim/gz_ground_truth_publisher --ros-args -r __node:=mur620a_ground_truth --params-file /tmp/launch_params_gcc_0e8m
+1627937 1627796  7.1  0.2       02:16 /opt/ros/jazzy/lib/nav2_map_server/map_server --ros-args -r __node:=map_server --params-file /tmp/launch_params_tn4jq1b1
+1627796 1626518  1.6  0.1       02:16 /usr/bin/python3 /opt/ros/jazzy/bin/ros2 launch mur_launch_sim multi_mur620.launch.py launch_moveit:=true launch_rviz:=true moveit_robot:=all fake_localization:=true
+1627938 1627935  0.0  0.1       02:16 gz sim scale.world -v 4 -r
+1627935 1627796  0.0  0.0       02:16 /bin/sh -c ruby /opt/ros/jazzy/opt/gz_tools_vendor/bin/gz sim scale.world -v 4 -r --force-version 8
+
+== Core Topics ==
+
+$ ros2 topic info /clock --verbose
+Type: rosgraph_msgs/msg/Clock
+
+Publisher count: 1
+
+Node name: clock_bridge
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: PUBLISHER
+GID: 01.0f.f6.e2.20.d7.08.97.00.00.00.00.00.00.14.03
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Subscription count: 56
+
+Node name: mur620a_ground_truth
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.0f.d8.92.7f.00.00.00.00.00.00.11.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620a_rsp
+Node namespace: /mur620a
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.10.d8.e6.ab.00.00.00.00.00.00.11.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620a_global_rsp
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.12.d8.49.b3.00.00.00.00.00.00.11.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620a_lift_effort_position_controller_l
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.14.d8.11.bc.00.00.00.00.00.00.05.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620a_lift_effort_position_controller_r
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.15.d8.3d.60.00.00.00.00.00.00.05.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620a_fake_localization
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.16.d8.84.14.00.00.00.00.00.00.05.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: map_server
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.21.d7.63.95.00.00.00.00.00.00.11.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: lifecycle_manager_map
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.23.d7.65.01.00.00.00.00.00.00.11.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620a_jparse_velocity_controller_l
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.28.de.87.ce.00.00.00.00.00.00.11.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620a_jparse_velocity_controller_r
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.29.de.3b.60.00.00.00.00.00.00.11.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: move_group
+Node namespace: /mur620b
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.5e.ea.27.be.00.00.00.00.00.00.11.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: moveit
+Node namespace: /mur620b
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.5e.ea.27.be.00.00.00.00.00.00.23.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: moveit_565990809
+Node namespace: /mur620b
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.5e.ea.27.be.00.00.00.00.00.00.35.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: move_group_private_94094307794832
+Node namespace: /mur620b
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.5e.ea.27.be.00.00.00.00.00.00.49.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: transform_listener_impl_55940a74c020
+Node namespace: /mur620b
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.5e.ea.27.be.00.00.00.00.00.00.4e.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: moveit_simple_controller_manager
+Node namespace: /mur620b
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.5e.ea.27.be.00.00.00.00.00.00.70.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620b_jparse_velocity_controller_l
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.64.ec.42.44.00.00.00.00.00.00.11.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620b_jparse_velocity_controller_r
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.65.ec.91.a0.00.00.00.00.00.00.11.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: controller_manager
+Node namespace: /mur620a
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.6e.d7.05.60.00.00.00.00.00.00.22.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: lift_effort_controller_l
+Node namespace: /mur620a
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.6e.d7.05.60.00.00.00.00.00.00.57.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: joint_state_broadcaster
+Node namespace: /mur620a
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.6e.d7.05.60.00.00.00.00.00.00.6f.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: joint_trajectory_controller_l
+Node namespace: /mur620a
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.6e.d7.05.60.00.00.00.00.00.00.88.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: lift_effort_controller_r
+Node namespace: /mur620a
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.6e.d7.05.60.00.00.00.00.00.00.ac.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: controller_manager
+Node namespace: /mur620b
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.6e.d7.05.60.00.00.00.00.00.00.d5.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: joint_trajectory_controller_r
+Node namespace: /mur620a
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.6e.d7.05.60.00.00.00.00.00.01.04.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: joint_trajectory_controller_lift_r
+Node namespace: /mur620a
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.6e.d7.05.60.00.00.00.00.00.01.28.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: forward_velocity_controller_r
+Node namespace: /mur620a
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.6e.d7.05.60.00.00.00.00.00.01.4c.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: joint_trajectory_controller_lift_l
+Node namespace: /mur620b
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.6e.d7.05.60.00.00.00.00.00.01.64.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: lift_controller_l
+Node namespace: /mur620a
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.6e.d7.05.60.00.00.00.00.00.01.88.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: lift_effort_controller_l
+Node namespace: /mur620b
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.6e.d7.05.60.00.00.00.00.00.01.a0.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: joint_state_broadcaster
+Node namespace: /mur620b
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.6e.d7.05.60.00.00.00.00.00.01.b8.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: forward_velocity_controller_l
+Node namespace: /mur620a
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.6e.d7.05.60.00.00.00.00.00.01.d1.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: lift_controller_l
+Node namespace: /mur620b
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.6e.d7.05.60.00.00.00.00.00.01.e9.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mobile_base_controller
+Node namespace: /mur620a
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.6e.d7.05.60.00.00.00.00.00.02.01.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: lift_controller_r
+Node namespace: /mur620b
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.6e.d7.05.60.00.00.00.00.00.02.1b.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: joint_trajectory_controller_lift_r
+Node namespace: /mur620b
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.6e.d7.05.60.00.00.00.00.00.02.33.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: joint_trajectory_controller_l
+Node namespace: /mur620b
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.6e.d7.05.60.00.00.00.00.00.02.57.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: lift_controller_r
+Node namespace: /mur620a
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.6e.d7.05.60.00.00.00.00.00.02.7b.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mobile_base_controller
+Node namespace: /mur620b
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.6e.d7.05.60.00.00.00.00.00.02.93.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: forward_velocity_controller_l
+Node namespace: /mur620b
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.6e.d7.05.60.00.00.00.00.00.02.ad.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: joint_trajectory_controller_lift_l
+Node namespace: /mur620a
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.6e.d7.05.60.00.00.00.00.00.02.c5.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: lift_effort_controller_r
+Node namespace: /mur620b
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.6e.d7.05.60.00.00.00.00.00.02.e9.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: joint_trajectory_controller_r
+Node namespace: /mur620b
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.6e.d7.05.60.00.00.00.00.00.03.01.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: forward_velocity_controller_r
+Node namespace: /mur620b
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.6e.d7.05.60.00.00.00.00.00.03.25.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620b_ground_truth
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.72.e7.15.64.00.00.00.00.00.00.11.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620b_rsp
+Node namespace: /mur620b
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.73.e7.98.b3.00.00.00.00.00.00.11.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620b_global_rsp
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.74.e7.50.5e.00.00.00.00.00.00.11.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620b_lift_effort_position_controller_l
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.76.e7.4b.c9.00.00.00.00.00.00.05.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620b_lift_effort_position_controller_r
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.77.e7.70.98.00.00.00.00.00.00.05.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620b_fake_localization
+Node namespace: /
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.78.e7.4b.17.00.00.00.00.00.00.05.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: move_group
+Node namespace: /mur620a
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.a2.db.71.1c.00.00.00.00.00.00.11.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: moveit
+Node namespace: /mur620a
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.a2.db.71.1c.00.00.00.00.00.00.23.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: moveit_453731355
+Node namespace: /mur620a
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.a2.db.71.1c.00.00.00.00.00.00.35.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: move_group_private_94067137443520
+Node namespace: /mur620a
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.a2.db.71.1c.00.00.00.00.00.00.49.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: transform_listener_impl_558db8d722d0
+Node namespace: /mur620a
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.a2.db.71.1c.00.00.00.00.00.00.4e.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: moveit_simple_controller_manager
+Node namespace: /mur620a
+Topic type: rosgraph_msgs/msg/Clock
+Topic type hash: RIHS01_692f7a66e93a3c83e71765d033b60349ba68023a8c689a79e48078bcb5c58564
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.a2.db.71.1c.00.00.00.00.00.00.70.04
+QoS profile:
+  Reliability: BEST_EFFORT
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+
+$ ros2 topic info /map --verbose
+Type: nav_msgs/msg/OccupancyGrid
+
+Publisher count: 1
+
+Node name: map_server
+Node namespace: /
+Topic type: nav_msgs/msg/OccupancyGrid
+Topic type hash: RIHS01_8d348150c12913a31ee0ec170fbf25089e4745d17035792a1ba94d6f0bc0cfc7
+Endpoint type: PUBLISHER
+GID: 01.0f.f6.e2.21.d7.63.95.00.00.00.00.00.00.22.03
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: TRANSIENT_LOCAL
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Subscription count: 1
+
+Node name: rviz
+Node namespace: /
+Topic type: nav_msgs/msg/OccupancyGrid
+Topic type hash: RIHS01_8d348150c12913a31ee0ec170fbf25089e4745d17035792a1ba94d6f0bc0cfc7
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.91.fe.54.55.00.00.00.00.00.00.9a.04
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: TRANSIENT_LOCAL
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+header:
+  stamp:
+    sec: 0
+    nanosec: 0
+  frame_id: map
+info:
+  map_load_time:
+    sec: 0
+    nanosec: 0
+  resolution: 0.05000000074505806
+  width: 1626
+  height: 2140
+  origin:
+    position:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    orientation:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+      w: 1.0
+data:
+- -1
+- -1
+- -1
+- -1
+- -1
+- -1
+- -1
+- -1
+- -1
+- -1
+- -1
+- -1
+- -1
+- -1
+- -1
+- -1
+- -1
+- -1
+- -1
+- -1
+- -1
+- -1
+
+$ ros2 lifecycle get /map_server
+active [3]
+
+== Gazebo Dynamic Pose ==
+Gazebo dynamic pose topic: /world/default/dynamic_pose/info
+header {
+  stamp {
+    sec: 121
+    nsec: 173000000
+  }
+}
+pose {
+  name: "mur620a"
+  id: 18
+  position {
+    x: 44
+    y: 44
+    z: -8.4663178063583434e-07
+  }
+  orientation {
+    x: -1.0602092550574251e-10
+    y: 5.9209995584998015e-10
+    z: -5.8380140398627789e-15
+    w: 1
+  }
+}
+pose {
+  name: "mur620b"
+  id: 138
+  position {
+    x: 46
+    y: 44
+    z: -8.4663178063562967e-07
+  }
+  orientation {
+    x: -1.0602092555804133e-10
+    y: 5.9209995588089768e-10
+    z: -5.8380173296720735e-15
+    w: 1
+  }
+}
+pose {
+  name: "base_footprint"
+  id: 19
+  position {
+  }
+  orientation {
+    w: 1
+  }
+}
+pose {
+  name: "bl_caster_rotation_link"
+  id: 38
+  position {
+    x: -0.48850000001529992
+    y: 0.321500000002807
+    z: 0.15000084483165629
+  }
+  orientation {
+    x: -1.3180274163099381e-11
+    y: -5.0012167291046873e-11
+    z: 0.071797152122807059
+    w: 0.99741925434947087
+  }
+}
+pose {
+  name: "bl_caster_wheel_link"
+  id: 41
+  position {
+    x: -0.52630617091268306
+    y: 0.31602885374908141
+    z: 0.0500008448279175
+  }
+  orientation {
+    x: -1.7541032857809791e-09
+    y: 2.4135210794723165e-08
+    z: 0.071797152122807031
+    w: 0.99741925434947054
+  }
+}
+pose {
+  name: "br_caster_rotation_link"
+  id: 44
+  position {
+    x: -0.48850000001521465
+    y: -0.3214999999971937
+    z: 0.15000084484394491
+  }
+  orientation {
+    x: -1.3044257919579158e-11
+    y: -5.00476954573751e-11
+    z: 0.0690813743093979
+    w: 0.99761102826879611
+  }
+}
+
+== TF Topics ==
+
+$ ros2 topic info /tf --verbose
+Type: tf2_msgs/msg/TFMessage
+
+Publisher count: 6
+
+Node name: mur620a_rsp
+Node namespace: /mur620a
+Topic type: tf2_msgs/msg/TFMessage
+Topic type hash: RIHS01_e369d0f05a23ae52508854b66f6aa0437f3449d652e8cbf22d5abe85d020f087
+Endpoint type: PUBLISHER
+GID: 01.0f.f6.e2.10.d8.e6.ab.00.00.00.00.00.00.15.03
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620a_fake_localization
+Node namespace: /
+Topic type: tf2_msgs/msg/TFMessage
+Topic type hash: RIHS01_e369d0f05a23ae52508854b66f6aa0437f3449d652e8cbf22d5abe85d020f087
+Endpoint type: PUBLISHER
+GID: 01.0f.f6.e2.16.d8.84.14.00.00.00.00.00.00.14.03
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mobile_base_controller
+Node namespace: /mur620a
+Topic type: tf2_msgs/msg/TFMessage
+Topic type hash: RIHS01_e369d0f05a23ae52508854b66f6aa0437f3449d652e8cbf22d5abe85d020f087
+Endpoint type: PUBLISHER
+GID: 01.0f.f6.e2.6e.d7.05.60.00.00.00.00.00.02.0c.03
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: TRANSIENT_LOCAL
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mobile_base_controller
+Node namespace: /mur620b
+Topic type: tf2_msgs/msg/TFMessage
+Topic type hash: RIHS01_e369d0f05a23ae52508854b66f6aa0437f3449d652e8cbf22d5abe85d020f087
+Endpoint type: PUBLISHER
+GID: 01.0f.f6.e2.6e.d7.05.60.00.00.00.00.00.02.9e.03
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: TRANSIENT_LOCAL
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620b_rsp
+Node namespace: /mur620b
+Topic type: tf2_msgs/msg/TFMessage
+Topic type hash: RIHS01_e369d0f05a23ae52508854b66f6aa0437f3449d652e8cbf22d5abe85d020f087
+Endpoint type: PUBLISHER
+GID: 01.0f.f6.e2.73.e7.98.b3.00.00.00.00.00.00.15.03
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620b_fake_localization
+Node namespace: /
+Topic type: tf2_msgs/msg/TFMessage
+Topic type hash: RIHS01_e369d0f05a23ae52508854b66f6aa0437f3449d652e8cbf22d5abe85d020f087
+Endpoint type: PUBLISHER
+GID: 01.0f.f6.e2.78.e7.4b.17.00.00.00.00.00.00.14.03
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Subscription count: 6
+
+Node name: mur620a_jparse_move_l
+Node namespace: /
+Topic type: tf2_msgs/msg/TFMessage
+Topic type hash: RIHS01_e369d0f05a23ae52508854b66f6aa0437f3449d652e8cbf22d5abe85d020f087
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.2a.de.5a.1c.00.00.00.00.00.00.16.04
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620a_jparse_move_r
+Node namespace: /
+Topic type: tf2_msgs/msg/TFMessage
+Topic type hash: RIHS01_e369d0f05a23ae52508854b66f6aa0437f3449d652e8cbf22d5abe85d020f087
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.2b.de.12.e3.00.00.00.00.00.00.16.04
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620b_jparse_move_l
+Node namespace: /
+Topic type: tf2_msgs/msg/TFMessage
+Topic type hash: RIHS01_e369d0f05a23ae52508854b66f6aa0437f3449d652e8cbf22d5abe85d020f087
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.66.ec.37.da.00.00.00.00.00.00.16.04
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620b_jparse_move_r
+Node namespace: /
+Topic type: tf2_msgs/msg/TFMessage
+Topic type hash: RIHS01_e369d0f05a23ae52508854b66f6aa0437f3449d652e8cbf22d5abe85d020f087
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.81.ec.46.bc.00.00.00.00.00.00.16.04
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: transform_listener_impl_63685cf60940
+Node namespace: /
+Topic type: tf2_msgs/msg/TFMessage
+Topic type hash: RIHS01_e369d0f05a23ae52508854b66f6aa0437f3449d652e8cbf22d5abe85d020f087
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.91.fe.54.55.00.00.00.00.00.00.28.04
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: transform_listener_impl_63686681e240
+Node namespace: /
+Topic type: tf2_msgs/msg/TFMessage
+Topic type hash: RIHS01_e369d0f05a23ae52508854b66f6aa0437f3449d652e8cbf22d5abe85d020f087
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.91.fe.54.55.00.00.00.00.00.00.98.04
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+
+$ ros2 topic info /tf_static --verbose
+Type: tf2_msgs/msg/TFMessage
+
+Publisher count: 4
+
+Node name: mur620a_rsp
+Node namespace: /mur620a
+Topic type: tf2_msgs/msg/TFMessage
+Topic type hash: RIHS01_e369d0f05a23ae52508854b66f6aa0437f3449d652e8cbf22d5abe85d020f087
+Endpoint type: PUBLISHER
+GID: 01.0f.f6.e2.10.d8.e6.ab.00.00.00.00.00.00.16.03
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: TRANSIENT_LOCAL
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620a_fake_localization
+Node namespace: /
+Topic type: tf2_msgs/msg/TFMessage
+Topic type hash: RIHS01_e369d0f05a23ae52508854b66f6aa0437f3449d652e8cbf22d5abe85d020f087
+Endpoint type: PUBLISHER
+GID: 01.0f.f6.e2.16.d8.84.14.00.00.00.00.00.00.15.03
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: TRANSIENT_LOCAL
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620b_rsp
+Node namespace: /mur620b
+Topic type: tf2_msgs/msg/TFMessage
+Topic type hash: RIHS01_e369d0f05a23ae52508854b66f6aa0437f3449d652e8cbf22d5abe85d020f087
+Endpoint type: PUBLISHER
+GID: 01.0f.f6.e2.73.e7.98.b3.00.00.00.00.00.00.16.03
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: TRANSIENT_LOCAL
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620b_fake_localization
+Node namespace: /
+Topic type: tf2_msgs/msg/TFMessage
+Topic type hash: RIHS01_e369d0f05a23ae52508854b66f6aa0437f3449d652e8cbf22d5abe85d020f087
+Endpoint type: PUBLISHER
+GID: 01.0f.f6.e2.78.e7.4b.17.00.00.00.00.00.00.15.03
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: TRANSIENT_LOCAL
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Subscription count: 6
+
+Node name: mur620a_jparse_move_l
+Node namespace: /
+Topic type: tf2_msgs/msg/TFMessage
+Topic type hash: RIHS01_e369d0f05a23ae52508854b66f6aa0437f3449d652e8cbf22d5abe85d020f087
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.2a.de.5a.1c.00.00.00.00.00.00.17.04
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: TRANSIENT_LOCAL
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620a_jparse_move_r
+Node namespace: /
+Topic type: tf2_msgs/msg/TFMessage
+Topic type hash: RIHS01_e369d0f05a23ae52508854b66f6aa0437f3449d652e8cbf22d5abe85d020f087
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.2b.de.12.e3.00.00.00.00.00.00.17.04
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: TRANSIENT_LOCAL
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620b_jparse_move_l
+Node namespace: /
+Topic type: tf2_msgs/msg/TFMessage
+Topic type hash: RIHS01_e369d0f05a23ae52508854b66f6aa0437f3449d652e8cbf22d5abe85d020f087
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.66.ec.37.da.00.00.00.00.00.00.17.04
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: TRANSIENT_LOCAL
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: mur620b_jparse_move_r
+Node namespace: /
+Topic type: tf2_msgs/msg/TFMessage
+Topic type hash: RIHS01_e369d0f05a23ae52508854b66f6aa0437f3449d652e8cbf22d5abe85d020f087
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.81.ec.46.bc.00.00.00.00.00.00.17.04
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: TRANSIENT_LOCAL
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: transform_listener_impl_63685cf60940
+Node namespace: /
+Topic type: tf2_msgs/msg/TFMessage
+Topic type hash: RIHS01_e369d0f05a23ae52508854b66f6aa0437f3449d652e8cbf22d5abe85d020f087
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.91.fe.54.55.00.00.00.00.00.00.29.04
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: TRANSIENT_LOCAL
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Node name: transform_listener_impl_63686681e240
+Node namespace: /
+Topic type: tf2_msgs/msg/TFMessage
+Topic type hash: RIHS01_e369d0f05a23ae52508854b66f6aa0437f3449d652e8cbf22d5abe85d020f087
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.91.fe.54.55.00.00.00.00.00.00.99.04
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: TRANSIENT_LOCAL
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+
+== Robot mur620a ==
+-- nodes
+/mur620a/move_group
+/mur620a/move_group_private_94067137443520
+/mur620a_fake_localization
+/mur620a_ground_truth
+-- ground truth odom
+
+$ ros2 topic info /mur620a/ground_truth/odom --verbose
+Type: nav_msgs/msg/Odometry
+
+Publisher count: 1
+
+Node name: mur620a_ground_truth
+Node namespace: /
+Topic type: nav_msgs/msg/Odometry
+Topic type hash: RIHS01_3cc97dc7fb7502f8714462c526d369e35b603cfc34d946e3f2eda2766dfec6e0
+Endpoint type: PUBLISHER
+GID: 01.0f.f6.e2.0f.d8.92.7f.00.00.00.00.00.00.16.03
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Subscription count: 1
+
+Node name: mur620a_fake_localization
+Node namespace: /
+Topic type: nav_msgs/msg/Odometry
+Topic type hash: RIHS01_3cc97dc7fb7502f8714462c526d369e35b603cfc34d946e3f2eda2766dfec6e0
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.16.d8.84.14.00.00.00.00.00.00.16.04
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+header:
+  stamp:
+    sec: 127
+    nanosec: 831000000
+  frame_id: map
+child_frame_id: mur620a/base_footprint
+pose:
+  pose:
+    position:
+      x: 44.0
+      y: 44.0
+      z: -8.466317806358343e-07
+    orientation:
+      x: -1.0602092550574251e-10
+      y: 5.920999558499801e-10
+      z: -5.838014039862779e-15
+      w: 1.0
+  covariance:
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+twist:
+  twist:
+    linear:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    angular:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+  covariance:
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+-- fake localization params
+
+$ ros2 param get /mur620a_fake_localization global_frame_id
+String value is: map
+
+$ ros2 param get /mur620a_fake_localization odom_frame_id
+String value is: mur620a/odom
+
+$ ros2 param get /mur620a_fake_localization base_frame_id
+String value is: mur620a/base_footprint
+
+$ ros2 param get /mur620a/mobile_base_controller enable_odom_tf
+Boolean value is: False
+-- expected TF chain
+[INFO] [1779370733.715722488] [tf2_echo]: Waiting for transform map ->  mur620a/odom: Invalid frame ID "map" passed to canTransform argument target_frame - frame does not exist
+At time 142.282000000
+- Translation: [44.000, 44.000, -0.000]
+- Rotation: in Quaternion (xyzw) [-0.000, 0.000, -0.000, 1.000]
+- Rotation: in RPY (radian) [-0.000, 0.000, -0.000]
+- Rotation: in RPY (degree) [-0.000, 0.000, -0.000]
+- Matrix:
+  1.000  0.000  0.000 44.000
+ -0.000  1.000  0.000 44.000
+ -0.000 -0.000  1.000 -0.000
+  0.000  0.000  0.000  1.000
+At time 143.114000000
+- Translation: [44.000, 44.000, -0.000]
+- Rotation: in Quaternion (xyzw) [-0.000, 0.000, -0.000, 1.000]
+- Rotation: in RPY (radian) [-0.000, 0.000, -0.000]
+- Rotation: in RPY (degree) [-0.000, 0.000, -0.000]
+- Matrix:
+  1.000  0.000  0.000 44.000
+ -0.000  1.000  0.000 44.000
+ -0.000 -0.000  1.000 -0.000
+  0.000  0.000  0.000  1.000
+At time 143.998000000
+- Translation: [44.000, 44.000, -0.000]
+- Rotation: in Quaternion (xyzw) [-0.000, 0.000, -0.000, 1.000]
+- Rotation: in RPY (radian) [-0.000, 0.000, -0.000]
+- Rotation: in RPY (degree) [-0.000, 0.000, -0.000]
+- Matrix:
+  1.000  0.000  0.000 44.000
+ -0.000  1.000  0.000 44.000
+ -0.000 -0.000  1.000 -0.000
+  0.000  0.000  0.000  1.000
+[INFO] [1779370737.519000219] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[INFO] [1779370737.739399376] [tf2_echo]: Waiting for transform mur620a/odom ->  mur620a/base_footprint: Invalid frame ID "mur620a/odom" passed to canTransform argument target_frame - frame does not exist
+At time 0.0
+- Translation: [0.000, 0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000  0.000  0.000  0.000
+  0.000  1.000  0.000  0.000
+  0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 0.0
+- Translation: [0.000, 0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000  0.000  0.000  0.000
+  0.000  1.000  0.000  0.000
+  0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+[INFO] [1779370741.522499543] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[INFO] [1779370741.737782122] [tf2_echo]: Waiting for transform map ->  mur620a/base_footprint: Invalid frame ID "map" passed to canTransform argument target_frame - frame does not exist
+At time 150.405000000
+- Translation: [44.000, 44.000, -0.000]
+- Rotation: in Quaternion (xyzw) [-0.000, 0.000, -0.000, 1.000]
+- Rotation: in RPY (radian) [-0.000, 0.000, -0.000]
+- Rotation: in RPY (degree) [-0.000, 0.000, -0.000]
+- Matrix:
+  1.000  0.000  0.000 44.000
+ -0.000  1.000  0.000 44.000
+ -0.000 -0.000  1.000 -0.000
+  0.000  0.000  0.000  1.000
+At time 151.297000000
+- Translation: [44.000, 44.000, -0.000]
+- Rotation: in Quaternion (xyzw) [-0.000, 0.000, -0.000, 1.000]
+- Rotation: in RPY (radian) [-0.000, 0.000, -0.000]
+- Rotation: in RPY (degree) [-0.000, 0.000, -0.000]
+- Matrix:
+  1.000  0.000  0.000 44.000
+ -0.000  1.000  0.000 44.000
+ -0.000 -0.000  1.000 -0.000
+  0.000  0.000  0.000  1.000
+[INFO] [1779370745.525721756] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+-- MoveIt quick check
+
+$ ros2 action info /mur620a/move_action
+Action: /mur620a/move_action
+Action clients: 0
+Action servers: 1
+    /mur620a/move_group
+
+$ ros2 topic info /mur620a/monitored_planning_scene --verbose
+Type: moveit_msgs/msg/PlanningScene
+
+Publisher count: 1
+
+Node name: move_group_private_94067137443520
+Node namespace: /mur620a
+Topic type: moveit_msgs/msg/PlanningScene
+Topic type hash: RIHS01_0f58540ad5eab4b9ea827d53b763c793d8cabd202b3b301fcee25afa4ce1bd80
+Endpoint type: PUBLISHER
+GID: 01.0f.f6.e2.a2.db.71.1c.00.00.00.00.00.00.57.03
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Subscription count: 0
+
+
+== Robot mur620b ==
+-- nodes
+/mur620b_ground_truth
+-- ground truth odom
+
+$ ros2 topic info /mur620b/ground_truth/odom --verbose
+Type: nav_msgs/msg/Odometry
+
+Publisher count: 1
+
+Node name: mur620b_ground_truth
+Node namespace: /
+Topic type: nav_msgs/msg/Odometry
+Topic type hash: RIHS01_3cc97dc7fb7502f8714462c526d369e35b603cfc34d946e3f2eda2766dfec6e0
+Endpoint type: PUBLISHER
+GID: 01.0f.f6.e2.72.e7.15.64.00.00.00.00.00.00.16.03
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Subscription count: 1
+
+Node name: mur620b_fake_localization
+Node namespace: /
+Topic type: nav_msgs/msg/Odometry
+Topic type hash: RIHS01_3cc97dc7fb7502f8714462c526d369e35b603cfc34d946e3f2eda2766dfec6e0
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.f6.e2.78.e7.4b.17.00.00.00.00.00.00.16.04
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+A message was lost!!!
+	total count change:8
+	total count: 8---
+A message was lost!!!
+	total count change:2
+	total count: 10---
+header:
+  stamp:
+    sec: 155
+    nanosec: 769000000
+  frame_id: map
+child_frame_id: mur620b/base_footprint
+pose:
+  pose:
+    position:
+      x: 46.0
+      y: 44.0
+      z: -8.466317806356297e-07
+    orientation:
+      x: -1.0602092555804133e-10
+      y: 5.920999558808977e-10
+      z: -5.8380173296720735e-15
+      w: 1.0
+  covariance:
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+twist:
+  twist:
+    linear:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    angular:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+-- fake localization params
+
+$ ros2 param get /mur620b_fake_localization global_frame_id
+String value is: map
+
+$ ros2 param get /mur620b_fake_localization odom_frame_id
+String value is: mur620b/odom
+
+$ ros2 param get /mur620b_fake_localization base_frame_id
+String value is: mur620b/base_footprint
+
+$ ros2 param get /mur620b/mobile_base_controller enable_odom_tf
+Boolean value is: False
+-- expected TF chain
+[INFO] [1779370762.849665604] [tf2_echo]: Waiting for transform map ->  mur620b/odom: Invalid frame ID "map" passed to canTransform argument target_frame - frame does not exist
+[INFO] [1779370764.824004890] [tf2_echo]: Waiting for transform map ->  mur620b/odom: Invalid frame ID "map" passed to canTransform argument target_frame - frame does not exist
+[INFO] [1779370766.645388396] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[INFO] [1779370766.861305590] [tf2_echo]: Waiting for transform mur620b/odom ->  mur620b/base_footprint: Invalid frame ID "mur620b/odom" passed to canTransform argument target_frame - frame does not exist
+At time 0.0
+- Translation: [0.000, 0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000  0.000  0.000  0.000
+  0.000  1.000  0.000  0.000
+  0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+At time 0.0
+- Translation: [0.000, 0.000, 0.000]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.000]
+- Rotation: in RPY (degree) [0.000, -0.000, 0.000]
+- Matrix:
+  1.000  0.000  0.000  0.000
+  0.000  1.000  0.000  0.000
+  0.000  0.000  1.000  0.000
+  0.000  0.000  0.000  1.000
+[INFO] [1779370770.649422046] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[INFO] [1779370770.876118222] [tf2_echo]: Waiting for transform map ->  mur620b/base_footprint: Invalid frame ID "map" passed to canTransform argument target_frame - frame does not exist
+At time 176.341000000
+- Translation: [46.000, 44.000, -0.000]
+- Rotation: in Quaternion (xyzw) [-0.000, 0.000, -0.000, 1.000]
+- Rotation: in RPY (radian) [-0.000, 0.000, -0.000]
+- Rotation: in RPY (degree) [-0.000, 0.000, -0.000]
+- Matrix:
+  1.000  0.000  0.000 46.000
+ -0.000  1.000  0.000 44.000
+ -0.000 -0.000  1.000 -0.000
+  0.000  0.000  0.000  1.000
+At time 177.237000000
+- Translation: [46.000, 44.000, -0.000]
+- Rotation: in Quaternion (xyzw) [-0.000, 0.000, -0.000, 1.000]
+- Rotation: in RPY (radian) [-0.000, 0.000, -0.000]
+- Rotation: in RPY (degree) [-0.000, 0.000, -0.000]
+- Matrix:
+  1.000  0.000  0.000 46.000
+ -0.000  1.000  0.000 44.000
+ -0.000 -0.000  1.000 -0.000
+  0.000  0.000  0.000  1.000
+[INFO] [1779370774.653342129] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+-- MoveIt quick check
+
+$ ros2 action info /mur620b/move_action
+Action: /mur620b/move_action
+Action clients: 0
+Action servers: 1
+    /mur620b/move_group
+
+$ ros2 topic info /mur620b/monitored_planning_scene --verbose
+Type: moveit_msgs/msg/PlanningScene
+
+Publisher count: 1
+
+Node name: move_group_private_94094307794832
+Node namespace: /mur620b
+Topic type: moveit_msgs/msg/PlanningScene
+Topic type hash: RIHS01_0f58540ad5eab4b9ea827d53b763c793d8cabd202b3b301fcee25afa4ce1bd80
+Endpoint type: PUBLISHER
+GID: 01.0f.f6.e2.5e.ea.27.be.00.00.00.00.00.00.57.03
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Subscription count: 0
+
+
+== Done ==
+Diagnostic log written to: /home/rosmatch/colcon_ws/src/match_mobile_robotics_jazzy/logs/check_multi_mur620_moveit_20260521_153819.log

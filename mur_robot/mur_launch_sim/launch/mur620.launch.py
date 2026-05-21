@@ -89,6 +89,7 @@ def generate_launch_description():
         DeclareLaunchArgument('launch_servo', default_value='false'),
         DeclareLaunchArgument('auto_switch_arm_controllers', default_value='true'),
         DeclareLaunchArgument('launch_jparse_idk', default_value='true'),
+        DeclareLaunchArgument('publish_global_moveit_descriptions', default_value='true'),
         DeclareLaunchArgument('publish_tf_alias', default_value='true'),
         DeclareLaunchArgument('tf_topic', default_value='/tf'),
         DeclareLaunchArgument('tf_static_topic', default_value='/tf_static'),
@@ -154,6 +155,10 @@ def generate_launch_description():
         parameters=[{
             'robot_name': LaunchConfiguration('robot_name'),
             'use_sim_time': LaunchConfiguration('use_sim_time'),
+            'publish_global_topics': LaunchConfiguration(
+                'publish_global_moveit_descriptions'
+            ),
+            'publish_namespaced_topics': 'true',
         }],
         output='screen',
     )

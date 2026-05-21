@@ -56,9 +56,9 @@ if [[ -f install/setup.bash ]]; then
 fi
 
 section "Processes"
-pgrep -af "multi_mur620.launch.py|move_group|rviz2|ground_truth|fake_localization|map_server|parameter_bridge" || true
+pgrep -af "multi_mur620.launch.py|move_group|rviz2|moveit_tf_republisher|ground_truth|fake_localization|map_server|parameter_bridge" || true
 ps -eo pid,ppid,pcpu,pmem,etime,cmd --sort=-pcpu \
-  | grep -E "move_group|rviz2|gz sim|ground_truth|fake_localization|map_server|parameter_bridge" \
+  | grep -E "move_group|rviz2|gz sim|moveit_tf_republisher|ground_truth|fake_localization|map_server|parameter_bridge" \
   | grep -v grep \
   | head -30 || true
 
@@ -67,6 +67,8 @@ run ros2 topic info /clock --verbose
 run ros2 topic info /map --verbose
 echo_once /map nav_msgs/msg/OccupancyGrid 45
 run ros2 lifecycle get /map_server
+run ros2 topic list
+run ros2 topic info /robot_description_semantic --verbose
 
 section "Gazebo Dynamic Pose"
 GZ_DYNAMIC_POSE_TOPIC="$(gz topic -l | grep -E '^/world/.+/dynamic_pose/info$' | head -1 || true)"
@@ -103,8 +105,13 @@ for robot in $ROBOTS; do
   tf_once map "${robot}/base_footprint"
 
   echo "-- MoveIt quick check"
+  run ros2 node list --no-daemon
   run ros2 action info "/${robot}/move_action"
   run ros2 topic info "/${robot}/monitored_planning_scene" --verbose
+  run ros2 topic info "/${robot}/robot_description_semantic" --verbose
+  run ros2 topic info "/${robot}/moveit_tf" --verbose
+  run ros2 topic info "/${robot}/moveit_tf_static" --verbose
+  echo_once "/${robot}/moveit_tf_static" tf2_msgs/msg/TFMessage 80
 done
 
 section "Done"
