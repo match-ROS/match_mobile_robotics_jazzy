@@ -16,6 +16,19 @@ run() {
   "$@" || true
 }
 
+echo_once() {
+  local topic="$1"
+  local type="$2"
+  local lines="${3:-60}"
+  timeout 4 ros2 topic echo "$topic" "$type" --once | sed -n "1,${lines}p" || true
+}
+
+tf_once() {
+  local target="$1"
+  local source="$2"
+  timeout 4 ros2 run tf2_ros tf2_echo "$target" "$source" || true
+}
+
 set -u
 
 WS="${WS:-/home/rosmatch/colcon_ws}"
@@ -43,87 +56,56 @@ if [[ -f install/setup.bash ]]; then
 fi
 
 section "Processes"
-pgrep -af "multi_mur620.launch.py|mur620.launch.py|move_group|rviz2|controller_manager|robot_state_publisher" || true
-echo
+pgrep -af "multi_mur620.launch.py|move_group|rviz2|ground_truth|fake_localization|map_server|parameter_bridge" || true
 ps -eo pid,ppid,pcpu,pmem,etime,cmd --sort=-pcpu \
-  | grep -E "move_group|rviz2|gz sim|robot_state_publisher|controller_manager" \
+  | grep -E "move_group|rviz2|gz sim|ground_truth|fake_localization|map_server|parameter_bridge" \
   | grep -v grep \
-  | head -40 || true
+  | head -30 || true
 
-section "Core Graph"
-run ros2 node list --no-daemon
-run ros2 topic list --no-daemon
-run ros2 action list
+section "Core Topics"
+run ros2 topic info /clock --verbose
+run ros2 topic info /map --verbose
+echo_once /map nav_msgs/msg/OccupancyGrid 45
+run ros2 lifecycle get /map_server
 
-section "MoveIt Topics"
-for topic in /mur620a/monitored_planning_scene /mur620a/display_planned_path /mur620b/monitored_planning_scene /mur620b/display_planned_path /monitored_planning_scene /display_planned_path; do
-  run ros2 topic info "$topic" --verbose
-done
+section "World Pose Bridge"
+WORLD_POSE_TOPIC="$(ros2 topic list --no-daemon | grep -E '^/world/.+/pose/info$' | head -1 || true)"
+if [[ -n "$WORLD_POSE_TOPIC" ]]; then
+  echo "World pose topic: $WORLD_POSE_TOPIC"
+  run ros2 topic info "$WORLD_POSE_TOPIC" --verbose
+  echo_once "$WORLD_POSE_TOPIC" tf2_msgs/msg/TFMessage 80
+else
+  echo "No /world/<world>/pose/info topic found."
+fi
+
+section "TF Topics"
+run ros2 topic info /tf --verbose
+run ros2 topic info /tf_static --verbose
 
 for robot in $ROBOTS; do
-  section "MoveIt ${robot}"
+  section "Robot ${robot}"
 
-  echo "-- Nodes"
-  ros2 node list --no-daemon | grep -E "^/${robot}/move_group|/${robot}/moveit|moveit.*${robot}|${robot}.*moveit" || true
+  echo "-- nodes"
+  ros2 node list --no-daemon | grep -E "${robot}.*ground_truth|${robot}.*fake_localization|/${robot}/move_group" || true
 
-  echo "-- MoveIt action"
+  echo "-- ground truth odom"
+  run ros2 topic info "/${robot}/ground_truth/odom" --verbose
+  echo_once "/${robot}/ground_truth/odom" nav_msgs/msg/Odometry 70
+
+  echo "-- fake localization params"
+  run ros2 param get "/${robot}_fake_localization" global_frame_id
+  run ros2 param get "/${robot}_fake_localization" odom_frame_id
+  run ros2 param get "/${robot}_fake_localization" base_frame_id
+  run ros2 param get "/${robot}/mobile_base_controller" enable_odom_tf
+
+  echo "-- expected TF chain"
+  tf_once map "${robot}/odom"
+  tf_once "${robot}/odom" "${robot}/base_footprint"
+  tf_once map "${robot}/base_footprint"
+
+  echo "-- MoveIt quick check"
   run ros2 action info "/${robot}/move_action"
-
-  echo "-- Robot descriptions"
-  timeout 8 ros2 param get "/${robot}/move_group" robot_description \
-    | wc -c \
-    | awk '{print "robot_description chars:", $1}' || true
-  timeout 8 ros2 param get "/${robot}/move_group" robot_description_semantic \
-    | wc -c \
-    | awk '{print "robot_description_semantic chars:", $1}' || true
-
-  echo "-- MoveIt core params"
-  run ros2 param get "/${robot}/move_group" planning_pipelines
-  run ros2 param get "/${robot}/move_group" default_planning_pipeline
-  run ros2 param get "/${robot}/move_group" robot_description_kinematics.UR_arm_l.kinematics_solver
-  run ros2 param get "/${robot}/move_group" robot_description_kinematics.UR_arm_r.kinematics_solver
-  run ros2 param get "/${robot}/move_group" robot_description_planning.joint_limits.UR10_l/shoulder_pan_joint.max_velocity
-
-  echo "-- Controllers"
-  timeout 8 ros2 control list_controllers -c "/${robot}/controller_manager" || true
-
-  echo "-- Joint states"
-  run ros2 topic info "/${robot}/joint_states" --verbose
-  timeout 8 ros2 topic echo "/${robot}/joint_states" sensor_msgs/msg/JointState --once \
-    | sed -n '1,140p' || true
-
-  echo "-- Current TF for MoveIt base"
-  timeout 7 ros2 run tf2_ros tf2_echo map "${robot}/base_footprint" || true
-  timeout 7 ros2 run tf2_ros tf2_echo "${robot}/base_footprint" "${robot}/UR10_l/tool0" || true
-
-  echo "-- Private MoveIt TF"
-  run ros2 topic info "/${robot}/moveit_tf" --verbose
-  run ros2 topic info "/${robot}/moveit_tf_static" --verbose
-  timeout 7 ros2 run tf2_ros tf2_echo "${robot}/base_footprint" base_footprint \
-    --ros-args -r /tf:="/${robot}/moveit_tf" -r /tf_static:="/${robot}/moveit_tf_static" || true
-  timeout 7 ros2 run tf2_ros tf2_echo base_footprint UR10_l/tool0 \
-    --ros-args -r /tf:="/${robot}/moveit_tf" -r /tf_static:="/${robot}/moveit_tf_static" || true
-done
-
-section "Recent MoveIt/RViz Logs"
-find /home/rosmatch/.ros/log -maxdepth 2 -type f \
-  \( -name '*move_group*.log' -o -name '*rviz*.log' -o -name '*moveit*.log' \) \
-  -mmin -45 -printf '%T@ %p\n' \
-  | sort -nr \
-  | head -16 \
-  | cut -d' ' -f2- \
-  | while read -r logfile; do
-      echo "---- $logfile"
-      tail -120 "$logfile" || true
-    done
-
-section "RViz Checks"
-for robot in $ROBOTS; do
-  echo "For namespace ${robot}, MotionPlanning should use:"
-  echo "  Move Group Namespace: ${robot}"
-  echo "  Planning Scene Topic: /${robot}/monitored_planning_scene"
-  echo "  Robot Description: robot_description"
-  echo "  Planned Path Trajectory Topic: /${robot}/display_planned_path"
+  run ros2 topic info "/${robot}/monitored_planning_scene" --verbose
 done
 
 section "Done"

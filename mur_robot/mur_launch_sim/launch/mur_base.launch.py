@@ -26,6 +26,7 @@ Arguments:
   fake_localization (bool) Publish map->odom from ground truth instead of AMCL (default false)
   navigation (bool)        Start Nav2 planner/controller/BT navigator (default false)
   ground_truth (bool)      Publish Gazebo model pose as ground truth topics (default true)
+  ground_truth_bridge (bool) Bridge Gazebo world poses for ground truth (default true)
   use_arms (bool)          Include UR arm links/controllers in robot_description (default true)
   use_camera (bool)        Include D435 camera links/Gazebo sensor (default true)
   use_simple_collisions (bool) Replace most MiR collision meshes with primitives (default false)
@@ -74,6 +75,7 @@ def declare_args():
         DeclareLaunchArgument('fake_localization', default_value='false'),
         DeclareLaunchArgument('navigation', default_value='false'),
         DeclareLaunchArgument('ground_truth', default_value='true'),
+        DeclareLaunchArgument('ground_truth_bridge', default_value='true'),
         DeclareLaunchArgument('use_arms', default_value='true'),
         DeclareLaunchArgument('use_camera', default_value='true'),
         DeclareLaunchArgument('use_simple_collisions', default_value='false'),
@@ -515,6 +517,9 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
     )
     navigation = LaunchConfiguration('navigation').perform(context) == 'true'
     ground_truth = LaunchConfiguration('ground_truth').perform(context) == 'true'
+    ground_truth_bridge = (
+        LaunchConfiguration('ground_truth_bridge').perform(context) == 'true'
+    )
     effective_ground_truth = ground_truth or fake_localization
     effective_lidar_bridge = lidar_bridge and not fake_localization
     effective_laser_merger = laser_merger and not fake_localization
@@ -611,13 +616,23 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
 
     if effective_ground_truth:
         gz_pose_topic = f'/world/{world}/pose/info'
+        if ground_truth_bridge:
+            nodes.append(
+                Node(
+                    package='ros_gz_bridge',
+                    executable='parameter_bridge',
+                    name=f'{robot_name}_ground_truth_bridge',
+                    arguments=[f'{gz_pose_topic}@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V'],
+                    output='screen',
+                )
+            )
         nodes.append(
             Node(
                 package='mur_launch_sim',
-                executable='gz_ground_truth_publisher',
+                executable='ground_truth_from_pose_tf.py',
                 name=f'{robot_name}_ground_truth',
                 parameters=[{
-                    'gz_pose_topic': gz_pose_topic,
+                    'input_topic': gz_pose_topic,
                     'robot_name': robot_name,
                     'output_frame_id': 'map',
                     'child_frame_id': f'{robot_name}/base_footprint',

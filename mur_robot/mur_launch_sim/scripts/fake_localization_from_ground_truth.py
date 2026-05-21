@@ -7,6 +7,7 @@ import rclpy
 from geometry_msgs.msg import TransformStamped
 from nav_msgs.msg import Odometry
 from rclpy.node import Node
+from rclpy.time import Time
 from tf2_ros import StaticTransformBroadcaster, TransformBroadcaster
 
 
@@ -32,7 +33,7 @@ class FakeLocalizationFromGroundTruth(Node):
         self.declare_parameter("odom_frame_id", "")
         self.declare_parameter("base_frame_id", "")
         self.declare_parameter("ground_truth_odom_topic", "")
-        self.declare_parameter("publish_rate", 50.0)
+        self.declare_parameter("publish_rate", 30.0)
 
         self.robot_name = self.get_parameter("robot_name").value
         self.global_frame_id = self.get_parameter("global_frame_id").value
@@ -49,13 +50,13 @@ class FakeLocalizationFromGroundTruth(Node):
         )
         publish_rate = float(self.get_parameter("publish_rate").value)
 
-        self.ground_truth_msg = None
+        self.publish_period = 1.0 / max(publish_rate, 1.0)
+        self.last_publish_time = None
         self.logged_ready = False
 
         self.tf_broadcaster = TransformBroadcaster(self)
         self.static_tf_broadcaster = StaticTransformBroadcaster(self)
         self.create_subscription(Odometry, ground_truth_odom_topic, self.ground_truth_cb, 10)
-        self.create_timer(1.0 / max(publish_rate, 1.0), self.publish_tf)
         self.publish_odom_to_base_identity()
 
         self.get_logger().info(
@@ -65,16 +66,23 @@ class FakeLocalizationFromGroundTruth(Node):
         )
 
     def ground_truth_cb(self, msg):
-        self.ground_truth_msg = msg
-
-    def publish_tf(self):
-        if self.ground_truth_msg is None:
+        stamp_time = Time.from_msg(msg.header.stamp)
+        stamp_sec = stamp_time.nanoseconds * 1e-9
+        if (
+            self.last_publish_time is not None
+            and stamp_sec > self.last_publish_time
+            and stamp_sec - self.last_publish_time < self.publish_period
+        ):
             return
 
-        map_to_odom = transform_from_odom(self.ground_truth_msg)
+        self.last_publish_time = stamp_sec
+        self.publish_tf(msg)
+
+    def publish_tf(self, ground_truth_msg):
+        map_to_odom = transform_from_odom(ground_truth_msg)
 
         transform_msg = TransformStamped()
-        transform_msg.header.stamp = self.ground_truth_msg.header.stamp
+        transform_msg.header.stamp = ground_truth_msg.header.stamp
         transform_msg.header.frame_id = self.global_frame_id
         transform_msg.child_frame_id = self.odom_frame_id
         transform_msg.transform.translation.x = map_to_odom[0][0]
