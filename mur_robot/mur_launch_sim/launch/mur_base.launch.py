@@ -26,7 +26,6 @@ Arguments:
   fake_localization (bool) Publish map->odom from ground truth instead of AMCL (default false)
   navigation (bool)        Start Nav2 planner/controller/BT navigator (default false)
   ground_truth (bool)      Publish Gazebo model pose as ground truth topics (default true)
-  ground_truth_bridge (bool) Bridge Gazebo world poses for ground truth (default true)
   use_arms (bool)          Include UR arm links/controllers in robot_description (default true)
   use_camera (bool)        Include D435 camera links/Gazebo sensor (default true)
   use_simple_collisions (bool) Replace most MiR collision meshes with primitives (default false)
@@ -36,6 +35,7 @@ Arguments:
 """
 
 import os
+import re
 import tempfile
 from copy import deepcopy
 
@@ -75,7 +75,6 @@ def declare_args():
         DeclareLaunchArgument('fake_localization', default_value='false'),
         DeclareLaunchArgument('navigation', default_value='false'),
         DeclareLaunchArgument('ground_truth', default_value='true'),
-        DeclareLaunchArgument('ground_truth_bridge', default_value='true'),
         DeclareLaunchArgument('use_arms', default_value='true'),
         DeclareLaunchArgument('use_camera', default_value='true'),
         DeclareLaunchArgument('use_simple_collisions', default_value='false'),
@@ -145,6 +144,20 @@ def make_controller_config(robot_name, source_yaml, *, enable_odom_tf=True):
         yaml.safe_dump(namespaced_config, config_file, sort_keys=False)
 
     return out_file
+
+
+def gazebo_world_name(world):
+    """Return the SDF world name, which may differ from the .world filename."""
+    mir_gazebo_path = get_package_share_directory('mir_gazebo')
+    world_file = os.path.join(mir_gazebo_path, 'worlds', f'{world}.world')
+    try:
+        with open(world_file, 'r', encoding='utf-8') as file:
+            match = re.search(r'<world\s+name=[\'"]([^\'"]+)[\'"]', file.read())
+        if match:
+            return match.group(1)
+    except OSError:
+        pass
+    return world
 
 
 def make_localization_config(robot_name, map_yaml, use_sim_time, x, y, yaw):
@@ -517,9 +530,6 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
     )
     navigation = LaunchConfiguration('navigation').perform(context) == 'true'
     ground_truth = LaunchConfiguration('ground_truth').perform(context) == 'true'
-    ground_truth_bridge = (
-        LaunchConfiguration('ground_truth_bridge').perform(context) == 'true'
-    )
     effective_ground_truth = ground_truth or fake_localization
     effective_lidar_bridge = lidar_bridge and not fake_localization
     effective_laser_merger = laser_merger and not fake_localization
@@ -615,24 +625,14 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
         )
 
     if effective_ground_truth:
-        gz_pose_topic = f'/world/{world}/pose/info'
-        if ground_truth_bridge:
-            nodes.append(
-                Node(
-                    package='ros_gz_bridge',
-                    executable='parameter_bridge',
-                    name=f'{robot_name}_ground_truth_bridge',
-                    arguments=[f'{gz_pose_topic}@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V'],
-                    output='screen',
-                )
-            )
+        gz_pose_topic = f'/world/{gazebo_world_name(world)}/dynamic_pose/info'
         nodes.append(
             Node(
                 package='mur_launch_sim',
-                executable='ground_truth_from_pose_tf.py',
+                executable='gz_ground_truth_publisher',
                 name=f'{robot_name}_ground_truth',
                 parameters=[{
-                    'input_topic': gz_pose_topic,
+                    'gz_pose_topic': gz_pose_topic,
                     'robot_name': robot_name,
                     'output_frame_id': 'map',
                     'child_frame_id': f'{robot_name}/base_footprint',

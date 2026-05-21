@@ -149,10 +149,6 @@ def launch_setup(context, *args, **kwargs):
     start_fake_localization = (
         LaunchConfiguration('fake_localization').perform(context).lower() == 'true'
     )
-    start_ground_truth = (
-        LaunchConfiguration('ground_truth').perform(context).lower() == 'true'
-        or start_fake_localization
-    )
     start_amcl = start_localization and not start_fake_localization
     spawn_interval = float(LaunchConfiguration('spawn_interval').perform(context))
     mur_launch_sim_path = get_package_share_directory('mur_launch_sim')
@@ -213,17 +209,6 @@ def launch_setup(context, *args, **kwargs):
             ),
         ])
 
-    if start_ground_truth:
-        actions.append(
-            Node(
-                package='ros_gz_bridge',
-                executable='parameter_bridge',
-                name='ground_truth_bridge',
-                arguments=[f'/world/{world}/pose/info@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V'],
-                output='screen',
-            )
-        )
-
     for index, (robot_name, x, y, z, yaw) in enumerate(ROBOT_POSES):
         robot = IncludeLaunchDescription(
             PythonLaunchDescriptionSource(mur_base_launch),
@@ -242,7 +227,6 @@ def launch_setup(context, *args, **kwargs):
                 'load_lift_controllers': 'false',
                 'laser_merger': 'false' if start_fake_localization else LaunchConfiguration('laser_merger'),
                 'ground_truth': 'true' if start_fake_localization else LaunchConfiguration('ground_truth'),
-                'ground_truth_bridge': 'false',
                 'use_arms': 'false',
                 'use_camera': 'false',
                 'use_simple_collisions': LaunchConfiguration('use_simple_collisions'),

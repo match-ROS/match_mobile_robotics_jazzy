@@ -68,14 +68,13 @@ run ros2 topic info /map --verbose
 echo_once /map nav_msgs/msg/OccupancyGrid 45
 run ros2 lifecycle get /map_server
 
-section "World Pose Bridge"
-WORLD_POSE_TOPIC="$(ros2 topic list --no-daemon | grep -E '^/world/.+/pose/info$' | head -1 || true)"
-if [[ -n "$WORLD_POSE_TOPIC" ]]; then
-  echo "World pose topic: $WORLD_POSE_TOPIC"
-  run ros2 topic info "$WORLD_POSE_TOPIC" --verbose
-  echo_once "$WORLD_POSE_TOPIC" tf2_msgs/msg/TFMessage 80
+section "Gazebo Dynamic Pose"
+GZ_DYNAMIC_POSE_TOPIC="$(gz topic -l | grep -E '^/world/.+/dynamic_pose/info$' | head -1 || true)"
+if [[ -n "$GZ_DYNAMIC_POSE_TOPIC" ]]; then
+  echo "Gazebo dynamic pose topic: $GZ_DYNAMIC_POSE_TOPIC"
+  timeout 4 gz topic -e -t "$GZ_DYNAMIC_POSE_TOPIC" | sed -n '1,90p' || true
 else
-  echo "No /world/<world>/pose/info topic found."
+  echo "No Gazebo /world/<world>/dynamic_pose/info topic found."
 fi
 
 section "TF Topics"

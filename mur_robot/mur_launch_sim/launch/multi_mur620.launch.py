@@ -214,10 +214,6 @@ def launch_setup(context, *args, **kwargs):
     start_fake_localization = (
         LaunchConfiguration('fake_localization').perform(context).lower() == 'true'
     )
-    start_ground_truth = (
-        LaunchConfiguration('ground_truth').perform(context).lower() == 'true'
-        or start_fake_localization
-    )
     start_amcl = start_localization and not start_fake_localization
     start_moveit = LaunchConfiguration('launch_moveit').perform(context).lower() == 'true'
     start_rviz = LaunchConfiguration('launch_rviz').perform(context).lower() == 'true'
@@ -286,17 +282,6 @@ def launch_setup(context, *args, **kwargs):
             ),
         ])
 
-    if start_ground_truth:
-        actions.append(
-            Node(
-                package='ros_gz_bridge',
-                executable='parameter_bridge',
-                name='ground_truth_bridge',
-                arguments=[f'/world/{world}/pose/info@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V'],
-                output='screen',
-            )
-        )
-
     for index, (robot_name, x, y, z, yaw) in enumerate(ROBOT_POSES):
         robot_uses_moveit = start_moveit and robot_name in moveit_robots
         robot_is_primary_moveit = robot_name == primary_moveit_robot
@@ -323,7 +308,6 @@ def launch_setup(context, *args, **kwargs):
                 'load_controllers': LaunchConfiguration('load_controllers'),
                 'laser_merger': 'false' if start_fake_localization else LaunchConfiguration('laser_merger'),
                 'ground_truth': 'true' if start_fake_localization else LaunchConfiguration('ground_truth'),
-                'ground_truth_bridge': 'false',
                 'use_simple_collisions': LaunchConfiguration('use_simple_collisions'),
                 'use_simple_visuals': LaunchConfiguration('use_simple_visuals'),
                 'use_high_quality_visuals': LaunchConfiguration(
