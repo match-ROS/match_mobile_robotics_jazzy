@@ -1,7 +1,8 @@
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, GroupAction, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch_ros.actions import SetRemap
 from launch_ros.substitutions import FindPackageShare
 
 
@@ -12,25 +13,31 @@ def generate_launch_description():
     launch_rviz = LaunchConfiguration("launch_rviz")
     initial_joint_controller = LaunchConfiguration("initial_joint_controller")
     activate_joint_controller = LaunchConfiguration("activate_joint_controller")
+    robot_description_topic = LaunchConfiguration("robot_description_topic")
 
-    ur_driver = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            PathJoinSubstitution(
-                [
-                    FindPackageShare("ur_robot_driver"),
-                    "launch",
-                    "ur_control.launch.py",
-                ]
-            )
-        ),
-        launch_arguments={
-            "ur_type": ur_type,
-            "robot_ip": robot_ip,
-            "reverse_ip": reverse_ip,
-            "launch_rviz": launch_rviz,
-            "initial_joint_controller": initial_joint_controller,
-            "activate_joint_controller": activate_joint_controller,
-        }.items(),
+    ur_driver = GroupAction(
+        actions=[
+            SetRemap(src="/robot_description", dst=robot_description_topic),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    PathJoinSubstitution(
+                        [
+                            FindPackageShare("ur_robot_driver"),
+                            "launch",
+                            "ur_control.launch.py",
+                        ]
+                    )
+                ),
+                launch_arguments={
+                    "ur_type": ur_type,
+                    "robot_ip": robot_ip,
+                    "reverse_ip": reverse_ip,
+                    "launch_rviz": launch_rviz,
+                    "initial_joint_controller": initial_joint_controller,
+                    "activate_joint_controller": activate_joint_controller,
+                }.items(),
+            ),
+        ]
     )
 
     return LaunchDescription(
@@ -77,6 +84,14 @@ def generate_launch_description():
                 "activate_joint_controller",
                 default_value="true",
                 description="Activate the initial joint controller on startup.",
+            ),
+            DeclareLaunchArgument(
+                "robot_description_topic",
+                default_value="/ur/robot_description",
+                description=(
+                    "Robot description topic used by the UR driver. Keeping this "
+                    "separate avoids collisions with other robot_state_publishers."
+                ),
             ),
             ur_driver,
         ]

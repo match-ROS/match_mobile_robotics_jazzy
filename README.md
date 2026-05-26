@@ -202,7 +202,9 @@ ros2 launch mur_launch_sim ur10e_driver.launch.py \
 
 The launch defaults to `ur_type:=ur10e` and starts
 `scaled_joint_trajectory_controller`, which is the usual controller for real UR
-trajectory execution.
+trajectory execution. It remaps the UR driver's robot description to
+`/ur/robot_description` so it cannot collide with other publishers such as the
+OAK camera description.
 
 ## Four Wheel Steering Example (`velocity_pub`)
 
