@@ -151,6 +151,59 @@ Example custom include (second robot without starting gz):
 ros2 launch mur_launch_sim mur_base.launch.py robot_name:=mur620b include_gz:=false x:=2.0 y:=1.0
 ```
 
+## Real UR10e Driver
+
+The real UR arm is started through the upstream `ur_robot_driver`, included in
+this repository as a git submodule. The driver also needs the upstream
+`ur_client_library`, included next to it:
+
+```bash
+git submodule update --init --recursive \
+  ur_robot/Universal_Robots_ROS2_Driver \
+  ur_robot/Universal_Robots_Client_Library
+```
+
+If you prefer the binary package instead of building the submodule, install it
+from apt:
+
+```bash
+sudo apt install -y ros-jazzy-ur-robot-driver
+```
+
+When building from source, run colcon from the workspace root and restrict the
+search paths to the UR sources. Do not run this from `~`, because colcon will
+otherwise discover old workspaces and unrelated Python projects:
+
+```bash
+cd /home/rosmatch/colcon_ws_recker
+source /opt/ros/jazzy/setup.bash
+colcon build --symlink-install \
+  --base-paths \
+    src/match_mobile_robotics_jazzy/ur_robot/Universal_Robots_Client_Library \
+    src/match_mobile_robotics_jazzy/ur_robot/Universal_Robots_ROS2_Driver \
+  --packages-up-to ur_robot_driver \
+  --allow-overriding ur_controllers ur_dashboard_msgs ur_moveit_config
+```
+
+Make sure the robot has the External Control URCap installed and that the teach
+pendant program is started. Then launch the driver with the robot controller IP:
+
+```bash
+ros2 launch mur_launch_sim ur10e_driver.launch.py robot_ip:=192.168.12.148
+```
+
+If the robot cannot connect back to this ROS PC, pass the PC IP explicitly:
+
+```bash
+ros2 launch mur_launch_sim ur10e_driver.launch.py \
+  robot_ip:=192.168.12.148 \
+  reverse_ip:=192.168.12.18
+```
+
+The launch defaults to `ur_type:=ur10e` and starts
+`scaled_joint_trajectory_controller`, which is the usual controller for real UR
+trajectory execution.
+
 ## Four Wheel Steering Example (`velocity_pub`)
 
 The `velocity_pub` package publishes steering positions and wheel velocities to controllers at:
