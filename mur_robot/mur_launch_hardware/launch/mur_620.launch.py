@@ -77,6 +77,7 @@ def declare_arguments():
         DeclareLaunchArgument('ur_startup_wait_timeout', default_value='60.0'),
         DeclareLaunchArgument('ur_startup_stop_program', default_value='true'),
         DeclareLaunchArgument('ur_startup_play_program', default_value='true'),
+        DeclareLaunchArgument('ur_startup_verify_program_running', default_value='true'),
         DeclareLaunchArgument('initial_joint_controller', default_value='forward_velocity_controller'),
         DeclareLaunchArgument('activate_joint_controller', default_value='true'),
         DeclareLaunchArgument('launch_trajectory_until_node', default_value='false'),
@@ -331,6 +332,7 @@ def make_ur_driver(side, robot_name, controllers_file, update_rate_config_file):
                 'speed_scaling_state_broadcaster',
                 'tcp_pose_broadcaster',
                 'ur_configuration_controller',
+                'forward_velocity_controller',
             ]},
         ],
     )
@@ -363,6 +365,7 @@ def make_ur_driver(side, robot_name, controllers_file, update_rate_config_file):
                     'target_robot_mode': 7,
                     'stop_program': LaunchConfiguration('ur_startup_stop_program'),
                     'play_program': LaunchConfiguration('ur_startup_play_program'),
+                    'verify_program_running': LaunchConfiguration('ur_startup_verify_program_running'),
                 }],
             ),
         ],
