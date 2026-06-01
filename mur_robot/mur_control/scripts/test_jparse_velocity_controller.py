@@ -91,13 +91,13 @@ class JParseVelocityTester(Node):
         )
         self.create_subscription(
             Float64MultiArray,
-            f'/{args.robot_name}/forward_velocity_controller_{args.arm}/commands',
+            args.command_topic or f'/{args.robot_name}/forward_velocity_controller_{args.arm}/commands',
             self._command_callback,
             10,
         )
         self.create_subscription(
             JointState,
-            f'/{args.robot_name}/joint_states',
+            args.joint_states_topic or f'/{args.robot_name}/joint_states',
             self._joint_state_callback,
             rclpy.qos.qos_profile_sensor_data,
         )
@@ -342,6 +342,8 @@ def parse_args():
     parser.add_argument('--arm', choices=['l', 'r'], default='l')
     parser.add_argument('--topic', default='')
     parser.add_argument('--debug-topic', default='')
+    parser.add_argument('--command-topic', default='')
+    parser.add_argument('--joint-states-topic', default='')
     parser.add_argument('--base-link', default='')
     parser.add_argument('--tip-link', default='')
     parser.add_argument('--tf-base-frame', default='')
@@ -359,8 +361,9 @@ def parse_args():
 
 
 def main():
+    args = parse_args()
     rclpy.init()
-    node = JParseVelocityTester(parse_args())
+    node = JParseVelocityTester(args)
     try:
         node.run()
     finally:

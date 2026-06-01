@@ -211,7 +211,7 @@ def generate_launch_description():
         condition=IfCondition(LaunchConfiguration('launch_jparse_idk')),
         actions=[
             Node(
-                package='mur_launch_sim',
+                package='mur_control',
                 executable='jparse_velocity_controller',
                 name=[LaunchConfiguration('robot_name'), '_jparse_velocity_controller_l'],
                 parameters=[{
@@ -228,7 +228,7 @@ def generate_launch_description():
                 output='screen',
             ),
             Node(
-                package='mur_launch_sim',
+                package='mur_control',
                 executable='jparse_velocity_controller',
                 name=[LaunchConfiguration('robot_name'), '_jparse_velocity_controller_r'],
                 parameters=[{
@@ -245,7 +245,7 @@ def generate_launch_description():
                 output='screen',
             ),
             Node(
-                package='mur_launch_sim',
+                package='mur_control',
                 executable='jparse_move_action_server.py',
                 name=[LaunchConfiguration('robot_name'), '_jparse_move_l'],
                 arguments=[
@@ -255,7 +255,7 @@ def generate_launch_description():
                 output='screen',
             ),
             Node(
-                package='mur_launch_sim',
+                package='mur_control',
                 executable='jparse_move_action_server.py',
                 name=[LaunchConfiguration('robot_name'), '_jparse_move_r'],
                 arguments=[
@@ -265,7 +265,7 @@ def generate_launch_description():
                 output='screen',
             ),
             Node(
-                package='mur_launch_sim',
+                package='mur_control',
                 executable='jparse_simple_goal.py',
                 name=[LaunchConfiguration('robot_name'), '_jparse_simple_goal_l'],
                 arguments=[
@@ -275,7 +275,7 @@ def generate_launch_description():
                 output='screen',
             ),
             Node(
-                package='mur_launch_sim',
+                package='mur_control',
                 executable='jparse_simple_goal.py',
                 name=[LaunchConfiguration('robot_name'), '_jparse_simple_goal_r'],
                 arguments=[

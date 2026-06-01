@@ -14,11 +14,13 @@ class EwellixStateToJointState(Node):
         super().__init__('ewellix_state_to_joint_state')
 
         self.declare_parameter('joint_name', 'lift_joint')
+        self.declare_parameter('joint_count', 2)
         self.declare_parameter('conversion', 3225.0)
         self.declare_parameter('position_multiplier', 1.0)
         self.declare_parameter('joint_states_topic', '/joint_states')
 
         self.joint_name = self.get_parameter('joint_name').value
+        self.joint_count = int(self.get_parameter('joint_count').value)
         self.conversion = float(self.get_parameter('conversion').value)
         self.position_multiplier = float(self.get_parameter('position_multiplier').value)
 
@@ -30,7 +32,10 @@ class EwellixStateToJointState(Node):
         self.subscription = self.create_subscription(State, 'state', self.state_callback, 10)
 
     def state_callback(self, state):
-        positions = [position for position in state.actual_positions if position >= 0]
+        positions = [
+            position for position in state.actual_positions[:self.joint_count]
+            if position >= 0
+        ]
         if not positions or self.conversion == 0.0:
             return
 

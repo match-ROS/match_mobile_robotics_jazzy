@@ -8,7 +8,7 @@ import time
 
 import rclpy
 from geometry_msgs.msg import TwistStamped
-from mur_launch_sim.action import JparseMove
+from mur_control.action import JparseMove
 from rclpy.action import ActionServer, CancelResponse, GoalResponse
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
@@ -149,21 +149,28 @@ class JparseMoveActionServer(Node):
         ]
         self.default_action_name = f'/{self.robot_name}/jparse_move_{self.arm}'
         self.action_name = args.action_name or self.default_action_name
+        self.twist_topic = args.twist_topic or (
+            f'/{self.robot_name}/jparse_velocity_controller_{self.arm}/twist_cmd'
+        )
+        self.joint_velocity_topic = args.joint_velocity_topic or (
+            f'/{self.robot_name}/forward_velocity_controller_{self.arm}/commands'
+        )
+        self.joint_states_topic = args.joint_states_topic or f'/{self.robot_name}/joint_states'
         self.twist_pub = self.create_publisher(
             TwistStamped,
-            f'/{self.robot_name}/jparse_velocity_controller_{self.arm}/twist_cmd',
+            self.twist_topic,
             10,
         )
         self.joint_velocity_pub = self.create_publisher(
             Float64MultiArray,
-            f'/{self.robot_name}/forward_velocity_controller_{self.arm}/commands',
+            self.joint_velocity_topic,
             10,
         )
         self.joint_positions = {}
         self.joint_lock = threading.Lock()
         self.create_subscription(
             JointState,
-            f'/{self.robot_name}/joint_states',
+            self.joint_states_topic,
             self.joint_state_callback,
             rclpy.qos.qos_profile_sensor_data,
         )
@@ -179,7 +186,8 @@ class JparseMoveActionServer(Node):
         )
         self.get_logger().info(
             f'J-PARSE move action ready on {self.action_name}; modes: task_space, joint_space; '
-            'accuracy: approach, precision'
+            f'accuracy: approach, precision; twist={self.twist_topic}; '
+            f'joint_velocity={self.joint_velocity_topic}'
         )
 
     def joint_state_callback(self, msg):
@@ -498,6 +506,9 @@ def parse_args():
     parser.add_argument('--action-name', default='')
     parser.add_argument('--base-link', default='')
     parser.add_argument('--tip-link', default='')
+    parser.add_argument('--twist-topic', default='')
+    parser.add_argument('--joint-velocity-topic', default='')
+    parser.add_argument('--joint-states-topic', default='')
     parser.add_argument('--control-rate', type=float, default=100.0)
     parser.add_argument('--max-linear-velocity', type=float, default=0.12)
     parser.add_argument('--max-angular-velocity', type=float, default=0.5)

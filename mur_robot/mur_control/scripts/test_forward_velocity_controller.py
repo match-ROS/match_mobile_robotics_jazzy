@@ -35,7 +35,7 @@ class ForwardVelocityTester(Node):
         self.last_joint_positions = {}
         self.create_subscription(
             JointState,
-            f'/{args.robot_name}/joint_states',
+            args.joint_states_topic or f'/{args.robot_name}/joint_states',
             self._joint_state_callback,
             rclpy.qos.qos_profile_sensor_data,
         )
@@ -148,6 +148,7 @@ def parse_args():
     parser.add_argument('--robot-name', default='mur620a')
     parser.add_argument('--arm', choices=['l', 'r'], default='l')
     parser.add_argument('--command-topic', default='')
+    parser.add_argument('--joint-states-topic', default='')
     parser.add_argument('--joint-index', type=int, default=5, choices=range(JOINT_COUNT))
     parser.add_argument('--velocity', type=float, default=0.15)
     parser.add_argument('--duration', type=float, default=2.0)

@@ -38,8 +38,11 @@ def declare_arguments():
         DeclareLaunchArgument('use_lift_visual_mesh', default_value='false'),
         DeclareLaunchArgument('launch_lift_l', default_value='true'),
         DeclareLaunchArgument('launch_lift_r', default_value='true'),
-        DeclareLaunchArgument('lift_port_l', default_value='/dev/ttyUSB0'),
-        DeclareLaunchArgument('lift_port_r', default_value='/dev/ttyUSB1'),
+        DeclareLaunchArgument('publish_fake_mir_wheel_joints', default_value='true'),
+        DeclareLaunchArgument('fake_mir_wheel_joint_frequency', default_value='10.0'),
+        # Matches the ROS 1 hardware launch wiring for the MUR620 lifts.
+        DeclareLaunchArgument('lift_port_l', default_value='/dev/ttyUSB1'),
+        DeclareLaunchArgument('lift_port_r', default_value='/dev/ttyUSB0'),
         DeclareLaunchArgument('lift_baud', default_value='38400'),
         DeclareLaunchArgument('lift_timeout', default_value='1000'),
         DeclareLaunchArgument('lift_joint_count', default_value='2'),
@@ -47,6 +50,7 @@ def declare_arguments():
         DeclareLaunchArgument('lift_rated_effort', default_value='2000.0'),
         DeclareLaunchArgument('lift_tolerance', default_value='0.005'),
         DeclareLaunchArgument('lift_frequency', default_value='10.0'),
+        DeclareLaunchArgument('lift_allow_zero_command', default_value='false'),
         DeclareLaunchArgument('lift_position_multiplier', default_value='1.0'),
         DeclareLaunchArgument('use_laser_visual_mesh', default_value='false'),
         DeclareLaunchArgument(
@@ -73,9 +77,17 @@ def declare_arguments():
         DeclareLaunchArgument('ur_startup_wait_timeout', default_value='60.0'),
         DeclareLaunchArgument('ur_startup_stop_program', default_value='true'),
         DeclareLaunchArgument('ur_startup_play_program', default_value='true'),
-        DeclareLaunchArgument('initial_joint_controller', default_value='scaled_joint_trajectory_controller'),
+        DeclareLaunchArgument('initial_joint_controller', default_value='forward_velocity_controller'),
         DeclareLaunchArgument('activate_joint_controller', default_value='true'),
+        DeclareLaunchArgument('launch_trajectory_until_node', default_value='false'),
         DeclareLaunchArgument('controller_spawner_timeout', default_value='10'),
+        DeclareLaunchArgument('launch_jparse_idk', default_value='true'),
+        DeclareLaunchArgument('jparse_startup_delay', default_value='5.0'),
+        DeclareLaunchArgument('jparse_rate_hz', default_value='500.0'),
+        DeclareLaunchArgument('jparse_command_timeout', default_value='0.12'),
+        DeclareLaunchArgument('jparse_max_joint_velocity', default_value='0.6'),
+        DeclareLaunchArgument('jparse_max_linear_velocity', default_value='0.12'),
+        DeclareLaunchArgument('jparse_max_angular_velocity', default_value='0.5'),
         DeclareLaunchArgument('safety_limits', default_value='true'),
         DeclareLaunchArgument('safety_pos_margin', default_value='0.15'),
         DeclareLaunchArgument('safety_k_position', default_value='20'),
@@ -175,6 +187,12 @@ def make_arm_controllers_file(source_file, robot_name, arm_name):
     loaded = yaml.safe_load(contents)
 
     namespace = f'{robot_name}/{arm_name}'
+    tcp_pose_params = loaded.get('tcp_pose_broadcaster', {}).get('ros__parameters', {})
+    if isinstance(tcp_pose_params, dict):
+        tcp_pose_params['frame_id'] = f'{namespace}/base'
+        tcp_pose_tf = tcp_pose_params.setdefault('tf', {})
+        tcp_pose_tf['child_frame_id'] = f'{namespace}/tool0_controller'
+
     namespaced = deepcopy(loaded)
     controller_manager_config = deepcopy(loaded.get('controller_manager', {}))
     namespaced[f'/{namespace}/controller_manager'] = controller_manager_config
@@ -238,6 +256,9 @@ def make_ur_driver(side, robot_name, controllers_file, update_rate_config_file):
         parameters=[
             update_rate_config_file,
             controllers_file,
+        ],
+        remappings=[
+            ('joint_states', '/joint_states'),
         ],
         output='screen',
     )
@@ -320,6 +341,7 @@ def make_ur_driver(side, robot_name, controllers_file, update_rate_config_file):
         name='trajectory_until_node',
         namespace=namespace,
         output='screen',
+        condition=IfCondition(LaunchConfiguration('launch_trajectory_until_node')),
         parameters=[{'motion_controller': LaunchConfiguration('initial_joint_controller')}],
     )
 
@@ -409,6 +431,7 @@ def make_lift_driver(side, robot_name):
                     'rated_effort': LaunchConfiguration('lift_rated_effort'),
                     'tolerance': LaunchConfiguration('lift_tolerance'),
                     'frequency': LaunchConfiguration('lift_frequency'),
+                    'allow_zero_command': LaunchConfiguration('lift_allow_zero_command'),
                 }],
                 output='screen',
             ),
@@ -419,6 +442,7 @@ def make_lift_driver(side, robot_name):
                 namespace=namespace,
                 parameters=[{
                     'joint_name': f'{side_name}_lift_joint',
+                    'joint_count': LaunchConfiguration('lift_joint_count'),
                     'conversion': LaunchConfiguration('lift_conversion'),
                     'position_multiplier': LaunchConfiguration('lift_position_multiplier'),
                     'joint_states_topic': '/joint_states',
@@ -427,6 +451,87 @@ def make_lift_driver(side, robot_name):
             ),
         ],
         condition=IfCondition(LaunchConfiguration(f'launch_lift_{side}')),
+    )
+
+
+def make_fake_mir_wheel_joint_publisher(robot_name):
+    return Node(
+        package='mur_launch_hardware',
+        executable='fake_mir_wheel_joint_states.py',
+        name='fake_mir_wheel_joint_states',
+        namespace=robot_name,
+        parameters=[{
+            'publish_frequency': LaunchConfiguration('fake_mir_wheel_joint_frequency'),
+            'joint_states_topic': '/joint_states',
+        }],
+        condition=IfCondition(LaunchConfiguration('publish_fake_mir_wheel_joints')),
+        output='screen',
+    )
+
+
+def make_jparse_nodes(robot_name):
+    actions = []
+    for side in ('l', 'r'):
+        arm_name = f'UR10_{side}'
+        twist_topic = f'/{robot_name}/jparse_velocity_controller_{side}/twist_cmd'
+        command_topic = f'/{robot_name}/{arm_name}/forward_velocity_controller/commands'
+        debug_topic = f'/{robot_name}/jparse_velocity_controller_{side}/debug_twist'
+
+        actions.extend([
+            Node(
+                package='mur_control',
+                executable='jparse_velocity_controller',
+                name=f'{robot_name}_jparse_velocity_controller_{side}',
+                parameters=[{
+                    'robot_name': robot_name,
+                    'arm': side,
+                    'joint_states_topic': '/joint_states',
+                    'command_topic': command_topic,
+                    'debug_twist_topic': debug_topic,
+                    'rate_hz': LaunchConfiguration('jparse_rate_hz'),
+                    'command_timeout': LaunchConfiguration('jparse_command_timeout'),
+                    'max_joint_velocity': LaunchConfiguration('jparse_max_joint_velocity'),
+                    'max_cartesian_linear_velocity': LaunchConfiguration('jparse_max_linear_velocity'),
+                    'max_cartesian_angular_velocity': LaunchConfiguration('jparse_max_angular_velocity'),
+                    'use_sim_time': LaunchConfiguration('use_sim_time'),
+                }],
+                remappings=[('~/twist_cmd', twist_topic)],
+                output='screen',
+            ),
+            Node(
+                package='mur_control',
+                executable='jparse_move_action_server.py',
+                name=f'{robot_name}_jparse_move_{side}',
+                arguments=[
+                    '--robot-name', robot_name,
+                    '--arm', side,
+                    '--twist-topic', twist_topic,
+                    '--joint-velocity-topic', command_topic,
+                    '--joint-states-topic', '/joint_states',
+                    '--max-linear-velocity', LaunchConfiguration('jparse_max_linear_velocity'),
+                    '--max-angular-velocity', LaunchConfiguration('jparse_max_angular_velocity'),
+                    '--max-joint-velocity', LaunchConfiguration('jparse_max_joint_velocity'),
+                ],
+                output='screen',
+            ),
+            Node(
+                package='mur_control',
+                executable='jparse_simple_goal.py',
+                name=f'{robot_name}_jparse_simple_goal_{side}',
+                arguments=[
+                    '--robot-name', robot_name,
+                    '--arm', side,
+                    '--max-linear-velocity', LaunchConfiguration('jparse_max_linear_velocity'),
+                    '--max-angular-velocity', LaunchConfiguration('jparse_max_angular_velocity'),
+                ],
+                output='screen',
+            ),
+        ])
+
+    return TimerAction(
+        period=LaunchConfiguration('jparse_startup_delay'),
+        actions=actions,
+        condition=IfCondition(LaunchConfiguration('launch_jparse_idk')),
     )
 
 
@@ -493,6 +598,8 @@ def launch_setup(context, *args, **kwargs):
 
     return [
         robot_state_publisher,
+        make_fake_mir_wheel_joint_publisher(robot_name),
+        make_jparse_nodes(robot_name),
         make_lift_driver('l', robot_name),
         make_lift_driver('r', robot_name),
         make_ur_driver(

@@ -24,6 +24,8 @@ using namespace std::chrono_literals;
 
 namespace
 {
+constexpr double PI = 3.14159265358979323846;
+
 Eigen::MatrixXd pseudoInverse(const Eigen::MatrixXd & matrix, double tolerance)
 {
   if (matrix.size() == 0) {
@@ -151,6 +153,29 @@ Eigen::MatrixXd computeJParseInverse(
 
   return j_parse;
 }
+
+std::string jointSuffix(const std::string & joint_name)
+{
+  const auto slash = joint_name.find_last_of('/');
+  if (slash == std::string::npos) {
+    return joint_name;
+  }
+  return joint_name.substr(slash + 1);
+}
+
+std::vector<double> defaultLimitsForJoints(
+  const std::vector<std::string> & joint_names,
+  const std::map<std::string, double> & values,
+  double fallback)
+{
+  std::vector<double> limits;
+  limits.reserve(joint_names.size());
+  for (const auto & joint_name : joint_names) {
+    const auto it = values.find(jointSuffix(joint_name));
+    limits.push_back(it == values.end() ? fallback : it->second);
+  }
+  return limits;
+}
 }  // namespace
 
 class JParseVelocityController : public rclcpp::Node
@@ -189,6 +214,7 @@ public:
       declare_parameter<double>("max_cartesian_linear_velocity", 0.25);
     max_cartesian_angular_velocity_ =
       declare_parameter<double>("max_cartesian_angular_velocity", 0.8);
+    joint_limit_margin_ = declare_parameter<double>("joint_limit_margin", 0.02);
 
     gamma_ = std::clamp(gamma_, 1.0e-4, 0.999);
     rate_hz_ = std::max(1.0, rate_hz_);
@@ -267,12 +293,77 @@ private:
     chain_joint_names_ = joint_names;
     command_joint_names_ = declare_parameter<std::vector<std::string>>(
       "command_joint_names", chain_joint_names_);
+    configureJointLimits();
     jac_solver_ = std::make_unique<KDL::ChainJntToJacSolver>(chain_);
     chain_ready_ = true;
 
     RCLCPP_INFO(
       get_logger(), "Configured KDL chain with %zu joints from %s to %s",
       chain_joint_names_.size(), base_link_.c_str(), tip_link_.c_str());
+  }
+
+  std::vector<double> checkedLimitVector(
+    const std::string & name,
+    const std::vector<double> & defaults)
+  {
+    auto values = declare_parameter<std::vector<double>>(name, defaults);
+    if (values.size() != command_joint_names_.size()) {
+      RCLCPP_WARN(
+        get_logger(),
+        "Parameter '%s' has %zu entries, expected %zu; using defaults",
+        name.c_str(), values.size(), command_joint_names_.size());
+      return defaults;
+    }
+    return values;
+  }
+
+  void configureJointLimits()
+  {
+    const std::map<std::string, double> lower_defaults = {
+      {"shoulder_pan_joint", -PI},
+      {"shoulder_lift_joint", -PI},
+      {"elbow_joint", -PI / 2.0},
+      {"wrist_1_joint", -PI},
+      {"wrist_2_joint", -PI},
+      {"wrist_3_joint", -PI},
+    };
+    const std::map<std::string, double> upper_defaults = {
+      {"shoulder_pan_joint", PI},
+      {"shoulder_lift_joint", PI},
+      {"elbow_joint", PI / 2.0},
+      {"wrist_1_joint", PI},
+      {"wrist_2_joint", PI},
+      {"wrist_3_joint", PI},
+    };
+    const std::map<std::string, double> velocity_defaults = {
+      {"shoulder_pan_joint", 2.09439510239},
+      {"shoulder_lift_joint", 2.09439510239},
+      {"elbow_joint", 1.57079632679},
+      {"wrist_1_joint", 1.57079632679},
+      {"wrist_2_joint", 1.57079632679},
+      {"wrist_3_joint", 1.57079632679},
+    };
+    const std::map<std::string, double> acceleration_defaults = {
+      {"shoulder_pan_joint", 5.0},
+      {"shoulder_lift_joint", 5.0},
+      {"elbow_joint", 5.0},
+      {"wrist_1_joint", 5.0},
+      {"wrist_2_joint", 5.0},
+      {"wrist_3_joint", 5.0},
+    };
+
+    joint_lower_limits_ = checkedLimitVector(
+      "joint_lower_limits",
+      defaultLimitsForJoints(command_joint_names_, lower_defaults, -PI));
+    joint_upper_limits_ = checkedLimitVector(
+      "joint_upper_limits",
+      defaultLimitsForJoints(command_joint_names_, upper_defaults, PI));
+    joint_velocity_limits_ = checkedLimitVector(
+      "joint_velocity_limits",
+      defaultLimitsForJoints(command_joint_names_, velocity_defaults, max_joint_velocity_));
+    joint_acceleration_limits_ = checkedLimitVector(
+      "joint_acceleration_limits",
+      defaultLimitsForJoints(command_joint_names_, acceleration_defaults, 5.0));
   }
 
   void updateJointState(const sensor_msgs::msg::JointState & msg)
@@ -343,6 +434,7 @@ private:
   void publishZero()
   {
     publishCommand(std::vector<double>(command_joint_names_.size(), 0.0));
+    last_velocity_commands_.clear();
   }
 
   void publishIdleZeroOnce()
@@ -413,6 +505,7 @@ private:
       const auto it = qdot_by_joint.find(joint_name);
       command.push_back(it == qdot_by_joint.end() ? 0.0 : it->second);
     }
+    command = applyJointSafetyLimits(command);
     publishCommand(command);
 
     std_msgs::msg::Float64MultiArray singular_msg;
@@ -438,6 +531,51 @@ private:
     debug_twist_pub_->publish(debug_msg);
   }
 
+  std::vector<double> applyJointSafetyLimits(std::vector<double> command)
+  {
+    const rclcpp::Time current_time = now();
+    double dt = last_command_time_.nanoseconds() == 0 ?
+      1.0 / rate_hz_ : (current_time - last_command_time_).seconds();
+    if (dt <= 0.0 || dt > 0.1) {
+      dt = 1.0 / rate_hz_;
+    }
+    last_command_time_ = current_time;
+
+    for (std::size_t i = 0; i < command.size(); ++i) {
+      const auto & joint_name = command_joint_names_[i];
+      const double velocity_limit = std::min(
+        std::abs(joint_velocity_limits_[i]),
+        std::abs(max_joint_velocity_));
+      command[i] = std::clamp(command[i], -velocity_limit, velocity_limit);
+
+      const auto position = joint_positions_.find(joint_name);
+      if (position != joint_positions_.end()) {
+        const double lower = joint_lower_limits_[i] + joint_limit_margin_;
+        const double upper = joint_upper_limits_[i] - joint_limit_margin_;
+        if ((position->second >= upper && command[i] > 0.0) ||
+            (position->second <= lower && command[i] < 0.0))
+        {
+          command[i] = 0.0;
+        } else if (command[i] > 0.0) {
+          command[i] = std::min(command[i], std::max(0.0, (upper - position->second) / dt));
+        } else if (command[i] < 0.0) {
+          command[i] = std::max(command[i], std::min(0.0, (lower - position->second) / dt));
+        }
+      }
+
+      const double acceleration_limit = std::abs(joint_acceleration_limits_[i]);
+      if (acceleration_limit > 0.0) {
+        const double previous = last_velocity_commands_.count(joint_name) ?
+          last_velocity_commands_[joint_name] : 0.0;
+        const double max_delta = acceleration_limit * dt;
+        command[i] = std::clamp(command[i], previous - max_delta, previous + max_delta);
+      }
+      last_velocity_commands_[joint_name] = command[i];
+    }
+
+    return command;
+  }
+
   std::string robot_name_;
   std::string arm_;
   std::string base_link_;
@@ -457,6 +595,7 @@ private:
   double max_joint_velocity_;
   double max_cartesian_linear_velocity_;
   double max_cartesian_angular_velocity_;
+  double joint_limit_margin_;
 
   KDL::Chain chain_;
   std::unique_ptr<KDL::ChainJntToJacSolver> jac_solver_;
@@ -465,8 +604,14 @@ private:
   bool chain_ready_{false};
 
   std::map<std::string, double> joint_positions_;
+  std::map<std::string, double> last_velocity_commands_;
+  std::vector<double> joint_lower_limits_;
+  std::vector<double> joint_upper_limits_;
+  std::vector<double> joint_velocity_limits_;
+  std::vector<double> joint_acceleration_limits_;
   Eigen::Matrix<double, 6, 1> target_twist_{Eigen::Matrix<double, 6, 1>::Zero()};
   rclcpp::Time last_twist_time_{0, 0, RCL_ROS_TIME};
+  rclcpp::Time last_command_time_{0, 0, RCL_ROS_TIME};
   bool have_twist_{false};
   bool idle_zero_sent_{false};
 

@@ -5,7 +5,7 @@ import argparse
 
 import rclpy
 from geometry_msgs.msg import PoseStamped
-from mur_launch_sim.action import JparseMove
+from mur_control.action import JparseMove
 from rclpy.action import ActionClient
 from rclpy.node import Node
 
