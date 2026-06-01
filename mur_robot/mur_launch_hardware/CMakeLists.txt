@@ -5,6 +5,7 @@ find_package(ament_cmake REQUIRED)
 
 install(PROGRAMS
   scripts/ewellix_state_to_joint_state.py
+  scripts/ur_startup_enable.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

@@ -1,12 +1,14 @@
 """Generic hardware launch for a MUR620 with two UR arms."""
 
+from copy import deepcopy
 import os
 import tempfile
 
 import xacro
+import yaml
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, GroupAction, IncludeLaunchDescription, OpaqueFunction
+from launch.actions import DeclareLaunchArgument, GroupAction, IncludeLaunchDescription, OpaqueFunction, TimerAction
 from launch.conditions import IfCondition, UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import AndSubstitution, LaunchConfiguration, NotSubstitution, PathJoinSubstitution
@@ -66,6 +68,11 @@ def declare_arguments():
         DeclareLaunchArgument('use_mock_hardware', default_value='false'),
         DeclareLaunchArgument('mock_sensor_commands', default_value='false'),
         DeclareLaunchArgument('launch_dashboard_client', default_value='true'),
+        DeclareLaunchArgument('auto_start_urs', default_value='true'),
+        DeclareLaunchArgument('ur_startup_delay', default_value='3.0'),
+        DeclareLaunchArgument('ur_startup_wait_timeout', default_value='60.0'),
+        DeclareLaunchArgument('ur_startup_stop_program', default_value='true'),
+        DeclareLaunchArgument('ur_startup_play_program', default_value='true'),
         DeclareLaunchArgument('initial_joint_controller', default_value='scaled_joint_trajectory_controller'),
         DeclareLaunchArgument('activate_joint_controller', default_value='true'),
         DeclareLaunchArgument('controller_spawner_timeout', default_value='10'),
@@ -165,13 +172,27 @@ def make_arm_controllers_file(source_file, robot_name, arm_name):
         contents = config.read()
 
     contents = contents.replace('$(var tf_prefix)', f'{arm_name}/')
+    loaded = yaml.safe_load(contents)
+
+    namespace = f'{robot_name}/{arm_name}'
+    namespaced = deepcopy(loaded)
+    controller_manager_config = deepcopy(loaded.get('controller_manager', {}))
+    namespaced[f'/{namespace}/controller_manager'] = controller_manager_config
+
+    controller_params = controller_manager_config.get('ros__parameters', {})
+    for controller_name, controller_config in controller_params.items():
+        if not isinstance(controller_config, dict) or 'type' not in controller_config:
+            continue
+        namespaced[f'/{namespace}/{controller_name}'] = deepcopy(
+            loaded.get(controller_name, {'ros__parameters': {}})
+        )
 
     out_dir = os.path.join(tempfile.gettempdir(), 'mur_launch_hardware')
     os.makedirs(out_dir, exist_ok=True)
     out_file = os.path.join(out_dir, f'{robot_name}_{arm_name}_ur_controllers.yaml')
 
     with open(out_file, 'w', encoding='utf-8') as config:
-        config.write(contents)
+        yaml.safe_dump(namespaced, config, sort_keys=False)
 
     return out_file
 
@@ -302,6 +323,29 @@ def make_ur_driver(side, robot_name, controllers_file, update_rate_config_file):
         parameters=[{'motion_controller': LaunchConfiguration('initial_joint_controller')}],
     )
 
+    startup_enable_node = TimerAction(
+        period=LaunchConfiguration('ur_startup_delay'),
+        actions=[
+            Node(
+                package='mur_launch_hardware',
+                executable='ur_startup_enable.py',
+                name=f'{arm_name}_startup_enable',
+                output='screen',
+                condition=IfCondition(AndSubstitution(
+                    LaunchConfiguration('auto_start_urs'),
+                    NotSubstitution(use_mock_hardware),
+                )),
+                parameters=[{
+                    'arm_namespace': f'/{namespace}',
+                    'wait_timeout': LaunchConfiguration('ur_startup_wait_timeout'),
+                    'target_robot_mode': 7,
+                    'stop_program': LaunchConfiguration('ur_startup_stop_program'),
+                    'play_program': LaunchConfiguration('ur_startup_play_program'),
+                }],
+            ),
+        ],
+    )
+
     ur_rsp = GroupAction([
         PushRosNamespace(namespace),
         SetRemap(src='/tf', dst=f'/{namespace}/unused_tf'),
@@ -338,6 +382,7 @@ def make_ur_driver(side, robot_name, controllers_file, update_rate_config_file):
             controller_stopper_node,
             ur_rsp,
             trajectory_until_node,
+            startup_enable_node,
             OpaqueFunction(function=add_selected_controller),
         ],
         condition=IfCondition(LaunchConfiguration(f'launch_ur_{side}')),
