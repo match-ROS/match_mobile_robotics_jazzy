@@ -99,7 +99,7 @@
 			safety_k_position="$(arg safety_k_position)"
 			force_abs_paths="true"
 			>
-			<origin xyz="0 0 0" rpy="$(arg ur_l_rpy)" />          <!-- position robot in the world -->
+			<origin xyz="$(arg ur_l_xyz)" rpy="$(arg ur_l_rpy)" />          <!-- position robot in the world -->
 		</xacro:ur_robot>
 
 		<xacro:ur_robot
@@ -115,7 +115,7 @@
 			safety_k_position="$(arg safety_k_position)"
 			force_abs_paths="true"
 			>
-			<origin xyz="0 0 0" rpy="$(arg ur_r_rpy)" />          <!-- position robot in the world -->
+			<origin xyz="$(arg ur_r_xyz)" rpy="$(arg ur_r_rpy)" />          <!-- position robot in the world -->
 		</xacro:ur_robot>
 
 		<xacro:ur_ros2_control
