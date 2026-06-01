@@ -89,6 +89,16 @@ def declare_arguments():
         DeclareLaunchArgument('jparse_max_joint_velocity', default_value='0.6'),
         DeclareLaunchArgument('jparse_max_linear_velocity', default_value='0.12'),
         DeclareLaunchArgument('jparse_max_angular_velocity', default_value='0.5'),
+        DeclareLaunchArgument('launch_arm_velocity_safety', default_value='true'),
+        DeclareLaunchArgument('arm_velocity_safety_rate_hz', default_value='500.0'),
+        DeclareLaunchArgument('arm_velocity_safety_command_timeout', default_value='0.15'),
+        DeclareLaunchArgument('arm_velocity_safety_max_joint_velocity', default_value='0.6'),
+        DeclareLaunchArgument('arm_velocity_safety_max_joint_acceleration', default_value='0.4'),
+        DeclareLaunchArgument('arm_velocity_safety_max_joint_jerk', default_value='1.0'),
+        DeclareLaunchArgument('arm_velocity_safety_joint_limit_margin', default_value='0.02'),
+        DeclareLaunchArgument('arm_collision_avoidance', default_value='true'),
+        DeclareLaunchArgument('arm_collision_stop_distance', default_value='0.14'),
+        DeclareLaunchArgument('arm_collision_release_distance', default_value='0.18'),
         DeclareLaunchArgument('safety_limits', default_value='true'),
         DeclareLaunchArgument('safety_pos_margin', default_value='0.15'),
         DeclareLaunchArgument('safety_k_position', default_value='20'),
@@ -472,12 +482,39 @@ def make_fake_mir_wheel_joint_publisher(robot_name):
     )
 
 
+def make_arm_velocity_safety_node(robot_name):
+    return Node(
+        package='mur_control',
+        executable='arm_velocity_safety_node',
+        name=f'{robot_name}_arm_velocity_safety',
+        parameters=[{
+            'robot_name': robot_name,
+            'joint_states_topic': '/joint_states',
+            'rate_hz': LaunchConfiguration('arm_velocity_safety_rate_hz'),
+            'command_timeout': LaunchConfiguration('arm_velocity_safety_command_timeout'),
+            'max_joint_velocity': LaunchConfiguration('arm_velocity_safety_max_joint_velocity'),
+            'max_joint_acceleration': LaunchConfiguration('arm_velocity_safety_max_joint_acceleration'),
+            'max_joint_jerk': LaunchConfiguration('arm_velocity_safety_max_joint_jerk'),
+            'joint_limit_margin': LaunchConfiguration('arm_velocity_safety_joint_limit_margin'),
+            'enable_collision_avoidance': LaunchConfiguration('arm_collision_avoidance'),
+            'collision_stop_distance': LaunchConfiguration('arm_collision_stop_distance'),
+            'collision_release_distance': LaunchConfiguration('arm_collision_release_distance'),
+            'l_input_topic': f'/{robot_name}/UR10_l/safe_forward_velocity_controller/commands',
+            'l_output_topic': f'/{robot_name}/UR10_l/forward_velocity_controller/commands',
+            'r_input_topic': f'/{robot_name}/UR10_r/safe_forward_velocity_controller/commands',
+            'r_output_topic': f'/{robot_name}/UR10_r/forward_velocity_controller/commands',
+        }],
+        condition=IfCondition(LaunchConfiguration('launch_arm_velocity_safety')),
+        output='screen',
+    )
+
+
 def make_jparse_nodes(robot_name):
     actions = []
     for side in ('l', 'r'):
         arm_name = f'UR10_{side}'
         twist_topic = f'/{robot_name}/jparse_velocity_controller_{side}/twist_cmd'
-        command_topic = f'/{robot_name}/{arm_name}/forward_velocity_controller/commands'
+        command_topic = f'/{robot_name}/{arm_name}/safe_forward_velocity_controller/commands'
         debug_topic = f'/{robot_name}/jparse_velocity_controller_{side}/debug_twist'
 
         actions.extend([
@@ -493,9 +530,6 @@ def make_jparse_nodes(robot_name):
                     'debug_twist_topic': debug_topic,
                     'rate_hz': LaunchConfiguration('jparse_rate_hz'),
                     'command_timeout': LaunchConfiguration('jparse_command_timeout'),
-                    'max_joint_velocity': LaunchConfiguration('jparse_max_joint_velocity'),
-                    'max_cartesian_linear_velocity': LaunchConfiguration('jparse_max_linear_velocity'),
-                    'max_cartesian_angular_velocity': LaunchConfiguration('jparse_max_angular_velocity'),
                     'use_sim_time': LaunchConfiguration('use_sim_time'),
                 }],
                 remappings=[('~/twist_cmd', twist_topic)],
@@ -602,6 +636,7 @@ def launch_setup(context, *args, **kwargs):
     return [
         robot_state_publisher,
         make_fake_mir_wheel_joint_publisher(robot_name),
+        make_arm_velocity_safety_node(robot_name),
         make_jparse_nodes(robot_name),
         make_lift_driver('l', robot_name),
         make_lift_driver('r', robot_name),

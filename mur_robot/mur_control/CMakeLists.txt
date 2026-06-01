@@ -13,6 +13,8 @@ find_package(rclcpp REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 add_executable(jparse_velocity_controller src/jparse_velocity_controller.cpp)
@@ -28,12 +30,23 @@ target_link_libraries(jparse_velocity_controller
   Eigen3::Eigen
 )
 
+add_executable(arm_velocity_safety_node src/arm_velocity_safety_node.cpp)
+ament_target_dependencies(arm_velocity_safety_node
+  geometry_msgs
+  rclcpp
+  sensor_msgs
+  std_msgs
+  tf2
+  tf2_ros
+)
+
 rosidl_generate_interfaces(${PROJECT_NAME}
   "action/JparseMove.action"
   DEPENDENCIES geometry_msgs
 )
 
 install(TARGETS
+  arm_velocity_safety_node
   jparse_velocity_controller
   DESTINATION lib/${PROJECT_NAME}
 )
