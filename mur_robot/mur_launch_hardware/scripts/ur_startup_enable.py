@@ -62,6 +62,11 @@ class URStartupEnable(Node):
         if result.success:
             self.get_logger().info(f'UR SetMode succeeded: {result.message}')
             return 0
+        if 'Reached target robot mode' in result.message:
+            self.get_logger().warn(
+                f'UR SetMode reached the requested robot mode, but reported: {result.message}'
+            )
+            return 0
 
         self.get_logger().error(f'UR SetMode failed: {result.message}')
         return 1

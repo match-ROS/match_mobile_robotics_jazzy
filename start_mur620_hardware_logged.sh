@@ -21,6 +21,7 @@ CLEAN_START_FORCE_KILL="${CLEAN_START_FORCE_KILL:-true}"
 TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
 LOG_FILE="${LOG_FILE:-${LOG_DIR}/${LAUNCH_PACKAGE}_${LAUNCH_FILE%.launch.py}_${TIMESTAMP}.log}"
 LATEST_LOG="${LOG_DIR}/latest.log"
+ENV_FILE="${LOG_DIR}/source_latest_ros_env.bash"
 
 export ROS_DOMAIN_ID
 export ROS_LOG_DIR
@@ -30,6 +31,12 @@ export RCUTILS_LOGGING_BUFFERED_STREAM=0
 mkdir -p "$LOG_DIR"
 mkdir -p "$ROS_LOG_DIR"
 ln -sfn "$LOG_FILE" "$LATEST_LOG"
+cat > "$ENV_FILE" <<EOF
+source /opt/ros/jazzy/setup.bash
+source ${WS}/install/setup.bash
+export ROS_DOMAIN_ID=${ROS_DOMAIN_ID}
+export ROS2CLI_NO_DAEMON=1
+EOF
 
 exec > >(tee -a "$LOG_FILE") 2>&1
 
@@ -95,6 +102,8 @@ echo "[start_mur620_hardware_logged] ROS_LOG_DIR=${ROS_LOG_DIR}"
 echo "[start_mur620_hardware_logged] launch=${LAUNCH_PACKAGE} ${LAUNCH_FILE}"
 echo "[start_mur620_hardware_logged] log=${LOG_FILE}"
 echo "[start_mur620_hardware_logged] latest=${LATEST_LOG}"
+echo "[start_mur620_hardware_logged] inspect_env=${ENV_FILE}"
+echo "[start_mur620_hardware_logged] inspect command: source ${ENV_FILE} && ros2 topic list"
 echo "[start_mur620_hardware_logged] build_before_launch=${BUILD_BEFORE_LAUNCH}"
 echo "[start_mur620_hardware_logged] clean_start=${CLEAN_START}"
 echo "[start_mur620_hardware_logged] extra args: $*"

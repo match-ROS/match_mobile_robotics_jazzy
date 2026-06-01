@@ -1,3 +1,4 @@
 *.log
 latest.log
+source_latest_ros_env.bash
 ros/
