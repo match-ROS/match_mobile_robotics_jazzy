@@ -34,6 +34,18 @@ def declare_arguments():
         DeclareLaunchArgument('use_wheel_visual_mesh', default_value='false'),
         DeclareLaunchArgument('use_caster_visual_mesh', default_value='false'),
         DeclareLaunchArgument('use_lift_visual_mesh', default_value='false'),
+        DeclareLaunchArgument('launch_lift_l', default_value='true'),
+        DeclareLaunchArgument('launch_lift_r', default_value='true'),
+        DeclareLaunchArgument('lift_port_l', default_value='/dev/ttyUSB0'),
+        DeclareLaunchArgument('lift_port_r', default_value='/dev/ttyUSB1'),
+        DeclareLaunchArgument('lift_baud', default_value='38400'),
+        DeclareLaunchArgument('lift_timeout', default_value='1000'),
+        DeclareLaunchArgument('lift_joint_count', default_value='2'),
+        DeclareLaunchArgument('lift_conversion', default_value='3225.0'),
+        DeclareLaunchArgument('lift_rated_effort', default_value='2000.0'),
+        DeclareLaunchArgument('lift_tolerance', default_value='0.005'),
+        DeclareLaunchArgument('lift_frequency', default_value='10.0'),
+        DeclareLaunchArgument('lift_position_multiplier', default_value='1.0'),
         DeclareLaunchArgument('use_laser_visual_mesh', default_value='false'),
         DeclareLaunchArgument(
             'ur_l_xyz',
@@ -332,6 +344,47 @@ def make_ur_driver(side, robot_name, controllers_file, update_rate_config_file):
     )
 
 
+def make_lift_driver(side, robot_name):
+    side_name = 'left' if side == 'l' else 'right'
+    namespace = f'{robot_name}/ewellix_lift_{side}'
+
+    return GroupAction(
+        actions=[
+            Node(
+                package='ewellix_driver',
+                executable='ewellix_node',
+                name='ewellix_node',
+                namespace=namespace,
+                parameters=[{
+                    'joint_count': LaunchConfiguration('lift_joint_count'),
+                    'port': LaunchConfiguration(f'lift_port_{side}'),
+                    'baud': LaunchConfiguration('lift_baud'),
+                    'timeout': LaunchConfiguration('lift_timeout'),
+                    'conversion': LaunchConfiguration('lift_conversion'),
+                    'rated_effort': LaunchConfiguration('lift_rated_effort'),
+                    'tolerance': LaunchConfiguration('lift_tolerance'),
+                    'frequency': LaunchConfiguration('lift_frequency'),
+                }],
+                output='screen',
+            ),
+            Node(
+                package='mur_launch_hardware',
+                executable='ewellix_state_to_joint_state.py',
+                name=f'{side_name}_lift_joint_state_bridge',
+                namespace=namespace,
+                parameters=[{
+                    'joint_name': f'{side_name}_lift_joint',
+                    'conversion': LaunchConfiguration('lift_conversion'),
+                    'position_multiplier': LaunchConfiguration('lift_position_multiplier'),
+                    'joint_states_topic': '/joint_states',
+                }],
+                output='screen',
+            ),
+        ],
+        condition=IfCondition(LaunchConfiguration(f'launch_lift_{side}')),
+    )
+
+
 def launch_setup(context, *args, **kwargs):
     robot_name = LaunchConfiguration('robot_name').perform(context)
     ur_type = LaunchConfiguration('ur_type').perform(context)
@@ -395,6 +448,8 @@ def launch_setup(context, *args, **kwargs):
 
     return [
         robot_state_publisher,
+        make_lift_driver('l', robot_name),
+        make_lift_driver('r', robot_name),
         make_ur_driver(
             'l',
             robot_name,

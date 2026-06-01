@@ -9,3 +9,15 @@
 	path = ur_robot/Universal_Robots_Client_Library
 	url = https://github.com/UniversalRobots/Universal_Robots_Client_Library.git
 	branch = master
+[submodule "ewellix/ewellix_lift"]
+	path = ewellix/ewellix_lift
+	url = https://github.com/clearpathrobotics/ewellix_lift.git
+	branch = jazzy
+[submodule "ewellix/ewellix_lift_common"]
+	path = ewellix/ewellix_lift_common
+	url = https://github.com/clearpathrobotics/ewellix_lift_common.git
+	branch = jazzy
+[submodule "ewellix/serial"]
+	path = ewellix/serial
+	url = https://github.com/RoverRobotics-forks/serial-ros2.git
+	branch = master
