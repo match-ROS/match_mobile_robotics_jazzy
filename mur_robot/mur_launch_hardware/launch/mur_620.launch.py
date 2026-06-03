@@ -363,6 +363,8 @@ def make_ur_driver(side, robot_name, controllers_file, update_rate_config_file):
                 'tcp_pose_broadcaster',
                 'ur_configuration_controller',
                 'forward_velocity_controller',
+                'scaled_joint_trajectory_controller',
+                'joint_trajectory_controller',
             ]},
         ],
     )

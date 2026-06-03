@@ -233,6 +233,17 @@ class MoveItTrajectoryControllerProxy(Node):
             return None
         return max(errors) if errors else None
 
+    def _trajectory_summary(self, goal):
+        trajectory = goal.trajectory
+        if not trajectory.points:
+            return "empty trajectory"
+        duration = trajectory.points[-1].time_from_start
+        seconds = duration.sec + duration.nanosec / 1_000_000_000.0
+        return (
+            f"joints={list(trajectory.joint_names)}, "
+            f"points={len(trajectory.points)}, duration={seconds:.3f}s"
+        )
+
     def _looks_like_deactivate_cancel(self, result):
         error_string = (result.error_string or '').lower()
         return (
@@ -242,6 +253,9 @@ class MoveItTrajectoryControllerProxy(Node):
 
     def execute_callback(self, goal_handle):
         result = FollowJointTrajectory.Result()
+        self.get_logger().info(
+            f"Accepted proxy goal: {self._trajectory_summary(goal_handle.request)}"
+        )
         if not self._switch_to_trajectory():
             result.error_code = FollowJointTrajectory.Result.INVALID_GOAL
             result.error_string = 'Could not activate trajectory controller'
@@ -297,10 +311,17 @@ class MoveItTrajectoryControllerProxy(Node):
                 return result
 
             result = real_result.result
+            final_error = self._final_goal_error(goal_handle.request)
+            self.get_logger().info(
+                "Real trajectory result: "
+                f"status={real_result.status}, "
+                f"error_code={result.error_code}, "
+                f"error_string='{result.error_string}', "
+                f"final_error={final_error}"
+            )
             if real_result.status == GoalStatus.STATUS_SUCCEEDED:
                 goal_handle.succeed()
             elif self._looks_like_deactivate_cancel(result):
-                final_error = self._final_goal_error(goal_handle.request)
                 if final_error is not None and final_error <= self.args.goal_reached_tolerance:
                     self.get_logger().warn(
                         'Real controller reported deactivate-transition cancel, '
