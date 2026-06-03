@@ -57,6 +57,8 @@ stop_old_hardware() {
     "ur_startup_enable.py"
     "ewellix_driver/ewellix_node"
     "ewellix_state_to_joint_state.py"
+    "move_group"
+    "moveit_trajectory_controller_proxy.py"
     "robot_state_publisher"
     "rviz2"
   )
@@ -118,10 +120,10 @@ fi
 
 if [[ "${BUILD_BEFORE_LAUNCH}" == "true" ]]; then
   echo "[start_mur620_hardware_logged] Building hardware packages..."
-  colcon build \
-    --symlink-install \
-    --packages-up-to serial ewellix_driver mur_launch_hardware \
-    --cmake-args -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+    colcon build \
+      --symlink-install \
+      --packages-up-to serial ewellix_driver mur_moveit_config mur_launch_hardware \
+      --cmake-args -DCMAKE_POSITION_INDEPENDENT_CODE=ON
   source_setup install/setup.bash
   echo "[start_mur620_hardware_logged] Build finished."
   echo

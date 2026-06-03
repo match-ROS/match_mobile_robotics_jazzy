@@ -244,12 +244,27 @@ def declare_arguments():
                 description="Static TF topic used by MoveIt and its RViz instance",
             ),
             DeclareLaunchArgument(
+                "joint_states_topic",
+                default_value="/joint_states",
+                description="JointState topic used by MoveIt and its RViz instance",
+            ),
+            DeclareLaunchArgument(
                 "virtual_joint_parent_frame",
                 default_value="",
                 description=(
                     "Parent frame for MoveIt's fixed virtual joint. Empty uses "
                     "<controller_namespace>/base_footprint."
                 ),
+            ),
+            DeclareLaunchArgument(
+                "default_velocity_scaling",
+                default_value="0.25",
+                description="Default MoveIt velocity scaling factor for generated plans",
+            ),
+            DeclareLaunchArgument(
+                "default_acceleration_scaling",
+                default_value="0.15",
+                description="Default MoveIt acceleration scaling factor for generated plans",
             ),
         ]
     )
@@ -273,12 +288,22 @@ def launch_setup(context, *args, **kwargs):
     publish_tf_alias = LaunchConfiguration("publish_tf_alias")
     tf_topic = LaunchConfiguration("tf_topic")
     tf_static_topic = LaunchConfiguration("tf_static_topic")
+    joint_states_topic = LaunchConfiguration("joint_states_topic")
+    default_velocity_scaling = ParameterValue(
+        LaunchConfiguration("default_velocity_scaling"),
+        value_type=float,
+    )
+    default_acceleration_scaling = ParameterValue(
+        LaunchConfiguration("default_acceleration_scaling"),
+        value_type=float,
+    )
     virtual_joint_parent_frame = LaunchConfiguration("virtual_joint_parent_frame").perform(context)
     if not virtual_joint_parent_frame:
         virtual_joint_parent_frame = f"{controller_namespace}/base_footprint"
     tf_remappings = [
         ("/tf", tf_topic),
         ("/tf_static", tf_static_topic),
+        ("joint_states", joint_states_topic),
     ]
 
     robot_xacro_file, robot_xacro_mappings = robot_description_source(controller_namespace)
@@ -316,6 +341,8 @@ def launch_setup(context, *args, **kwargs):
                 "publish_robot_description_semantic": publish_robot_description_semantic,
                 "planning_pipelines": ["ompl"],
                 "default_planning_pipeline": "ompl",
+                "default_velocity_scaling_factor": default_velocity_scaling,
+                "default_acceleration_scaling_factor": default_acceleration_scaling,
                 "fix_start_state": True,
                 "default_workspace_bounds": 100.0,
             },
@@ -349,7 +376,8 @@ def launch_setup(context, *args, **kwargs):
         output="log",
         arguments=["-d", rviz_config, "--ros-args", "--log-level", "warn"],
         parameters=[
-            moveit_config.to_dict(),
+            moveit_config.robot_description,
+            moveit_config.robot_description_semantic,
             warehouse_ros_config,
             {
                 "use_sim_time": use_sim_time,

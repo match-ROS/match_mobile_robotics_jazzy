@@ -18,6 +18,7 @@ from launch_ros.substitutions import FindPackageShare
 
 def declare_arguments():
     mur_launch_hardware = get_package_share_directory('mur_launch_hardware')
+    mur_moveit_config = get_package_share_directory('mur_moveit_config')
 
     return [
         DeclareLaunchArgument('robot_name', default_value='mur620'),
@@ -89,6 +90,25 @@ def declare_arguments():
         DeclareLaunchArgument('jparse_max_joint_velocity', default_value='0.6'),
         DeclareLaunchArgument('jparse_max_linear_velocity', default_value='0.12'),
         DeclareLaunchArgument('jparse_max_angular_velocity', default_value='0.5'),
+        DeclareLaunchArgument('launch_moveit', default_value='false'),
+        DeclareLaunchArgument('launch_moveit_rviz', default_value='false'),
+        DeclareLaunchArgument('moveit_rviz_delay', default_value='5.0'),
+        DeclareLaunchArgument(
+            'moveit_rviz_config',
+            default_value=os.path.join(mur_moveit_config, 'config', 'moveit.rviz'),
+        ),
+        DeclareLaunchArgument('auto_switch_moveit_controllers', default_value='true'),
+        DeclareLaunchArgument('moveit_controller_proxy_delay', default_value='8.0'),
+        DeclareLaunchArgument(
+            'moveit_hardware_trajectory_controller',
+            default_value='scaled_joint_trajectory_controller',
+        ),
+        DeclareLaunchArgument('moveit_controller_switch_timeout', default_value='5.0'),
+        DeclareLaunchArgument('moveit_trajectory_action_timeout', default_value='20.0'),
+        DeclareLaunchArgument('moveit_post_result_settle_sec', default_value='0.35'),
+        DeclareLaunchArgument('moveit_goal_reached_tolerance', default_value='0.03'),
+        DeclareLaunchArgument('moveit_default_velocity_scaling', default_value='0.25'),
+        DeclareLaunchArgument('moveit_default_acceleration_scaling', default_value='0.15'),
         DeclareLaunchArgument('launch_arm_velocity_safety', default_value='true'),
         DeclareLaunchArgument('arm_velocity_safety_rate_hz', default_value='500.0'),
         DeclareLaunchArgument('arm_velocity_safety_command_timeout', default_value='0.15'),
@@ -509,6 +529,77 @@ def make_arm_velocity_safety_node(robot_name):
     )
 
 
+def make_moveit_controller_proxies(robot_name):
+    actions = []
+    for side in ('l', 'r'):
+        arm_name = f'UR10_{side}'
+        actions.append(
+            Node(
+                package='mur_control',
+                executable='moveit_trajectory_controller_proxy.py',
+                name=f'{robot_name}_moveit_controller_proxy_{side}',
+                arguments=[
+                    '--robot-name', robot_name,
+                    '--arm', side,
+                    '--proxy-action',
+                    f'/{robot_name}/moveit_joint_trajectory_controller_{side}/follow_joint_trajectory',
+                    '--real-action',
+                    [
+                        f'/{robot_name}/{arm_name}/',
+                        LaunchConfiguration('moveit_hardware_trajectory_controller'),
+                        '/follow_joint_trajectory',
+                    ],
+                    '--controller-manager', f'/{robot_name}/{arm_name}/controller_manager',
+                    '--velocity-controller', 'forward_velocity_controller',
+                    '--trajectory-controller',
+                    LaunchConfiguration('moveit_hardware_trajectory_controller'),
+                    '--velocity-command-topic',
+                    f'/{robot_name}/{arm_name}/safe_forward_velocity_controller/commands',
+                    '--joint-states-topic', '/joint_states',
+                    '--switch-timeout', LaunchConfiguration('moveit_controller_switch_timeout'),
+                    '--action-timeout', LaunchConfiguration('moveit_trajectory_action_timeout'),
+                    '--post-result-settle-sec', LaunchConfiguration('moveit_post_result_settle_sec'),
+                    '--goal-reached-tolerance', LaunchConfiguration('moveit_goal_reached_tolerance'),
+                ],
+                output='screen',
+            )
+        )
+
+    return TimerAction(
+        period=LaunchConfiguration('moveit_controller_proxy_delay'),
+        condition=IfCondition(AndSubstitution(
+            LaunchConfiguration('launch_moveit'),
+            LaunchConfiguration('auto_switch_moveit_controllers'),
+        )),
+        actions=actions,
+    )
+
+
+def make_moveit_launch(robot_name):
+    mur_moveit_path = get_package_share_directory('mur_moveit_config')
+    moveit_launch = os.path.join(mur_moveit_path, 'launch', 'ur_moveit.launch.py')
+    return IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(moveit_launch),
+        condition=IfCondition(LaunchConfiguration('launch_moveit')),
+        launch_arguments={
+            'ur_type': LaunchConfiguration('ur_type'),
+            'use_sim_time': LaunchConfiguration('use_sim_time'),
+            'launch_servo': 'false',
+            'launch_rviz': LaunchConfiguration('launch_moveit_rviz'),
+            'rviz_delay': LaunchConfiguration('moveit_rviz_delay'),
+            'rviz_config': LaunchConfiguration('moveit_rviz_config'),
+            'controller_namespace': robot_name,
+            'publish_tf_alias': 'true',
+            'tf_topic': '/tf',
+            'tf_static_topic': '/tf_static',
+            'joint_states_topic': '/joint_states',
+            'virtual_joint_parent_frame': f'{robot_name}/base_footprint',
+            'default_velocity_scaling': LaunchConfiguration('moveit_default_velocity_scaling'),
+            'default_acceleration_scaling': LaunchConfiguration('moveit_default_acceleration_scaling'),
+        }.items(),
+    )
+
+
 def make_jparse_nodes(robot_name):
     actions = []
     for side in ('l', 'r'):
@@ -637,7 +728,9 @@ def launch_setup(context, *args, **kwargs):
         robot_state_publisher,
         make_fake_mir_wheel_joint_publisher(robot_name),
         make_arm_velocity_safety_node(robot_name),
+        make_moveit_controller_proxies(robot_name),
         make_jparse_nodes(robot_name),
+        make_moveit_launch(robot_name),
         make_lift_driver('l', robot_name),
         make_lift_driver('r', robot_name),
         make_ur_driver(
