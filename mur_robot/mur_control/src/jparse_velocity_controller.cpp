@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <cctype>
 #include <limits>
 #include <map>
 #include <memory>
@@ -43,6 +44,32 @@ Eigen::MatrixXd pseudoInverse(const Eigen::MatrixXd & matrix, double tolerance)
   }
 
   return svd.matrixV() * sigma_inv * svd.matrixU().transpose();
+}
+
+Eigen::MatrixXd dampedLeastSquaresInverse(const Eigen::MatrixXd & jacobian, double damping)
+{
+  if (jacobian.size() == 0) {
+    return Eigen::MatrixXd(jacobian.cols(), jacobian.rows());
+  }
+
+  const double lambda = std::max(0.0, damping);
+  if (lambda <= std::numeric_limits<double>::epsilon()) {
+    return pseudoInverse(jacobian, 1.0e-6);
+  }
+
+  const Eigen::MatrixXd identity =
+    Eigen::MatrixXd::Identity(jacobian.rows(), jacobian.rows());
+  const Eigen::MatrixXd regularized =
+    jacobian * jacobian.transpose() + lambda * lambda * identity;
+  return jacobian.transpose() * regularized.ldlt().solve(identity);
+}
+
+std::string lowerCopy(std::string value)
+{
+  std::transform(value.begin(), value.end(), value.begin(), [](unsigned char character) {
+    return static_cast<char>(std::tolower(character));
+  });
+  return value;
 }
 
 Eigen::MatrixXd composeSvd(
@@ -182,10 +209,15 @@ public:
     rate_hz_ = declare_parameter<double>("rate_hz", 500.0);
     command_timeout_ = declare_parameter<double>("command_timeout", 0.12);
     gamma_ = declare_parameter<double>("gamma", 0.1);
+    inverse_mode_ = lowerCopy(declare_parameter<std::string>("inverse_mode", "jparse"));
+    damping_ = declare_parameter<double>("damping", 0.03);
+    max_joint_velocity_ = declare_parameter<double>("max_joint_velocity", 0.6);
     singular_gain_position_ = declare_parameter<double>("singular_gain_position", 1.0);
     singular_gain_angular_ = declare_parameter<double>("singular_gain_angular", 1.0);
     pinv_tolerance_ = declare_parameter<double>("pinv_tolerance", 1.0e-6);
     gamma_ = std::clamp(gamma_, 1.0e-4, 0.999);
+    damping_ = std::max(0.0, damping_);
+    max_joint_velocity_ = std::max(0.0, max_joint_velocity_);
     rate_hz_ = std::max(1.0, rate_hz_);
 
     command_pub_ =
@@ -223,8 +255,9 @@ public:
 
     RCLCPP_INFO(
       get_logger(),
-      "J-PARSE velocity controller ready for arm %s: %s -> %s, command=%s, twist=%s, debug=%s",
+      "J-PARSE velocity controller ready for arm %s: %s -> %s, mode=%s, damping=%.4f, command=%s, twist=%s, debug=%s",
       arm_.c_str(), base_link_.c_str(), tip_link_.c_str(),
+      inverse_mode_.c_str(), damping_,
       command_topic_.c_str(), twist_topic_.c_str(), debug_twist_topic_.c_str());
   }
 
@@ -367,10 +400,35 @@ private:
 
     Eigen::VectorXd singular_values;
     double inverse_condition = 0.0;
-    const Eigen::MatrixXd jparse_inverse = computeJParseInverse(
-      jacobian, gamma_, singular_gain_position_, singular_gain_angular_,
-      pinv_tolerance_, &singular_values, &inverse_condition);
-    Eigen::VectorXd qdot = jparse_inverse * target_twist_;
+    Eigen::JacobiSVD<Eigen::MatrixXd> debug_svd(jacobian);
+    singular_values = debug_svd.singularValues();
+    const double sigma_max = singular_values.size() > 0 ? singular_values.maxCoeff() : 0.0;
+    const double sigma_min = singular_values.size() > 0 ? singular_values.minCoeff() : 0.0;
+    inverse_condition = sigma_max > std::numeric_limits<double>::epsilon() ?
+      sigma_min / sigma_max : 0.0;
+
+    Eigen::MatrixXd inverse;
+    if (inverse_mode_ == "jparse") {
+      inverse = computeJParseInverse(
+        jacobian, gamma_, singular_gain_position_, singular_gain_angular_,
+        pinv_tolerance_, &singular_values, &inverse_condition);
+    } else if (inverse_mode_ == "dls" || inverse_mode_ == "damped_least_squares") {
+      inverse = dampedLeastSquaresInverse(jacobian, damping_);
+    } else {
+      RCLCPP_WARN_THROTTLE(
+        get_logger(), *get_clock(), 2000,
+        "Unknown inverse_mode '%s'; using damped least squares", inverse_mode_.c_str());
+      inverse = dampedLeastSquaresInverse(jacobian, damping_);
+    }
+
+    Eigen::VectorXd qdot = inverse * target_twist_;
+
+    if (max_joint_velocity_ > 0.0 && qdot.size() > 0) {
+      const double max_abs_qdot = qdot.cwiseAbs().maxCoeff();
+      if (max_abs_qdot > max_joint_velocity_) {
+        qdot *= max_joint_velocity_ / max_abs_qdot;
+      }
+    }
 
     const Eigen::VectorXd achieved_twist = jacobian * qdot;
 
@@ -423,6 +481,9 @@ private:
   double rate_hz_;
   double command_timeout_;
   double gamma_;
+  std::string inverse_mode_;
+  double damping_;
+  double max_joint_velocity_;
   double singular_gain_position_;
   double singular_gain_angular_;
   double pinv_tolerance_;

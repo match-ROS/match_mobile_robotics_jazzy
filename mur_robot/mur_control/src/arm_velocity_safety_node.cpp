@@ -70,6 +70,9 @@ public:
     max_joint_velocity_ = declare_parameter<double>("max_joint_velocity", 0.6);
     max_joint_acceleration_ = declare_parameter<double>("max_joint_acceleration", 0.4);
     max_joint_jerk_ = declare_parameter<double>("max_joint_jerk", 1.0);
+    preserve_command_direction_ = declare_parameter<bool>("preserve_command_direction", true);
+    immediate_zero_on_zero_command_ = declare_parameter<bool>("immediate_zero_on_zero_command", true);
+    zero_command_deadband_ = declare_parameter<double>("zero_command_deadband", 1.0e-5);
     joint_limit_margin_ = declare_parameter<double>("joint_limit_margin", 0.02);
     enable_collision_avoidance_ = declare_parameter<bool>("enable_collision_avoidance", true);
     collision_stop_distance_ = declare_parameter<double>("collision_stop_distance", 0.14);
@@ -277,6 +280,10 @@ private:
     arm.last_input_time = now();
     arm.have_input = true;
     arm.idle_zero_sent = false;
+    if (immediate_zero_on_zero_command_ && isZeroCommand(command)) {
+      publishZero(arm);
+      arm.idle_zero_sent = true;
+    }
   }
 
   void updateJointState(const sensor_msgs::msg::JointState & msg)
@@ -302,6 +309,16 @@ private:
     arm.last_acceleration_commands.clear();
   }
 
+  bool isZeroCommand(const std::vector<double> & command) const
+  {
+    for (const double value : command) {
+      if (std::abs(value) > zero_command_deadband_) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   std::vector<double> applyLimits(ArmState & arm, std::vector<double> command)
   {
     const rclcpp::Time current_time = now();
@@ -311,6 +328,10 @@ private:
       dt = 1.0 / rate_hz_;
     }
     arm.last_output_time = current_time;
+
+    if (preserve_command_direction_) {
+      return applyDirectionalLimits(arm, command, dt);
+    }
 
     for (std::size_t i = 0; i < command.size(); ++i) {
       const auto & joint_name = arm.joint_names[i];
@@ -363,6 +384,118 @@ private:
 
       command[i] = previous_velocity + acceleration * dt;
       command[i] = std::clamp(command[i], -velocity_limit, velocity_limit);
+      arm.last_velocity_commands[joint_name] = command[i];
+      arm.last_acceleration_commands[joint_name] = acceleration;
+    }
+
+    return command;
+  }
+
+  std::vector<double> applyDirectionalLimits(
+    ArmState & arm,
+    std::vector<double> command,
+    double dt)
+  {
+    std::vector<double> velocity_limits(command.size(), 0.0);
+    std::vector<double> previous_velocity(command.size(), 0.0);
+    std::vector<double> previous_acceleration(command.size(), 0.0);
+    std::vector<bool> position_blocked(command.size(), false);
+
+    for (std::size_t i = 0; i < command.size(); ++i) {
+      const auto & joint_name = arm.joint_names[i];
+      velocity_limits[i] = std::min(
+        std::abs(arm.joint_velocity_limits[i]), std::abs(max_joint_velocity_));
+      const auto velocity_it = arm.last_velocity_commands.find(joint_name);
+      if (velocity_it != arm.last_velocity_commands.end()) {
+        previous_velocity[i] = velocity_it->second;
+      }
+      const auto acceleration_it = arm.last_acceleration_commands.find(joint_name);
+      if (acceleration_it != arm.last_acceleration_commands.end()) {
+        previous_acceleration[i] = acceleration_it->second;
+      }
+
+      const auto position = joint_positions_.find(joint_name);
+      if (position == joint_positions_.end()) {
+        continue;
+      }
+      const double lower = arm.joint_lower_limits[i] + joint_limit_margin_;
+      const double upper = arm.joint_upper_limits[i] - joint_limit_margin_;
+      if ((position->second >= upper && command[i] > 0.0) ||
+          (position->second <= lower && command[i] < 0.0))
+      {
+        command[i] = 0.0;
+        position_blocked[i] = true;
+      } else if (command[i] > 0.0) {
+        command[i] = std::min(command[i], std::max(0.0, (upper - position->second) / dt));
+      } else if (command[i] < 0.0) {
+        command[i] = std::max(command[i], std::min(0.0, (lower - position->second) / dt));
+      }
+    }
+
+    double velocity_scale = 1.0;
+    for (std::size_t i = 0; i < command.size(); ++i) {
+      if (velocity_limits[i] > 0.0 && std::abs(command[i]) > velocity_limits[i]) {
+        velocity_scale = std::min(velocity_scale, velocity_limits[i] / std::abs(command[i]));
+      }
+    }
+    for (double & value : command) {
+      value *= velocity_scale;
+    }
+
+    std::vector<double> desired_acceleration(command.size(), 0.0);
+    for (std::size_t i = 0; i < command.size(); ++i) {
+      desired_acceleration[i] = (command[i] - previous_velocity[i]) / dt;
+    }
+
+    double acceleration_scale = 1.0;
+    for (std::size_t i = 0; i < desired_acceleration.size(); ++i) {
+      const double acceleration_limit = std::abs(arm.joint_acceleration_limits[i]);
+      if (acceleration_limit > 0.0 && std::abs(desired_acceleration[i]) > acceleration_limit) {
+        acceleration_scale = std::min(
+          acceleration_scale,
+          acceleration_limit / std::abs(desired_acceleration[i]));
+      }
+    }
+    for (double & value : desired_acceleration) {
+      value *= acceleration_scale;
+    }
+
+    std::vector<double> acceleration_delta(command.size(), 0.0);
+    for (std::size_t i = 0; i < command.size(); ++i) {
+      acceleration_delta[i] = desired_acceleration[i] - previous_acceleration[i];
+    }
+
+    double jerk_scale = 1.0;
+    for (std::size_t i = 0; i < acceleration_delta.size(); ++i) {
+      const double jerk_limit = std::abs(arm.joint_jerk_limits[i]);
+      const double max_acceleration_delta = jerk_limit * dt;
+      if (max_acceleration_delta > 0.0 && std::abs(acceleration_delta[i]) > max_acceleration_delta) {
+        jerk_scale = std::min(
+          jerk_scale,
+          max_acceleration_delta / std::abs(acceleration_delta[i]));
+      }
+    }
+
+    for (std::size_t i = 0; i < command.size(); ++i) {
+      const auto & joint_name = arm.joint_names[i];
+      const double target_velocity = command[i];
+      double acceleration = previous_acceleration[i] + acceleration_delta[i] * jerk_scale;
+      double next_velocity = previous_velocity[i] + acceleration * dt;
+
+      const double remaining = target_velocity - previous_velocity[i];
+      const double next_remaining = target_velocity - next_velocity;
+      if (std::abs(remaining) < 1.0e-9 || remaining * next_remaining <= 0.0) {
+        next_velocity = target_velocity;
+        acceleration = 0.0;
+      }
+
+      command[i] = std::clamp(next_velocity, -velocity_limits[i], velocity_limits[i]);
+
+      if (position_blocked[i]) {
+        command[i] = 0.0;
+        acceleration = 0.0;
+      }
+
       arm.last_velocity_commands[joint_name] = command[i];
       arm.last_acceleration_commands[joint_name] = acceleration;
     }
@@ -476,6 +609,9 @@ private:
   double max_joint_velocity_;
   double max_joint_acceleration_;
   double max_joint_jerk_;
+  bool preserve_command_direction_;
+  bool immediate_zero_on_zero_command_;
+  double zero_command_deadband_;
   double joint_limit_margin_;
   bool enable_collision_avoidance_;
   double collision_stop_distance_;

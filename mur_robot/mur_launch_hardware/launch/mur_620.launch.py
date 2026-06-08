@@ -87,6 +87,8 @@ def declare_arguments():
         DeclareLaunchArgument('jparse_startup_delay', default_value='5.0'),
         DeclareLaunchArgument('jparse_rate_hz', default_value='500.0'),
         DeclareLaunchArgument('jparse_command_timeout', default_value='0.12'),
+        DeclareLaunchArgument('jparse_inverse_mode', default_value='jparse'),
+        DeclareLaunchArgument('jparse_damping', default_value='0.03'),
         DeclareLaunchArgument('jparse_max_joint_velocity', default_value='0.6'),
         DeclareLaunchArgument('jparse_max_linear_velocity', default_value='0.12'),
         DeclareLaunchArgument('jparse_max_angular_velocity', default_value='0.5'),
@@ -115,6 +117,9 @@ def declare_arguments():
         DeclareLaunchArgument('arm_velocity_safety_max_joint_velocity', default_value='0.6'),
         DeclareLaunchArgument('arm_velocity_safety_max_joint_acceleration', default_value='0.4'),
         DeclareLaunchArgument('arm_velocity_safety_max_joint_jerk', default_value='1.0'),
+        DeclareLaunchArgument('arm_velocity_safety_preserve_command_direction', default_value='true'),
+        DeclareLaunchArgument('arm_velocity_safety_immediate_zero_on_zero_command', default_value='true'),
+        DeclareLaunchArgument('arm_velocity_safety_zero_command_deadband', default_value='1.0e-5'),
         DeclareLaunchArgument('arm_velocity_safety_joint_limit_margin', default_value='0.02'),
         DeclareLaunchArgument('arm_collision_avoidance', default_value='true'),
         DeclareLaunchArgument('arm_collision_stop_distance', default_value='0.14'),
@@ -517,6 +522,15 @@ def make_arm_velocity_safety_node(robot_name):
             'max_joint_velocity': LaunchConfiguration('arm_velocity_safety_max_joint_velocity'),
             'max_joint_acceleration': LaunchConfiguration('arm_velocity_safety_max_joint_acceleration'),
             'max_joint_jerk': LaunchConfiguration('arm_velocity_safety_max_joint_jerk'),
+            'preserve_command_direction': LaunchConfiguration(
+                'arm_velocity_safety_preserve_command_direction'
+            ),
+            'immediate_zero_on_zero_command': LaunchConfiguration(
+                'arm_velocity_safety_immediate_zero_on_zero_command'
+            ),
+            'zero_command_deadband': LaunchConfiguration(
+                'arm_velocity_safety_zero_command_deadband'
+            ),
             'joint_limit_margin': LaunchConfiguration('arm_velocity_safety_joint_limit_margin'),
             'enable_collision_avoidance': LaunchConfiguration('arm_collision_avoidance'),
             'collision_stop_distance': LaunchConfiguration('arm_collision_stop_distance'),
@@ -623,6 +637,9 @@ def make_jparse_nodes(robot_name):
                     'debug_twist_topic': debug_topic,
                     'rate_hz': LaunchConfiguration('jparse_rate_hz'),
                     'command_timeout': LaunchConfiguration('jparse_command_timeout'),
+                    'inverse_mode': LaunchConfiguration('jparse_inverse_mode'),
+                    'damping': LaunchConfiguration('jparse_damping'),
+                    'max_joint_velocity': LaunchConfiguration('jparse_max_joint_velocity'),
                     'use_sim_time': LaunchConfiguration('use_sim_time'),
                 }],
                 remappings=[('~/twist_cmd', twist_topic)],

@@ -55,6 +55,7 @@ install(PROGRAMS
   scripts/jparse_move_action_server.py
   scripts/jparse_simple_goal.py
   scripts/moveit_trajectory_controller_proxy.py
+  scripts/log_jparse_axis_response.py
   scripts/test_forward_velocity_controller.py
   scripts/test_jparse_velocity_controller.py
   DESTINATION lib/${PROJECT_NAME}
