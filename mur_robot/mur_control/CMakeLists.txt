@@ -40,6 +40,14 @@ ament_target_dependencies(arm_velocity_safety_node
   tf2_ros
 )
 
+add_executable(cartesian_admittance_controller src/cartesian_admittance_controller.cpp)
+ament_target_dependencies(cartesian_admittance_controller
+  geometry_msgs
+  rclcpp
+  tf2
+  tf2_ros
+)
+
 rosidl_generate_interfaces(${PROJECT_NAME}
   "action/JparseMove.action"
   DEPENDENCIES geometry_msgs
@@ -47,15 +55,18 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 
 install(TARGETS
   arm_velocity_safety_node
+  cartesian_admittance_controller
   jparse_velocity_controller
   DESTINATION lib/${PROJECT_NAME}
 )
 
 install(PROGRAMS
+  scripts/diagnose_cartesian_admittance.py
   scripts/jparse_move_action_server.py
   scripts/jparse_simple_goal.py
   scripts/moveit_trajectory_controller_proxy.py
   scripts/log_jparse_axis_response.py
+  scripts/test_cartesian_admittance_controller.py
   scripts/test_forward_velocity_controller.py
   scripts/test_jparse_velocity_controller.py
   DESTINATION lib/${PROJECT_NAME}

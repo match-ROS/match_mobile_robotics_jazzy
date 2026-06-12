@@ -92,6 +92,15 @@ def declare_arguments():
         DeclareLaunchArgument('jparse_max_joint_velocity', default_value='0.6'),
         DeclareLaunchArgument('jparse_max_linear_velocity', default_value='0.12'),
         DeclareLaunchArgument('jparse_max_angular_velocity', default_value='0.5'),
+        DeclareLaunchArgument('launch_cartesian_admittance', default_value='false'),
+        DeclareLaunchArgument('cartesian_admittance_rate_hz', default_value='500.0'),
+        DeclareLaunchArgument('cartesian_admittance_command_timeout', default_value='0.12'),
+        DeclareLaunchArgument('cartesian_admittance_wrench_timeout', default_value='0.5'),
+        DeclareLaunchArgument('cartesian_admittance_require_wrench', default_value='true'),
+        DeclareLaunchArgument('cartesian_admittance_wrench_bias_duration', default_value='1.0'),
+        DeclareLaunchArgument('cartesian_admittance_wrench_filter_alpha', default_value='0.02'),
+        DeclareLaunchArgument('cartesian_admittance_max_linear_velocity', default_value='0.10'),
+        DeclareLaunchArgument('cartesian_admittance_max_angular_velocity', default_value='0.35'),
         DeclareLaunchArgument('launch_moveit', default_value='false'),
         DeclareLaunchArgument('launch_moveit_rviz', default_value='false'),
         DeclareLaunchArgument('moveit_rviz_delay', default_value='5.0'),
@@ -682,6 +691,51 @@ def make_jparse_nodes(robot_name):
     )
 
 
+def make_cartesian_admittance_nodes(robot_name):
+    actions = []
+    for side in ('l', 'r'):
+        arm_name = f'UR10_{side}'
+        actions.append(
+            Node(
+                package='mur_control',
+                executable='cartesian_admittance_controller',
+                name=f'{robot_name}_cartesian_admittance_controller_{side}',
+                parameters=[{
+                    'robot_name': robot_name,
+                    'arm': side,
+                    'tf_base_frame': f'{robot_name}/{arm_name}/base_link',
+                    'tf_tcp_frame': f'{robot_name}/{arm_name}/tool0',
+                    'command_frame': f'{arm_name}/base_link',
+                    'input_twist_topic':
+                        f'/{robot_name}/cartesian_admittance_controller_{side}/equilibrium_twist_cmd',
+                    'output_twist_topic': f'/{robot_name}/jparse_velocity_controller_{side}/twist_cmd',
+                    'wrench_topic':
+                        f'/{robot_name}/{arm_name}/force_torque_sensor_broadcaster/ft_data',
+                    'rate_hz': LaunchConfiguration('cartesian_admittance_rate_hz'),
+                    'command_timeout': LaunchConfiguration('cartesian_admittance_command_timeout'),
+                    'wrench_timeout': LaunchConfiguration('cartesian_admittance_wrench_timeout'),
+                    'require_wrench': LaunchConfiguration('cartesian_admittance_require_wrench'),
+                    'wrench_bias_duration':
+                        LaunchConfiguration('cartesian_admittance_wrench_bias_duration'),
+                    'wrench_filter_alpha':
+                        LaunchConfiguration('cartesian_admittance_wrench_filter_alpha'),
+                    'max_linear_velocity':
+                        LaunchConfiguration('cartesian_admittance_max_linear_velocity'),
+                    'max_angular_velocity':
+                        LaunchConfiguration('cartesian_admittance_max_angular_velocity'),
+                    'use_sim_time': LaunchConfiguration('use_sim_time'),
+                }],
+                output='screen',
+            )
+        )
+
+    return TimerAction(
+        period=LaunchConfiguration('jparse_startup_delay'),
+        actions=actions,
+        condition=IfCondition(LaunchConfiguration('launch_cartesian_admittance')),
+    )
+
+
 def launch_setup(context, *args, **kwargs):
     robot_name = LaunchConfiguration('robot_name').perform(context)
     ur_type = LaunchConfiguration('ur_type').perform(context)
@@ -749,6 +803,7 @@ def launch_setup(context, *args, **kwargs):
         make_arm_velocity_safety_node(robot_name),
         make_moveit_controller_proxies(robot_name),
         make_jparse_nodes(robot_name),
+        make_cartesian_admittance_nodes(robot_name),
         make_moveit_launch(robot_name),
         make_lift_driver('l', robot_name),
         make_lift_driver('r', robot_name),
