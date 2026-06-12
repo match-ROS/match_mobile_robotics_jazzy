@@ -508,7 +508,8 @@ class StepResponseLogger(Node):
 
     def capture_row(self, segment, phase, command, segment_start_time):
         position, orientation = self.lookup_tool_pose(timeout=0.1)
-        debug = pad(self.last_debug, 19)
+        debug = pad(self.last_debug, 21)
+        qdot_offset = 15 if len(self.last_debug) >= 21 else 13
         joint_positions = [self.joint_positions.get(name, float("nan")) for name in self.joint_names]
         joint_velocities = [self.joint_velocities.get(name, float("nan")) for name in self.joint_names]
         now = time.monotonic()
@@ -543,8 +544,10 @@ class StepResponseLogger(Node):
             "debug_achieved_wx": debug[10],
             "debug_achieved_wy": debug[11],
             "debug_achieved_wz": debug[12],
+            "debug_collision_min_clearance": debug[13] if qdot_offset == 15 else float("nan"),
+            "debug_collision_scale": debug[14] if qdot_offset == 15 else float("nan"),
         }
-        for index, value in enumerate(debug[13:19]):
+        for index, value in enumerate(debug[qdot_offset:qdot_offset + 6]):
             row[f"debug_qdot_{index}"] = value
         for index, value in enumerate(pad(self.last_wrench, 6)):
             row[f"wrench_{index}"] = value
@@ -586,6 +589,8 @@ class StepResponseLogger(Node):
             "debug_achieved_wx",
             "debug_achieved_wy",
             "debug_achieved_wz",
+            "debug_collision_min_clearance",
+            "debug_collision_scale",
         ]
         fields.extend(f"debug_qdot_{index}" for index in range(6))
         fields.extend(f"wrench_{index}" for index in range(6))

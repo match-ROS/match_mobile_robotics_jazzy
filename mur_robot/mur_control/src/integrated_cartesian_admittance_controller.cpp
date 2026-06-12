@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cctype>
 #include <limits>
+#include <map>
 #include <memory>
 #include <string>
 #include <utility>
@@ -25,7 +26,10 @@
 #include <pluginlib/class_list_macros.hpp>
 #include <rclcpp_lifecycle/state.hpp>
 #include <realtime_tools/realtime_thread_safe_box.hpp>
+#include <sensor_msgs/msg/joint_state.hpp>
+#include <std_msgs/msg/float64.hpp>
 #include <std_msgs/msg/float64_multi_array.hpp>
+#include <std_msgs/msg/string.hpp>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Transform.h>
 #include <tf2/LinearMath/Vector3.h>
@@ -279,6 +283,13 @@ struct TwistReference
   bool valid{false};
 };
 
+struct CollisionJointState
+{
+  std::map<std::string, double> positions;
+  rclcpp::Time stamp{0, 0, RCL_ROS_TIME};
+  bool valid{false};
+};
+
 class IntegratedCartesianAdmittanceController
   : public controller_interface::ChainableControllerInterface
 {
@@ -353,6 +364,37 @@ public:
       reset_equilibrium_on_zero_command_ = auto_declare<bool>("reset_equilibrium_on_zero_command", true);
       zero_command_deadband_ = std::max(0.0, auto_declare<double>("zero_command_deadband", 1.0e-5));
       publish_state_rate_hz_ = std::max(0.0, auto_declare<double>("publish_state_rate_hz", 50.0));
+
+      enable_collision_avoidance_ = auto_declare<bool>("enable_collision_avoidance", false);
+      collision_other_prefix_ = auto_declare<std::string>(
+        "collision_other_prefix", arm_ == "l" ? "UR10_r" : "UR10_l");
+      collision_other_base_link_ = auto_declare<std::string>(
+        "collision_other_base_link", collision_other_prefix_ + "/base_link");
+      collision_other_tip_link_ = auto_declare<std::string>(
+        "collision_other_tip_link", collision_other_prefix_ + "/tool0");
+      collision_other_joint_names_ = auto_declare<std::vector<std::string>>(
+        "collision_other_joint_names",
+        {
+          collision_other_prefix_ + "/shoulder_pan_joint",
+          collision_other_prefix_ + "/shoulder_lift_joint",
+          collision_other_prefix_ + "/elbow_joint",
+          collision_other_prefix_ + "/wrist_1_joint",
+          collision_other_prefix_ + "/wrist_2_joint",
+          collision_other_prefix_ + "/wrist_3_joint",
+        });
+      collision_common_link_ = auto_declare<std::string>("collision_common_link", "base_link");
+      collision_joint_states_topic_ = auto_declare<std::string>("collision_joint_states_topic", "/joint_states");
+      collision_joint_state_timeout_ = std::max(
+        0.0, auto_declare<double>("collision_joint_state_timeout", 0.1));
+      collision_sample_spacing_ = std::max(
+        0.005, auto_declare<double>("collision_sample_spacing", 0.08));
+      collision_sphere_radius_ = std::max(
+        0.0, auto_declare<double>("collision_sphere_radius", 0.04));
+      collision_activation_clearance_ = std::max(
+        0.0, auto_declare<double>("collision_activation_clearance", 0.12));
+      collision_stop_clearance_ = std::max(
+        0.0, auto_declare<double>("collision_stop_clearance", 0.04));
+      collision_fail_safe_stop_ = auto_declare<bool>("collision_fail_safe_stop", true);
 
       admittance_ = checked_vector("admittance", {0.0006, 0.0006, 0.0015, 0.0, 0.0, 0.0});
       wrench_twist_gain_ = checked_vector("wrench_twist_gain", {0.0, 0.0, 0.0, 0.0, 0.0, 0.0});
@@ -439,6 +481,26 @@ public:
     jac_solver_ = std::make_unique<KDL::ChainJntToJacSolver>(chain_);
     fk_solver_ = std::make_unique<KDL::ChainFkSolverPos_recursive>(chain_);
 
+    if (enable_collision_avoidance_) {
+      if (!configure_collision_chains(tree)) {
+        return CallbackReturn::ERROR;
+      }
+      collision_joint_state_sub_ = get_node()->create_subscription<sensor_msgs::msg::JointState>(
+        collision_joint_states_topic_, rclcpp::SensorDataQoS(),
+        [this](const sensor_msgs::msg::JointState::SharedPtr msg) {
+          CollisionJointState snapshot;
+          snapshot.stamp = msg->header.stamp.sec == 0 && msg->header.stamp.nanosec == 0 ?
+            get_node()->now() : rclcpp::Time(msg->header.stamp);
+          snapshot.valid = true;
+          for (std::size_t i = 0; i < msg->name.size(); ++i) {
+            if (i < msg->position.size() && std::isfinite(msg->position[i])) {
+              snapshot.positions[msg->name[i]] = msg->position[i];
+            }
+          }
+          received_collision_joint_state_.set(snapshot);
+        });
+    }
+
     twist_sub_ = get_node()->create_subscription<geometry_msgs::msg::TwistStamped>(
       "~/equilibrium_twist_cmd", rclcpp::SystemDefaultsQoS(),
       [this](const geometry_msgs::msg::TwistStamped::SharedPtr msg) {
@@ -462,13 +524,18 @@ public:
       get_node()->create_publisher<geometry_msgs::msg::PoseStamped>("~/equilibrium_pose", 10);
     target_pose_pub_ =
       get_node()->create_publisher<geometry_msgs::msg::PoseStamped>("~/target_pose", 10);
+    collision_min_clearance_pub_ =
+      get_node()->create_publisher<std_msgs::msg::Float64>("~/collision_min_clearance", 10);
+    collision_status_pub_ =
+      get_node()->create_publisher<std_msgs::msg::String>("~/collision_status", 10);
     tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*get_node());
 
     RCLCPP_INFO(
       get_node()->get_logger(),
-      "Configured integrated Cartesian controller for %s: %s -> %s, joints=%zu, ft=%s",
+      "Configured integrated Cartesian controller for %s: %s -> %s, joints=%zu, ft=%s, collision=%s",
       prefix_.c_str(), base_link_.c_str(), tip_link_.c_str(), joint_names_.size(),
-      use_ft_sensor_ ? "enabled" : "disabled");
+      use_ft_sensor_ ? "enabled" : "disabled",
+      enable_collision_avoidance_ ? "enabled" : "disabled");
     return CallbackReturn::SUCCESS;
   }
 
@@ -675,6 +742,7 @@ protected:
       }
     }
 
+    qdot = apply_collision_avoidance(qdot, q, time);
     qdot = apply_safety_limits(qdot, q, dt);
     Eigen::VectorXd qdot_limited = Eigen::VectorXd::Zero(qdot_raw.size());
     for (std::size_t i = 0; i < command_joint_names_.size(); ++i) {
@@ -693,6 +761,7 @@ protected:
     latest_achieved_twist_ = latest_jacobian_ * qdot_limited;
     if (should_publish(time)) {
       publish_debug(time, target_twist, qdot_limited);
+      publish_collision_state(time);
       publish_state(time, current_tcp, false);
     }
     return return_type::OK;
@@ -711,6 +780,273 @@ private:
       return defaults;
     }
     return values;
+  }
+
+  static std::vector<std::string> movable_joint_names(const KDL::Chain & chain)
+  {
+    std::vector<std::string> names;
+    for (unsigned int i = 0; i < chain.getNrOfSegments(); ++i) {
+      const auto joint = chain.getSegment(i).getJoint();
+      if (joint.getType() != KDL::Joint::None) {
+        names.push_back(joint.getName());
+      }
+    }
+    return names;
+  }
+
+  bool configure_collision_chains(const KDL::Tree & tree)
+  {
+    if (!tree.getChain(collision_common_link_, tip_link_, own_collision_chain_)) {
+      RCLCPP_ERROR(
+        get_node()->get_logger(),
+        "Could not build own collision KDL chain from '%s' to '%s'",
+        collision_common_link_.c_str(), tip_link_.c_str());
+      return false;
+    }
+    if (!tree.getChain(collision_common_link_, collision_other_tip_link_, other_collision_chain_)) {
+      RCLCPP_ERROR(
+        get_node()->get_logger(),
+        "Could not build other collision KDL chain from '%s' to '%s'",
+        collision_common_link_.c_str(), collision_other_tip_link_.c_str());
+      return false;
+    }
+
+    own_collision_joint_names_ = movable_joint_names(own_collision_chain_);
+    other_collision_joint_names_ = movable_joint_names(other_collision_chain_);
+    own_collision_fk_solver_ =
+      std::make_unique<KDL::ChainFkSolverPos_recursive>(own_collision_chain_);
+    other_collision_fk_solver_ =
+      std::make_unique<KDL::ChainFkSolverPos_recursive>(other_collision_chain_);
+
+    RCLCPP_INFO(
+      get_node()->get_logger(),
+      "Configured collision avoidance for %s against %s: common=%s, own_joints=%zu, other_joints=%zu",
+      prefix_.c_str(), collision_other_prefix_.c_str(), collision_common_link_.c_str(),
+      own_collision_joint_names_.size(), other_collision_joint_names_.size());
+    return true;
+  }
+
+  bool fill_collision_q(
+    const std::vector<std::string> & collision_joint_names,
+    const CollisionJointState & joint_state,
+    const KDL::JntArray * own_q,
+    KDL::JntArray & q) const
+  {
+    q.resize(collision_joint_names.size());
+    for (std::size_t i = 0; i < collision_joint_names.size(); ++i) {
+      const auto & joint_name = collision_joint_names[i];
+      bool assigned = false;
+      if (own_q != nullptr) {
+        const auto own_it = std::find(joint_names_.begin(), joint_names_.end(), joint_name);
+        if (own_it != joint_names_.end()) {
+          const auto own_index = static_cast<std::size_t>(std::distance(joint_names_.begin(), own_it));
+          if (own_index < own_q->rows()) {
+            q(static_cast<unsigned int>(i)) = (*own_q)(static_cast<unsigned int>(own_index));
+            assigned = true;
+          }
+        }
+      }
+      if (!assigned) {
+        const auto state_it = joint_state.positions.find(joint_name);
+        if (state_it == joint_state.positions.end() || !std::isfinite(state_it->second)) {
+          return false;
+        }
+        q(static_cast<unsigned int>(i)) = state_it->second;
+      }
+    }
+    return true;
+  }
+
+  bool collision_joint_state_valid(
+    const CollisionJointState & joint_state,
+    const rclcpp::Time & time) const
+  {
+    if (!joint_state.valid) {
+      return false;
+    }
+    if (joint_state.stamp.nanoseconds() == 0) {
+      return false;
+    }
+    return (time - joint_state.stamp).seconds() <= collision_joint_state_timeout_;
+  }
+
+  static tf2::Vector3 point_from_kdl(const KDL::Vector & vector)
+  {
+    return {vector.x(), vector.y(), vector.z()};
+  }
+
+  bool sample_collision_points(
+    const KDL::Chain & chain,
+    KDL::ChainFkSolverPos_recursive & solver,
+    const KDL::JntArray & q,
+    std::vector<tf2::Vector3> & points) const
+  {
+    points.clear();
+    KDL::Frame previous_frame;
+    bool have_previous = false;
+    bool started_movable_part = false;
+
+    for (unsigned int i = 0; i < chain.getNrOfSegments(); ++i) {
+      KDL::Frame current_frame;
+      if (solver.JntToCart(q, current_frame, i + 1) < 0) {
+        return false;
+      }
+
+      const auto joint = chain.getSegment(i).getJoint();
+      if (joint.getType() != KDL::Joint::None) {
+        started_movable_part = true;
+      }
+
+      if (started_movable_part && have_previous) {
+        const tf2::Vector3 start = point_from_kdl(previous_frame.p);
+        const tf2::Vector3 end = point_from_kdl(current_frame.p);
+        const double length = (end - start).length();
+        const int steps = std::max(1, static_cast<int>(std::ceil(length / collision_sample_spacing_)));
+        for (int step = 0; step <= steps; ++step) {
+          const double t = static_cast<double>(step) / static_cast<double>(steps);
+          points.push_back(start.lerp(end, t));
+        }
+      }
+
+      previous_frame = current_frame;
+      have_previous = true;
+    }
+
+    return !points.empty();
+  }
+
+  bool compute_collision_clearance(
+    const KDL::JntArray & own_collision_q,
+    const KDL::JntArray & other_collision_q,
+    double & clearance) const
+  {
+    if (!own_collision_fk_solver_ || !other_collision_fk_solver_) {
+      return false;
+    }
+
+    std::vector<tf2::Vector3> own_points;
+    std::vector<tf2::Vector3> other_points;
+    if (!sample_collision_points(
+        own_collision_chain_, *own_collision_fk_solver_, own_collision_q, own_points) ||
+      !sample_collision_points(
+        other_collision_chain_, *other_collision_fk_solver_, other_collision_q, other_points))
+    {
+      return false;
+    }
+
+    double min_center_distance = std::numeric_limits<double>::infinity();
+    for (const auto & own_point : own_points) {
+      for (const auto & other_point : other_points) {
+        min_center_distance = std::min(min_center_distance, (own_point - other_point).length());
+      }
+    }
+    if (!std::isfinite(min_center_distance)) {
+      return false;
+    }
+    clearance = min_center_distance - 2.0 * collision_sphere_radius_;
+    return true;
+  }
+
+  std::vector<double> apply_collision_avoidance(
+    std::vector<double> qdot,
+    const KDL::JntArray & own_q,
+    const rclcpp::Time & time)
+  {
+    latest_collision_status_ = "disabled";
+    latest_collision_min_clearance_ = std::numeric_limits<double>::quiet_NaN();
+    latest_collision_scale_ = 1.0;
+
+    if (!enable_collision_avoidance_) {
+      return qdot;
+    }
+
+    const auto maybe_joint_state = received_collision_joint_state_.try_get();
+    const CollisionJointState joint_state = maybe_joint_state.value_or(CollisionJointState{});
+    if (!collision_joint_state_valid(joint_state, time)) {
+      latest_collision_status_ = "stale_other_arm";
+      latest_collision_scale_ = 0.0;
+      return collision_fail_safe_stop_ ? std::vector<double>(qdot.size(), 0.0) : qdot;
+    }
+
+    KDL::JntArray own_collision_q;
+    KDL::JntArray other_collision_q;
+    if (!fill_collision_q(own_collision_joint_names_, joint_state, &own_q, own_collision_q) ||
+      !fill_collision_q(other_collision_joint_names_, joint_state, nullptr, other_collision_q))
+    {
+      latest_collision_status_ = "stale_other_arm";
+      latest_collision_scale_ = 0.0;
+      return collision_fail_safe_stop_ ? std::vector<double>(qdot.size(), 0.0) : qdot;
+    }
+
+    double clearance = std::numeric_limits<double>::quiet_NaN();
+    if (!compute_collision_clearance(own_collision_q, other_collision_q, clearance)) {
+      latest_collision_status_ = "stale_other_arm";
+      latest_collision_scale_ = 0.0;
+      return collision_fail_safe_stop_ ? std::vector<double>(qdot.size(), 0.0) : qdot;
+    }
+    latest_collision_min_clearance_ = clearance;
+
+    if (clearance >= collision_activation_clearance_) {
+      latest_collision_status_ = "clear";
+      return qdot;
+    }
+
+    std::vector<double> gradient(qdot.size(), 0.0);
+    constexpr double gradient_step = 1.0e-4;
+    for (std::size_t command_index = 0; command_index < command_joint_names_.size(); ++command_index) {
+      const auto collision_it = std::find(
+        own_collision_joint_names_.begin(), own_collision_joint_names_.end(),
+        command_joint_names_[command_index]);
+      if (collision_it == own_collision_joint_names_.end()) {
+        continue;
+      }
+
+      const auto collision_index = static_cast<unsigned int>(
+        std::distance(own_collision_joint_names_.begin(), collision_it));
+      KDL::JntArray perturbed = own_collision_q;
+      perturbed(collision_index) += gradient_step;
+
+      double perturbed_clearance = clearance;
+      if (compute_collision_clearance(perturbed, other_collision_q, perturbed_clearance)) {
+        gradient[command_index] = (perturbed_clearance - clearance) / gradient_step;
+      }
+    }
+
+    double gradient_norm_sq = 0.0;
+    double closing_speed = 0.0;
+    for (std::size_t i = 0; i < std::min(gradient.size(), qdot.size()); ++i) {
+      gradient_norm_sq += gradient[i] * gradient[i];
+      closing_speed += gradient[i] * qdot[i];
+    }
+
+    if (gradient_norm_sq <= 1.0e-12 || closing_speed >= 0.0) {
+      latest_collision_status_ = "clear";
+      return qdot;
+    }
+
+    if (clearance <= collision_stop_clearance_) {
+      latest_collision_status_ = "blocked";
+      latest_collision_scale_ = 0.0;
+      return std::vector<double>(qdot.size(), 0.0);
+    }
+
+    const double projection = closing_speed / gradient_norm_sq;
+    for (std::size_t i = 0; i < std::min(gradient.size(), qdot.size()); ++i) {
+      qdot[i] -= projection * gradient[i];
+    }
+
+    latest_collision_status_ = "limited";
+    latest_collision_scale_ = 0.0;
+    const double original_norm = std::abs(closing_speed);
+    double residual_closing = 0.0;
+    for (std::size_t i = 0; i < std::min(gradient.size(), qdot.size()); ++i) {
+      residual_closing += gradient[i] * qdot[i];
+    }
+    if (original_norm > 1.0e-12) {
+      latest_collision_scale_ = std::clamp(
+        1.0 - std::abs(residual_closing) / original_norm, 0.0, 1.0);
+    }
+    return qdot;
   }
 
   double sanitized_dt(const rclcpp::Time & time, const rclcpp::Duration & period)
@@ -1032,7 +1368,7 @@ private:
     singular_values_pub_->publish(singular_msg);
 
     std_msgs::msg::Float64MultiArray debug_msg;
-    debug_msg.data.reserve(13 + static_cast<std::size_t>(qdot.size()));
+    debug_msg.data.reserve(15 + static_cast<std::size_t>(qdot.size()));
     debug_msg.data.push_back(latest_inverse_condition_);
     for (Eigen::Index i = 0; i < target_twist.size(); ++i) {
       debug_msg.data.push_back(target_twist(i));
@@ -1040,6 +1376,8 @@ private:
     for (Eigen::Index i = 0; i < latest_achieved_twist_.size(); ++i) {
       debug_msg.data.push_back(latest_achieved_twist_(i));
     }
+    debug_msg.data.push_back(latest_collision_min_clearance_);
+    debug_msg.data.push_back(latest_collision_scale_);
     for (Eigen::Index i = 0; i < qdot.size(); ++i) {
       debug_msg.data.push_back(qdot(i));
     }
@@ -1055,6 +1393,17 @@ private:
     wrench_msg.wrench.torque.y = filtered_wrench_[4];
     wrench_msg.wrench.torque.z = filtered_wrench_[5];
     filtered_wrench_pub_->publish(wrench_msg);
+  }
+
+  void publish_collision_state(const rclcpp::Time &)
+  {
+    std_msgs::msg::Float64 clearance_msg;
+    clearance_msg.data = latest_collision_min_clearance_;
+    collision_min_clearance_pub_->publish(clearance_msg);
+
+    std_msgs::msg::String status_msg;
+    status_msg.data = latest_collision_status_;
+    collision_status_pub_->publish(status_msg);
   }
 
   bool should_publish(const rclcpp::Time & time)
@@ -1114,17 +1463,31 @@ private:
   std::string target_frame_;
   std::string inverse_mode_;
   std::string ft_sensor_name_;
+  std::string collision_other_prefix_;
+  std::string collision_other_base_link_;
+  std::string collision_other_tip_link_;
+  std::string collision_common_link_;
+  std::string collision_joint_states_topic_;
   std::vector<std::string> joint_names_;
   std::vector<std::string> command_joint_names_;
   std::vector<std::string> chain_joint_names_;
   std::vector<std::string> ft_state_interface_names_;
+  std::vector<std::string> collision_other_joint_names_;
+  std::vector<std::string> own_collision_joint_names_;
+  std::vector<std::string> other_collision_joint_names_;
 
   KDL::Chain chain_;
+  KDL::Chain own_collision_chain_;
+  KDL::Chain other_collision_chain_;
   std::unique_ptr<KDL::ChainJntToJacSolver> jac_solver_;
   std::unique_ptr<KDL::ChainFkSolverPos_recursive> fk_solver_;
+  std::unique_ptr<KDL::ChainFkSolverPos_recursive> own_collision_fk_solver_;
+  std::unique_ptr<KDL::ChainFkSolverPos_recursive> other_collision_fk_solver_;
 
   rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr twist_sub_;
+  rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr collision_joint_state_sub_;
   realtime_tools::RealtimeThreadSafeBox<TwistReference> received_reference_;
+  realtime_tools::RealtimeThreadSafeBox<CollisionJointState> received_collision_joint_state_;
   TwistReference last_reference_;
   bool subscriber_is_active_{true};
 
@@ -1133,6 +1496,8 @@ private:
   rclcpp::Publisher<geometry_msgs::msg::WrenchStamped>::SharedPtr filtered_wrench_pub_;
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr equilibrium_pose_pub_;
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr target_pose_pub_;
+  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr collision_min_clearance_pub_;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr collision_status_pub_;
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 
   double gamma_{0.1};
@@ -1154,12 +1519,19 @@ private:
   double joint_limit_margin_{0.02};
   double zero_command_deadband_{1.0e-5};
   double publish_state_rate_hz_{50.0};
+  double collision_joint_state_timeout_{0.1};
+  double collision_sample_spacing_{0.08};
+  double collision_sphere_radius_{0.04};
+  double collision_activation_clearance_{0.12};
+  double collision_stop_clearance_{0.04};
   bool require_wrench_{false};
   bool use_ft_sensor_{false};
   bool wrench_in_tcp_frame_{true};
   bool preserve_command_direction_{true};
   bool immediate_zero_on_zero_command_{true};
   bool reset_equilibrium_on_zero_command_{true};
+  bool enable_collision_avoidance_{false};
+  bool collision_fail_safe_stop_{true};
 
   std::vector<double> admittance_;
   std::vector<double> wrench_twist_gain_;
@@ -1194,6 +1566,9 @@ private:
   Eigen::VectorXd latest_achieved_twist_{Eigen::VectorXd::Zero(6)};
   Eigen::MatrixXd latest_jacobian_;
   double latest_inverse_condition_{0.0};
+  double latest_collision_min_clearance_{std::numeric_limits<double>::quiet_NaN()};
+  double latest_collision_scale_{1.0};
+  std::string latest_collision_status_{"disabled"};
 };
 
 }  // namespace mur_control

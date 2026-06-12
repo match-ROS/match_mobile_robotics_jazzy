@@ -140,6 +140,15 @@ def declare_arguments():
         DeclareLaunchArgument('integrated_controller_max_joint_jerk', default_value='1.0'),
         DeclareLaunchArgument('integrated_controller_joint_limit_margin', default_value='0.02'),
         DeclareLaunchArgument('integrated_controller_reset_equilibrium_on_zero_command', default_value='auto'),
+        DeclareLaunchArgument('integrated_controller_enable_collision_avoidance', default_value='true'),
+        DeclareLaunchArgument('integrated_controller_collision_common_link', default_value='base_link'),
+        DeclareLaunchArgument('integrated_controller_collision_joint_states_topic', default_value='/joint_states'),
+        DeclareLaunchArgument('integrated_controller_collision_joint_state_timeout', default_value='0.1'),
+        DeclareLaunchArgument('integrated_controller_collision_sample_spacing', default_value='0.08'),
+        DeclareLaunchArgument('integrated_controller_collision_sphere_radius', default_value='0.04'),
+        DeclareLaunchArgument('integrated_controller_collision_activation_clearance', default_value='0.12'),
+        DeclareLaunchArgument('integrated_controller_collision_stop_clearance', default_value='0.04'),
+        DeclareLaunchArgument('integrated_controller_collision_fail_safe_stop', default_value='true'),
         DeclareLaunchArgument('launch_moveit', default_value='false'),
         DeclareLaunchArgument('launch_moveit_rviz', default_value='false'),
         DeclareLaunchArgument('moveit_rviz_delay', default_value='5.0'),
@@ -946,6 +955,8 @@ def launch_setup(context, *args, **kwargs):
 
     def integrated_controller_params(side):
         arm_name = f'UR10_{side}'
+        other_side = 'r' if side == 'l' else 'l'
+        other_arm_name = f'UR10_{other_side}'
         return {
             'robot_name': robot_name,
             'arm': side,
@@ -1015,6 +1026,35 @@ def launch_setup(context, *args, **kwargs):
             'joint_limit_margin': float(LaunchConfiguration(
                 'integrated_controller_joint_limit_margin').perform(context)),
             'reset_equilibrium_on_zero_command': integrated_reset_equilibrium_on_zero,
+            'enable_collision_avoidance': LaunchConfiguration(
+                'integrated_controller_enable_collision_avoidance').perform(context) == 'true',
+            'collision_other_prefix': other_arm_name,
+            'collision_other_base_link': f'{other_arm_name}/base_link',
+            'collision_other_tip_link': f'{other_arm_name}/tool0',
+            'collision_other_joint_names': [
+                f'{other_arm_name}/shoulder_pan_joint',
+                f'{other_arm_name}/shoulder_lift_joint',
+                f'{other_arm_name}/elbow_joint',
+                f'{other_arm_name}/wrist_1_joint',
+                f'{other_arm_name}/wrist_2_joint',
+                f'{other_arm_name}/wrist_3_joint',
+            ],
+            'collision_common_link': LaunchConfiguration(
+                'integrated_controller_collision_common_link').perform(context),
+            'collision_joint_states_topic': LaunchConfiguration(
+                'integrated_controller_collision_joint_states_topic').perform(context),
+            'collision_joint_state_timeout': float(LaunchConfiguration(
+                'integrated_controller_collision_joint_state_timeout').perform(context)),
+            'collision_sample_spacing': float(LaunchConfiguration(
+                'integrated_controller_collision_sample_spacing').perform(context)),
+            'collision_sphere_radius': float(LaunchConfiguration(
+                'integrated_controller_collision_sphere_radius').perform(context)),
+            'collision_activation_clearance': float(LaunchConfiguration(
+                'integrated_controller_collision_activation_clearance').perform(context)),
+            'collision_stop_clearance': float(LaunchConfiguration(
+                'integrated_controller_collision_stop_clearance').perform(context)),
+            'collision_fail_safe_stop': LaunchConfiguration(
+                'integrated_controller_collision_fail_safe_stop').perform(context) == 'true',
             'publish_state_rate_hz': 50.0,
         }
 
