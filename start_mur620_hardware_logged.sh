@@ -17,6 +17,11 @@ LAUNCH_FILE="${LAUNCH_FILE:-mur_620.launch.py}"
 BUILD_BEFORE_LAUNCH="${BUILD_BEFORE_LAUNCH:-true}"
 CLEAN_START="${CLEAN_START:-true}"
 CLEAN_START_FORCE_KILL="${CLEAN_START_FORCE_KILL:-true}"
+BUILD_PACKAGES="${BUILD_PACKAGES:-serial ewellix_driver mur_control mur_moveit_config mur_launch_hardware}"
+INTEGRATED_CARTESIAN_ACTIVE="${INTEGRATED_CARTESIAN_ACTIVE:-false}"
+INTEGRATED_CARTESIAN_USE_FT="${INTEGRATED_CARTESIAN_USE_FT:-false}"
+INTEGRATED_CARTESIAN_REQUIRE_WRENCH="${INTEGRATED_CARTESIAN_REQUIRE_WRENCH:-false}"
+MOVEIT_WITH_INTEGRATED_CARTESIAN="${MOVEIT_WITH_INTEGRATED_CARTESIAN:-false}"
 
 TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
 LOG_FILE="${LOG_FILE:-${LOG_DIR}/${LAUNCH_PACKAGE}_${LAUNCH_FILE%.launch.py}_${TIMESTAMP}.log}"
@@ -25,6 +30,7 @@ ENV_FILE="${LOG_DIR}/source_latest_ros_env.bash"
 
 export ROS_DOMAIN_ID
 export ROS_LOG_DIR
+export ROS2CLI_NO_DAEMON=1
 export PYTHONUNBUFFERED=1
 export RCUTILS_LOGGING_BUFFERED_STREAM=0
 
@@ -36,6 +42,7 @@ source /opt/ros/jazzy/setup.bash
 source ${WS}/install/setup.bash
 export ROS_DOMAIN_ID=${ROS_DOMAIN_ID}
 export ROS2CLI_NO_DAEMON=1
+export ROS_LOG_DIR=${ROS_LOG_DIR}
 EOF
 
 exec > >(tee -a "$LOG_FILE") 2>&1
@@ -107,7 +114,12 @@ echo "[start_mur620_hardware_logged] latest=${LATEST_LOG}"
 echo "[start_mur620_hardware_logged] inspect_env=${ENV_FILE}"
 echo "[start_mur620_hardware_logged] inspect command: source ${ENV_FILE} && ros2 topic list"
 echo "[start_mur620_hardware_logged] build_before_launch=${BUILD_BEFORE_LAUNCH}"
+echo "[start_mur620_hardware_logged] build_packages=${BUILD_PACKAGES}"
 echo "[start_mur620_hardware_logged] clean_start=${CLEAN_START}"
+echo "[start_mur620_hardware_logged] integrated_cartesian_active=${INTEGRATED_CARTESIAN_ACTIVE}"
+echo "[start_mur620_hardware_logged] integrated_cartesian_use_ft=${INTEGRATED_CARTESIAN_USE_FT}"
+echo "[start_mur620_hardware_logged] integrated_cartesian_require_wrench=${INTEGRATED_CARTESIAN_REQUIRE_WRENCH}"
+echo "[start_mur620_hardware_logged] moveit_with_integrated_cartesian=${MOVEIT_WITH_INTEGRATED_CARTESIAN}"
 echo "[start_mur620_hardware_logged] extra args: $*"
 echo
 
@@ -120,10 +132,11 @@ fi
 
 if [[ "${BUILD_BEFORE_LAUNCH}" == "true" ]]; then
   echo "[start_mur620_hardware_logged] Building hardware packages..."
-    colcon build \
-      --symlink-install \
-      --packages-up-to serial ewellix_driver mur_moveit_config mur_launch_hardware \
-      --cmake-args -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+  # shellcheck disable=SC2086
+  colcon build \
+    --symlink-install \
+    --packages-up-to ${BUILD_PACKAGES} \
+    --cmake-args -DCMAKE_POSITION_INDEPENDENT_CODE=ON
   source_setup install/setup.bash
   echo "[start_mur620_hardware_logged] Build finished."
   echo
@@ -131,9 +144,25 @@ elif [[ -f install/setup.bash ]]; then
   source_setup install/setup.bash
 fi
 
+declare -a LAUNCH_ARGS=("$@")
+if [[ "${INTEGRATED_CARTESIAN_ACTIVE}" == "true" ]]; then
+  LAUNCH_ARGS+=(
+    "use_integrated_cartesian_controller:=true"
+    "integrated_controller_initial_active:=true"
+    "integrated_controller_use_ft_sensor:=${INTEGRATED_CARTESIAN_USE_FT}"
+    "integrated_controller_require_wrench:=${INTEGRATED_CARTESIAN_REQUIRE_WRENCH}"
+  )
+fi
+if [[ "${MOVEIT_WITH_INTEGRATED_CARTESIAN}" == "true" ]]; then
+  LAUNCH_ARGS+=("moveit_velocity_controller:=integrated_cartesian_arm_controller")
+fi
+
 echo "[start_mur620_hardware_logged] Starting launch..."
+printf '[start_mur620_hardware_logged] full command: ros2 launch %s %s' "$LAUNCH_PACKAGE" "$LAUNCH_FILE"
+printf ' %q' "${LAUNCH_ARGS[@]}"
+printf '\n'
 set +e
-ros2 launch "$LAUNCH_PACKAGE" "$LAUNCH_FILE" "$@"
+ros2 launch "$LAUNCH_PACKAGE" "$LAUNCH_FILE" "${LAUNCH_ARGS[@]}"
 status="$?"
 set -e
 

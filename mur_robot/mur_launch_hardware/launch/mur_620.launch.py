@@ -101,6 +101,20 @@ def declare_arguments():
         DeclareLaunchArgument('cartesian_admittance_wrench_filter_alpha', default_value='0.02'),
         DeclareLaunchArgument('cartesian_admittance_max_linear_velocity', default_value='0.10'),
         DeclareLaunchArgument('cartesian_admittance_max_angular_velocity', default_value='0.35'),
+        DeclareLaunchArgument('use_integrated_cartesian_controller', default_value='false'),
+        DeclareLaunchArgument('integrated_controller_initial_active', default_value='false'),
+        DeclareLaunchArgument('integrated_controller_use_ft_sensor', default_value='false'),
+        DeclareLaunchArgument('integrated_controller_require_wrench', default_value='false'),
+        DeclareLaunchArgument('integrated_controller_command_timeout', default_value='0.12'),
+        DeclareLaunchArgument('integrated_controller_wrench_timeout', default_value='0.5'),
+        DeclareLaunchArgument('integrated_controller_wrench_bias_duration', default_value='1.0'),
+        DeclareLaunchArgument('integrated_controller_wrench_filter_alpha', default_value='0.02'),
+        DeclareLaunchArgument('integrated_controller_max_linear_velocity', default_value='0.10'),
+        DeclareLaunchArgument('integrated_controller_max_angular_velocity', default_value='0.35'),
+        DeclareLaunchArgument('integrated_controller_max_joint_velocity', default_value='0.6'),
+        DeclareLaunchArgument('integrated_controller_max_joint_acceleration', default_value='0.4'),
+        DeclareLaunchArgument('integrated_controller_max_joint_jerk', default_value='1.0'),
+        DeclareLaunchArgument('integrated_controller_joint_limit_margin', default_value='0.02'),
         DeclareLaunchArgument('launch_moveit', default_value='false'),
         DeclareLaunchArgument('launch_moveit_rviz', default_value='false'),
         DeclareLaunchArgument('moveit_rviz_delay', default_value='5.0'),
@@ -120,6 +134,7 @@ def declare_arguments():
         DeclareLaunchArgument('moveit_goal_reached_tolerance', default_value='0.03'),
         DeclareLaunchArgument('moveit_default_velocity_scaling', default_value='0.25'),
         DeclareLaunchArgument('moveit_default_acceleration_scaling', default_value='0.15'),
+        DeclareLaunchArgument('moveit_velocity_controller', default_value='forward_velocity_controller'),
         DeclareLaunchArgument('launch_arm_velocity_safety', default_value='true'),
         DeclareLaunchArgument('arm_velocity_safety_rate_hz', default_value='500.0'),
         DeclareLaunchArgument('arm_velocity_safety_command_timeout', default_value='0.15'),
@@ -224,7 +239,7 @@ def controller_spawner(namespace, controllers, *, active=True):
     )
 
 
-def make_arm_controllers_file(source_file, robot_name, arm_name):
+def make_arm_controllers_file(source_file, robot_name, arm_name, integrated_controller_params):
     with open(source_file, 'r', encoding='utf-8') as config:
         contents = config.read()
 
@@ -243,11 +258,17 @@ def make_arm_controllers_file(source_file, robot_name, arm_name):
     namespaced[f'/{namespace}/controller_manager'] = controller_manager_config
 
     controller_params = controller_manager_config.get('ros__parameters', {})
+    controller_params['integrated_cartesian_arm_controller'] = {
+        'type': 'mur_control/IntegratedCartesianArmController',
+    }
+    namespaced['integrated_cartesian_arm_controller'] = {
+        'ros__parameters': integrated_controller_params,
+    }
     for controller_name, controller_config in controller_params.items():
         if not isinstance(controller_config, dict) or 'type' not in controller_config:
             continue
         namespaced[f'/{namespace}/{controller_name}'] = deepcopy(
-            loaded.get(controller_name, {'ros__parameters': {}})
+            namespaced.get(controller_name, loaded.get(controller_name, {'ros__parameters': {}}))
         )
 
     out_dir = os.path.join(tempfile.gettempdir(), 'mur_launch_hardware')
@@ -377,6 +398,7 @@ def make_ur_driver(side, robot_name, controllers_file, update_rate_config_file):
                 'tcp_pose_broadcaster',
                 'ur_configuration_controller',
                 'forward_velocity_controller',
+                'integrated_cartesian_arm_controller',
                 'scaled_joint_trajectory_controller',
                 'joint_trajectory_controller',
             ]},
@@ -431,10 +453,23 @@ def make_ur_driver(side, robot_name, controllers_file, update_rate_config_file):
         selected = selected_controller(context)
         active = list(controllers_active)
         inactive = list(controllers_inactive)
-        if activate_joint_controller.perform(context) == 'true':
+        use_integrated = LaunchConfiguration('use_integrated_cartesian_controller').perform(context) == 'true'
+        integrated_active = (
+            LaunchConfiguration('integrated_controller_initial_active').perform(context) == 'true'
+        )
+        if activate_joint_controller.perform(context) == 'true' and not (use_integrated and integrated_active):
             active.append(selected)
             if selected in inactive:
                 inactive.remove(selected)
+        if use_integrated:
+            inactive.append('integrated_cartesian_arm_controller')
+            if integrated_active:
+                active.append('integrated_cartesian_arm_controller')
+                inactive.remove('integrated_cartesian_arm_controller')
+                if 'forward_velocity_controller' in active:
+                    active.remove('forward_velocity_controller')
+                if 'forward_velocity_controller' not in inactive:
+                    inactive.append('forward_velocity_controller')
         if use_mock_hardware.perform(context) == 'true' and 'tcp_pose_broadcaster' in active:
             active.remove('tcp_pose_broadcaster')
 
@@ -575,7 +610,7 @@ def make_moveit_controller_proxies(robot_name):
                         '/follow_joint_trajectory',
                     ],
                     '--controller-manager', f'/{robot_name}/{arm_name}/controller_manager',
-                    '--velocity-controller', 'forward_velocity_controller',
+                    '--velocity-controller', LaunchConfiguration('moveit_velocity_controller'),
                     '--trajectory-controller',
                     LaunchConfiguration('moveit_hardware_trajectory_controller'),
                     '--velocity-command-topic',
@@ -751,6 +786,70 @@ def launch_setup(context, *args, **kwargs):
         f'{ur_type}_update_rate.yaml',
     )
 
+    def integrated_controller_params(side):
+        arm_name = f'UR10_{side}'
+        return {
+            'robot_name': robot_name,
+            'arm': side,
+            'prefix': arm_name,
+            'base_link': f'{arm_name}/base_link',
+            'tip_link': f'{arm_name}/tool0',
+            'debug_base_frame': f'{robot_name}/{arm_name}/base_link',
+            'command_frame': f'{arm_name}/base_link',
+            'equilibrium_frame': f'{robot_name}/{arm_name}/admittance_equilibrium_pose',
+            'target_frame': f'{robot_name}/{arm_name}/admittance_target_pose',
+            'joints': [
+                f'{arm_name}/shoulder_pan_joint',
+                f'{arm_name}/shoulder_lift_joint',
+                f'{arm_name}/elbow_joint',
+                f'{arm_name}/wrist_1_joint',
+                f'{arm_name}/wrist_2_joint',
+                f'{arm_name}/wrist_3_joint',
+            ],
+            'command_joints': [
+                f'{arm_name}/shoulder_pan_joint',
+                f'{arm_name}/shoulder_lift_joint',
+                f'{arm_name}/elbow_joint',
+                f'{arm_name}/wrist_1_joint',
+                f'{arm_name}/wrist_2_joint',
+                f'{arm_name}/wrist_3_joint',
+            ],
+            'use_ft_sensor': LaunchConfiguration(
+                'integrated_controller_use_ft_sensor').perform(context) == 'true',
+            'require_wrench': LaunchConfiguration(
+                'integrated_controller_require_wrench').perform(context) == 'true',
+            'ft_sensor_name': f'{arm_name}/tcp_fts_sensor',
+            'ft_state_interface_names': [
+                f'{arm_name}/tcp_fts_sensor/force.x',
+                f'{arm_name}/tcp_fts_sensor/force.y',
+                f'{arm_name}/tcp_fts_sensor/force.z',
+                f'{arm_name}/tcp_fts_sensor/torque.x',
+                f'{arm_name}/tcp_fts_sensor/torque.y',
+                f'{arm_name}/tcp_fts_sensor/torque.z',
+            ],
+            'command_timeout': float(LaunchConfiguration(
+                'integrated_controller_command_timeout').perform(context)),
+            'wrench_timeout': float(LaunchConfiguration(
+                'integrated_controller_wrench_timeout').perform(context)),
+            'wrench_bias_duration': float(LaunchConfiguration(
+                'integrated_controller_wrench_bias_duration').perform(context)),
+            'wrench_filter_alpha': float(LaunchConfiguration(
+                'integrated_controller_wrench_filter_alpha').perform(context)),
+            'max_linear_velocity': float(LaunchConfiguration(
+                'integrated_controller_max_linear_velocity').perform(context)),
+            'max_angular_velocity': float(LaunchConfiguration(
+                'integrated_controller_max_angular_velocity').perform(context)),
+            'max_joint_velocity': float(LaunchConfiguration(
+                'integrated_controller_max_joint_velocity').perform(context)),
+            'max_joint_acceleration': float(LaunchConfiguration(
+                'integrated_controller_max_joint_acceleration').perform(context)),
+            'max_joint_jerk': float(LaunchConfiguration(
+                'integrated_controller_max_joint_jerk').perform(context)),
+            'joint_limit_margin': float(LaunchConfiguration(
+                'integrated_controller_joint_limit_margin').perform(context)),
+            'publish_state_rate_hz': 50.0,
+        }
+
     visual_mesh_flags = {
         name: LaunchConfiguration(name).perform(context)
         for name in (
@@ -810,13 +909,23 @@ def launch_setup(context, *args, **kwargs):
         make_ur_driver(
             'l',
             robot_name,
-            make_arm_controllers_file(controllers_file, robot_name, 'UR10_l'),
+            make_arm_controllers_file(
+                controllers_file,
+                robot_name,
+                'UR10_l',
+                integrated_controller_params('l'),
+            ),
             update_rate_config_file,
         ),
         make_ur_driver(
             'r',
             robot_name,
-            make_arm_controllers_file(controllers_file, robot_name, 'UR10_r'),
+            make_arm_controllers_file(
+                controllers_file,
+                robot_name,
+                'UR10_r',
+                integrated_controller_params('r'),
+            ),
             update_rate_config_file,
         ),
     ]

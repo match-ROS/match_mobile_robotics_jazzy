@@ -6,10 +6,15 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 find_package(ament_cmake REQUIRED)
+find_package(controller_interface REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(hardware_interface REQUIRED)
 find_package(kdl_parser REQUIRED)
 find_package(orocos_kdl REQUIRED)
+find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_lifecycle REQUIRED)
+find_package(realtime_tools REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
@@ -48,6 +53,30 @@ ament_target_dependencies(cartesian_admittance_controller
   tf2_ros
 )
 
+add_library(integrated_cartesian_arm_controller SHARED
+  src/integrated_cartesian_arm_controller.cpp
+)
+ament_target_dependencies(integrated_cartesian_arm_controller
+  controller_interface
+  geometry_msgs
+  hardware_interface
+  kdl_parser
+  orocos_kdl
+  pluginlib
+  rclcpp
+  rclcpp_lifecycle
+  realtime_tools
+  std_msgs
+  tf2
+  tf2_ros
+)
+target_link_libraries(integrated_cartesian_arm_controller
+  Eigen3::Eigen
+)
+pluginlib_export_plugin_description_file(
+  controller_interface mur_control_plugins.xml
+)
+
 rosidl_generate_interfaces(${PROJECT_NAME}
   "action/JparseMove.action"
   DEPENDENCIES geometry_msgs
@@ -56,12 +85,21 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 install(TARGETS
   arm_velocity_safety_node
   cartesian_admittance_controller
+  integrated_cartesian_arm_controller
   jparse_velocity_controller
-  DESTINATION lib/${PROJECT_NAME}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
+
+install(FILES
+  mur_control_plugins.xml
+  DESTINATION share/${PROJECT_NAME}
 )
 
 install(PROGRAMS
   scripts/diagnose_cartesian_admittance.py
+  scripts/diagnose_integrated_cartesian_controller.py
   scripts/jparse_move_action_server.py
   scripts/jparse_simple_goal.py
   scripts/moveit_trajectory_controller_proxy.py
