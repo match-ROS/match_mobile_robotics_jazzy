@@ -760,8 +760,11 @@ protected:
       }
     }
 
+    latest_qdot_raw_command_ = qdot;
     qdot = apply_collision_avoidance(qdot, q, time);
+    latest_qdot_after_collision_ = qdot;
     qdot = apply_safety_limits(qdot, q, dt);
+    latest_qdot_after_safety_ = qdot;
     Eigen::VectorXd qdot_limited = Eigen::VectorXd::Zero(qdot_raw.size());
     for (std::size_t i = 0; i < command_joint_names_.size(); ++i) {
       const auto it = std::find(chain_joint_names_.begin(), chain_joint_names_.end(), command_joint_names_[i]);
@@ -778,7 +781,7 @@ protected:
     latest_target_orientation_ = target_orientation;
     latest_achieved_twist_ = latest_jacobian_ * qdot_limited;
     if (should_publish(time)) {
-      publish_debug(time, target_twist, qdot_limited);
+      publish_debug(time, target_twist);
       publish_collision_state(time);
       publish_state(time, current_tcp, false);
     }
@@ -1277,6 +1280,12 @@ private:
     const KDL::JntArray & q,
     double dt)
   {
+    latest_safety_velocity_scale_ = 1.0;
+    latest_safety_acceleration_scale_ = 1.0;
+    latest_safety_jerk_scale_ = 1.0;
+    latest_safety_limiting_joint_index_ = -1.0;
+    latest_safety_limiting_stage_ = 0.0;
+
     if (command.size() != last_commanded_velocity_.size()) {
       last_commanded_velocity_.assign(command.size(), 0.0);
       last_commanded_acceleration_.assign(command.size(), 0.0);
@@ -1297,6 +1306,8 @@ private:
       if ((position >= upper && command[i] > 0.0) || (position <= lower && command[i] < 0.0)) {
         command[i] = 0.0;
         position_blocked[i] = true;
+        latest_safety_limiting_joint_index_ = static_cast<double>(i);
+        latest_safety_limiting_stage_ = 4.0;
       } else if (command[i] > 0.0) {
         command[i] = std::min(command[i], std::max(0.0, (upper - position) / dt));
       } else if (command[i] < 0.0) {
@@ -1308,9 +1319,15 @@ private:
       double velocity_scale = 1.0;
       for (std::size_t i = 0; i < command.size(); ++i) {
         if (velocity_limits[i] > 0.0 && std::abs(command[i]) > velocity_limits[i]) {
-          velocity_scale = std::min(velocity_scale, velocity_limits[i] / std::abs(command[i]));
+          const double scale = velocity_limits[i] / std::abs(command[i]);
+          if (scale < velocity_scale) {
+            velocity_scale = scale;
+            latest_safety_limiting_joint_index_ = static_cast<double>(i);
+            latest_safety_limiting_stage_ = 1.0;
+          }
         }
       }
+      latest_safety_velocity_scale_ = velocity_scale;
       for (double & value : command) {
         value *= velocity_scale;
       }
@@ -1325,10 +1342,16 @@ private:
       for (std::size_t i = 0; i < command.size(); ++i) {
         const double limit = std::abs(joint_acceleration_limits_[i]);
         if (limit > 0.0 && std::abs(desired_acceleration[i]) > limit) {
-          acceleration_scale = std::min(acceleration_scale, limit / std::abs(desired_acceleration[i]));
+          const double scale = limit / std::abs(desired_acceleration[i]);
+          if (scale < acceleration_scale) {
+            acceleration_scale = scale;
+            latest_safety_limiting_joint_index_ = static_cast<double>(i);
+            latest_safety_limiting_stage_ = 2.0;
+          }
         }
       }
     }
+    latest_safety_acceleration_scale_ = acceleration_scale;
     for (std::size_t i = 0; i < command.size(); ++i) {
       desired_acceleration[i] *= acceleration_scale;
       if (!preserve_command_direction_) {
@@ -1345,10 +1368,16 @@ private:
       for (std::size_t i = 0; i < command.size(); ++i) {
         const double max_delta = std::abs(joint_jerk_limits_[i]) * dt;
         if (max_delta > 0.0 && std::abs(acceleration_delta[i]) > max_delta) {
-          jerk_scale = std::min(jerk_scale, max_delta / std::abs(acceleration_delta[i]));
+          const double scale = max_delta / std::abs(acceleration_delta[i]);
+          if (scale < jerk_scale) {
+            jerk_scale = scale;
+            latest_safety_limiting_joint_index_ = static_cast<double>(i);
+            latest_safety_limiting_stage_ = 3.0;
+          }
         }
       }
     }
+    latest_safety_jerk_scale_ = jerk_scale;
 
     for (std::size_t i = 0; i < command.size(); ++i) {
       double acceleration = last_commanded_acceleration_[i] + acceleration_delta[i] * jerk_scale;
@@ -1370,6 +1399,10 @@ private:
       }
       next_velocity = std::clamp(next_velocity, -velocity_limits[i], velocity_limits[i]);
       if (position_blocked[i] || (immediate_zero_on_zero_command_ && std::abs(command[i]) <= zero_command_deadband_)) {
+        if (!position_blocked[i] && latest_safety_limiting_stage_ == 0.0) {
+          latest_safety_limiting_joint_index_ = static_cast<double>(i);
+          latest_safety_limiting_stage_ = 5.0;
+        }
         next_velocity = 0.0;
         acceleration = 0.0;
       }
@@ -1398,8 +1431,7 @@ private:
 
   void publish_debug(
     const rclcpp::Time & time,
-    const Eigen::VectorXd & target_twist,
-    const Eigen::VectorXd & qdot)
+    const Eigen::VectorXd & target_twist)
   {
     std_msgs::msg::Float64MultiArray singular_msg;
     singular_msg.data.reserve(static_cast<std::size_t>(latest_singular_values_.size()) + 1);
@@ -1410,7 +1442,8 @@ private:
     singular_values_pub_->publish(singular_msg);
 
     std_msgs::msg::Float64MultiArray debug_msg;
-    debug_msg.data.reserve(15 + static_cast<std::size_t>(qdot.size()));
+    debug_msg.data.reserve(20 + latest_qdot_raw_command_.size() +
+      latest_qdot_after_collision_.size() + latest_qdot_after_safety_.size());
     debug_msg.data.push_back(latest_inverse_condition_);
     for (Eigen::Index i = 0; i < target_twist.size(); ++i) {
       debug_msg.data.push_back(target_twist(i));
@@ -1420,8 +1453,19 @@ private:
     }
     debug_msg.data.push_back(latest_collision_min_clearance_);
     debug_msg.data.push_back(latest_collision_scale_);
-    for (Eigen::Index i = 0; i < qdot.size(); ++i) {
-      debug_msg.data.push_back(qdot(i));
+    debug_msg.data.push_back(latest_safety_velocity_scale_);
+    debug_msg.data.push_back(latest_safety_acceleration_scale_);
+    debug_msg.data.push_back(latest_safety_jerk_scale_);
+    debug_msg.data.push_back(latest_safety_limiting_joint_index_);
+    debug_msg.data.push_back(latest_safety_limiting_stage_);
+    for (double value : latest_qdot_raw_command_) {
+      debug_msg.data.push_back(value);
+    }
+    for (double value : latest_qdot_after_collision_) {
+      debug_msg.data.push_back(value);
+    }
+    for (double value : latest_qdot_after_safety_) {
+      debug_msg.data.push_back(value);
     }
     debug_twist_pub_->publish(debug_msg);
 
@@ -1590,6 +1634,9 @@ private:
   std::vector<double> joint_jerk_limits_;
   std::vector<double> last_commanded_velocity_;
   std::vector<double> last_commanded_acceleration_;
+  std::vector<double> latest_qdot_raw_command_;
+  std::vector<double> latest_qdot_after_collision_;
+  std::vector<double> latest_qdot_after_safety_;
 
   Vector6 filtered_wrench_{0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   Vector6 wrench_bias_{0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
@@ -1616,6 +1663,11 @@ private:
   double latest_inverse_condition_{0.0};
   double latest_collision_min_clearance_{std::numeric_limits<double>::quiet_NaN()};
   double latest_collision_scale_{1.0};
+  double latest_safety_velocity_scale_{1.0};
+  double latest_safety_acceleration_scale_{1.0};
+  double latest_safety_jerk_scale_{1.0};
+  double latest_safety_limiting_joint_index_{-1.0};
+  double latest_safety_limiting_stage_{0.0};
   std::string latest_collision_status_{"disabled"};
 };
 

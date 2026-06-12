@@ -508,8 +508,9 @@ class StepResponseLogger(Node):
 
     def capture_row(self, segment, phase, command, segment_start_time):
         position, orientation = self.lookup_tool_pose(timeout=0.1)
-        debug = pad(self.last_debug, 21)
-        qdot_offset = 15 if len(self.last_debug) >= 21 else 13
+        debug = pad(self.last_debug, 38)
+        new_debug = len(self.last_debug) >= 38
+        qdot_offset = 32 if new_debug else (15 if len(self.last_debug) >= 21 else 13)
         joint_positions = [self.joint_positions.get(name, float("nan")) for name in self.joint_names]
         joint_velocities = [self.joint_velocities.get(name, float("nan")) for name in self.joint_names]
         now = time.monotonic()
@@ -544,9 +545,18 @@ class StepResponseLogger(Node):
             "debug_achieved_wx": debug[10],
             "debug_achieved_wy": debug[11],
             "debug_achieved_wz": debug[12],
-            "debug_collision_min_clearance": debug[13] if qdot_offset == 15 else float("nan"),
-            "debug_collision_scale": debug[14] if qdot_offset == 15 else float("nan"),
+            "debug_collision_min_clearance": debug[13] if len(self.last_debug) >= 21 else float("nan"),
+            "debug_collision_scale": debug[14] if len(self.last_debug) >= 21 else float("nan"),
+            "debug_safety_velocity_scale": debug[15] if new_debug else float("nan"),
+            "debug_safety_acceleration_scale": debug[16] if new_debug else float("nan"),
+            "debug_safety_jerk_scale": debug[17] if new_debug else float("nan"),
+            "debug_safety_limiting_joint": debug[18] if new_debug else float("nan"),
+            "debug_safety_limiting_stage": debug[19] if new_debug else float("nan"),
         }
+        for index, value in enumerate(debug[20:26] if new_debug else [float("nan")] * 6):
+            row[f"debug_qdot_raw_{index}"] = value
+        for index, value in enumerate(debug[26:32] if new_debug else [float("nan")] * 6):
+            row[f"debug_qdot_collision_{index}"] = value
         for index, value in enumerate(debug[qdot_offset:qdot_offset + 6]):
             row[f"debug_qdot_{index}"] = value
         for index, value in enumerate(pad(self.last_wrench, 6)):
@@ -591,7 +601,14 @@ class StepResponseLogger(Node):
             "debug_achieved_wz",
             "debug_collision_min_clearance",
             "debug_collision_scale",
+            "debug_safety_velocity_scale",
+            "debug_safety_acceleration_scale",
+            "debug_safety_jerk_scale",
+            "debug_safety_limiting_joint",
+            "debug_safety_limiting_stage",
         ]
+        fields.extend(f"debug_qdot_raw_{index}" for index in range(6))
+        fields.extend(f"debug_qdot_collision_{index}" for index in range(6))
         fields.extend(f"debug_qdot_{index}" for index in range(6))
         fields.extend(f"wrench_{index}" for index in range(6))
         fields.extend(f"joint_pos_{index}" for index in range(6))

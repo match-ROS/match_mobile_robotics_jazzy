@@ -110,6 +110,28 @@ def fmt(values):
     return '[' + ' '.join(f'{value:.4f}' for value in values) + ']'
 
 
+def limit_norm(values, limit):
+    magnitude = math.sqrt(sum(value * value for value in values))
+    if limit <= 0.0 or magnitude <= limit or magnitude < 1.0e-12:
+        return values
+    return [value * limit / magnitude for value in values]
+
+
+def stage_name(value):
+    stages = {
+        0: 'none',
+        1: 'velocity',
+        2: 'acceleration',
+        3: 'jerk',
+        4: 'position',
+        5: 'zero',
+    }
+    try:
+        return stages.get(int(round(value)), f'unknown({value:.0f})')
+    except (TypeError, ValueError):
+        return 'unknown'
+
+
 class IntegratedCartesianDiagnoser(Node):
     def __init__(self, args):
         super().__init__('diagnose_integrated_cartesian_admittance_controller')
@@ -180,6 +202,7 @@ class IntegratedCartesianDiagnoser(Node):
         self.create_subscription(String, self.topics['collision_status'].name, self._string_cb('collision_status'), 10)
         self.create_subscription(JointState, self.topics['joint_states'].name, self._joint_cb, rclpy.qos.qos_profile_sensor_data)
         self.test_pub = self.create_publisher(TwistStamped, self.topics['input'].name, 10)
+        self.next_test_publish_time = 0.0
 
     def _make_log_path(self):
         if self.args.log_file == 'none':
@@ -227,10 +250,20 @@ class IntegratedCartesianDiagnoser(Node):
                 values.append(msg.position[index])
         self.topics['joint_states'].update(values)
 
-    def publish_test_twist(self, active):
+    def test_scale(self, now, start):
+        elapsed = now - start
+        ramp = max(0.0, self.args.test_ramp_duration)
+        if elapsed < 0.0 or elapsed > self.args.test_duration:
+            return 0.0
+        scale = 1.0
+        if ramp > 1.0e-6:
+            scale = min(scale, elapsed / ramp)
+            scale = min(scale, max(0.0, (self.args.test_duration - elapsed) / ramp))
+        return max(0.0, min(1.0, scale))
+
+    def publish_test_twist(self, scale):
         values = [0.0] * 6
-        if active:
-            values[AXIS_INDEX[self.args.axis]] = self.args.velocity
+        values[AXIS_INDEX[self.args.axis]] = self.args.velocity * scale
         msg = TwistStamped()
         msg.header.stamp = self.get_clock().now().to_msg()
         msg.header.frame_id = self.command_frame
@@ -247,26 +280,31 @@ class IntegratedCartesianDiagnoser(Node):
         self.read_controller_parameters()
         start = time.monotonic()
         end = start + self.args.duration
-        test_end = start + self.args.test_duration
         next_tick = start
+        test_period = 1.0 / max(1.0, self.args.test_publish_rate_hz)
+        self.next_test_publish_time = start
         if self.args.send_test_command:
             self.get_logger().info(
-                f'Sending test twist {self.args.axis}={self.args.velocity:.4f} for '
-                f'{self.args.test_duration:.2f}s to {self.topics["input"].name}'
+                f'Sending rate-limited test twist {self.args.axis}={self.args.velocity:.4f} '
+                f'for {self.args.test_duration:.2f}s at {self.args.test_publish_rate_hz:.1f} Hz '
+                f'with {self.args.test_ramp_duration:.2f}s ramps to {self.topics["input"].name}'
             )
         while rclpy.ok() and time.monotonic() < end:
             now = time.monotonic()
-            if self.args.send_test_command:
-                self.publish_test_twist(now < test_end)
+            if self.args.send_test_command and now >= self.next_test_publish_time:
+                self.publish_test_twist(self.test_scale(now, start))
+                self.next_test_publish_time += test_period
+                if self.next_test_publish_time < now - test_period:
+                    self.next_test_publish_time = now + test_period
             rclpy.spin_once(self, timeout_sec=0.01)
             if now >= next_tick:
                 self.print_tick()
                 next_tick = now + 1.0
         if self.args.send_test_command:
             for _ in range(10):
-                self.publish_test_twist(False)
+                self.publish_test_twist(0.0)
                 rclpy.spin_once(self, timeout_sec=0.01)
-                time.sleep(0.02)
+                time.sleep(test_period)
         self.print_summary()
         self.write_json_summary()
         if self.log_path is not None:
@@ -439,6 +477,41 @@ class IntegratedCartesianDiagnoser(Node):
                     '* Collision clearance is negative. If the arms are visually separated, suspect wrong '
                     'mount transforms or sampled base/link points that overlap near the robot center.'
                 )
+        self.print_debug_interpretation()
+
+    def print_debug_interpretation(self):
+        debug = self.topics['debug_twist'].samples[-1] if self.topics['debug_twist'].samples else []
+        if len(debug) < 21:
+            return
+        self._print('\n--- Latest debug_twist decoded ---')
+        if len(debug) >= 38:
+            safety = {
+                'velocity_scale': debug[13 + 2],
+                'acceleration_scale': debug[13 + 3],
+                'jerk_scale': debug[13 + 4],
+                'limiting_joint_index': debug[13 + 5],
+                'limiting_stage': debug[13 + 6],
+            }
+            qdot_raw = debug[20:26]
+            qdot_collision = debug[26:32]
+            qdot_safety = debug[32:38]
+            joint_index = int(round(safety['limiting_joint_index']))
+            joint_name = (
+                self.joint_names[joint_index]
+                if 0 <= joint_index < len(self.joint_names)
+                else 'none'
+            )
+            self._print(
+                f"  safety scales: vel={safety['velocity_scale']:.4f}, "
+                f"acc={safety['acceleration_scale']:.4f}, jerk={safety['jerk_scale']:.4f}, "
+                f"limiting={joint_name}, stage={stage_name(safety['limiting_stage'])}"
+            )
+            self._print(f'  qdot raw:       {fmt(qdot_raw)}')
+            self._print(f'  qdot collision: {fmt(qdot_collision)}')
+            self._print(f'  qdot safety:    {fmt(qdot_safety)}')
+        else:
+            qdot_offset = 15 if len(debug) >= 21 else 13
+            self._print(f'  legacy qdot: {fmt(debug[qdot_offset:qdot_offset + 6])}')
 
     def write_json_summary(self):
         self.json_path.parent.mkdir(parents=True, exist_ok=True)
@@ -475,6 +548,8 @@ def parse_args():
     parser.add_argument('--duration', type=float, default=6.0)
     parser.add_argument('--send-test-command', action='store_true')
     parser.add_argument('--test-duration', type=float, default=2.0)
+    parser.add_argument('--test-publish-rate-hz', type=float, default=50.0)
+    parser.add_argument('--test-ramp-duration', type=float, default=0.4)
     parser.add_argument('--axis', choices=sorted(AXIS_INDEX), default='x')
     parser.add_argument('--velocity', type=float, default=0.01)
     parser.add_argument('--command-frame')

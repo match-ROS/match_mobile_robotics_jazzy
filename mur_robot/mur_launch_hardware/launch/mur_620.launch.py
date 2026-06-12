@@ -139,6 +139,9 @@ def declare_arguments():
         DeclareLaunchArgument('integrated_controller_max_joint_acceleration', default_value='1.4'),
         DeclareLaunchArgument('integrated_controller_max_joint_jerk', default_value='6.0'),
         DeclareLaunchArgument('integrated_controller_joint_limit_margin', default_value='0.02'),
+        DeclareLaunchArgument('integrated_controller_preserve_command_direction', default_value='true'),
+        DeclareLaunchArgument('integrated_controller_immediate_zero_on_zero_command', default_value='true'),
+        DeclareLaunchArgument('integrated_controller_zero_command_deadband', default_value='1.0e-5'),
         DeclareLaunchArgument('integrated_controller_reset_equilibrium_on_zero_command', default_value='auto'),
         DeclareLaunchArgument('integrated_controller_enable_collision_avoidance', default_value='true'),
         DeclareLaunchArgument('integrated_controller_collision_common_link', default_value='base_link'),
@@ -1051,6 +1054,12 @@ def launch_setup(context, *args, **kwargs):
                 'integrated_controller_max_joint_jerk').perform(context)),
             'joint_limit_margin': float(LaunchConfiguration(
                 'integrated_controller_joint_limit_margin').perform(context)),
+            'preserve_command_direction': LaunchConfiguration(
+                'integrated_controller_preserve_command_direction').perform(context) == 'true',
+            'immediate_zero_on_zero_command': LaunchConfiguration(
+                'integrated_controller_immediate_zero_on_zero_command').perform(context) == 'true',
+            'zero_command_deadband': float(LaunchConfiguration(
+                'integrated_controller_zero_command_deadband').perform(context)),
             'reset_equilibrium_on_zero_command': integrated_reset_equilibrium_on_zero,
             'enable_collision_avoidance': LaunchConfiguration(
                 'integrated_controller_enable_collision_avoidance').perform(context) == 'true',
