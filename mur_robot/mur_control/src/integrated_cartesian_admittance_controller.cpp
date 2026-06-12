@@ -105,6 +105,20 @@ tf2::Vector3 rotation_vector_from_quaternion(tf2::Quaternion q)
   return q.getAxis() * angle;
 }
 
+tf2::Transform transform_from_xyz_rpy(
+  const std::vector<double> & xyz,
+  const std::vector<double> & rpy)
+{
+  tf2::Quaternion q;
+  q.setRPY(rpy[0], rpy[1], rpy[2]);
+  q.normalize();
+
+  tf2::Transform transform;
+  transform.setOrigin(tf2::Vector3(xyz[0], xyz[1], xyz[2]));
+  transform.setRotation(q);
+  return transform;
+}
+
 void vector_to_msg(const tf2::Vector3 & value, geometry_msgs::msg::Vector3 & msg)
 {
   msg.x = value.x();
@@ -383,6 +397,10 @@ public:
           collision_other_prefix_ + "/wrist_3_joint",
         });
       collision_common_link_ = auto_declare<std::string>("collision_common_link", "base_link");
+      collision_own_base_xyz_ = checked_vector("collision_own_base_xyz", {0.0, 0.0, 0.0});
+      collision_own_base_rpy_ = checked_vector("collision_own_base_rpy", {0.0, 0.0, 0.0});
+      collision_other_base_xyz_ = checked_vector("collision_other_base_xyz", {0.0, 0.0, 0.0});
+      collision_other_base_rpy_ = checked_vector("collision_other_base_rpy", {0.0, 0.0, 0.0});
       collision_joint_states_topic_ = auto_declare<std::string>("collision_joint_states_topic", "/joint_states");
       collision_joint_state_timeout_ = std::max(
         0.0, auto_declare<double>("collision_joint_state_timeout", 0.1));
@@ -796,23 +814,40 @@ private:
 
   bool configure_collision_chains(const KDL::Tree & tree)
   {
-    if (!tree.getChain(collision_common_link_, tip_link_, own_collision_chain_)) {
+    if (!tree.getChain(base_link_, tip_link_, own_collision_chain_)) {
       RCLCPP_ERROR(
         get_node()->get_logger(),
         "Could not build own collision KDL chain from '%s' to '%s'",
-        collision_common_link_.c_str(), tip_link_.c_str());
+        base_link_.c_str(), tip_link_.c_str());
       return false;
     }
-    if (!tree.getChain(collision_common_link_, collision_other_tip_link_, other_collision_chain_)) {
-      RCLCPP_ERROR(
+    bool other_chain_from_robot_description = true;
+    if (!tree.getChain(collision_other_base_link_, collision_other_tip_link_, other_collision_chain_)) {
+      other_chain_from_robot_description = false;
+      other_collision_chain_ = own_collision_chain_;
+      RCLCPP_WARN(
         get_node()->get_logger(),
-        "Could not build other collision KDL chain from '%s' to '%s'",
-        collision_common_link_.c_str(), collision_other_tip_link_.c_str());
-      return false;
+        "Could not build other collision KDL chain from '%s' to '%s'; reusing own UR arm "
+        "chain geometry and applying the configured other-arm mount transform",
+        collision_other_base_link_.c_str(), collision_other_tip_link_.c_str());
     }
 
+    collision_common_from_own_base_ =
+      transform_from_xyz_rpy(collision_own_base_xyz_, collision_own_base_rpy_);
+    collision_common_from_other_base_ =
+      transform_from_xyz_rpy(collision_other_base_xyz_, collision_other_base_rpy_);
+
     own_collision_joint_names_ = movable_joint_names(own_collision_chain_);
-    other_collision_joint_names_ = movable_joint_names(other_collision_chain_);
+    auto other_movable_joint_names = movable_joint_names(other_collision_chain_);
+    if (collision_other_joint_names_.size() == other_movable_joint_names.size()) {
+      other_collision_joint_names_ = collision_other_joint_names_;
+    } else {
+      RCLCPP_WARN(
+        get_node()->get_logger(),
+        "Parameter 'collision_other_joint_names' has %zu entries, expected %zu; using KDL joint names",
+        collision_other_joint_names_.size(), other_movable_joint_names.size());
+      other_collision_joint_names_ = std::move(other_movable_joint_names);
+    }
     own_collision_fk_solver_ =
       std::make_unique<KDL::ChainFkSolverPos_recursive>(own_collision_chain_);
     other_collision_fk_solver_ =
@@ -820,8 +855,12 @@ private:
 
     RCLCPP_INFO(
       get_node()->get_logger(),
-      "Configured collision avoidance for %s against %s: common=%s, own_joints=%zu, other_joints=%zu",
+      "Configured collision avoidance for %s against %s: common=%s, own_chain=%s->%s, "
+      "other_chain=%s->%s%s, own_joints=%zu, other_joints=%zu",
       prefix_.c_str(), collision_other_prefix_.c_str(), collision_common_link_.c_str(),
+      base_link_.c_str(), tip_link_.c_str(),
+      collision_other_base_link_.c_str(), collision_other_tip_link_.c_str(),
+      other_chain_from_robot_description ? "" : " (reused geometry)",
       own_collision_joint_names_.size(), other_collision_joint_names_.size());
     return true;
   }
@@ -879,6 +918,7 @@ private:
     const KDL::Chain & chain,
     KDL::ChainFkSolverPos_recursive & solver,
     const KDL::JntArray & q,
+    const tf2::Transform & common_from_chain_base,
     std::vector<tf2::Vector3> & points) const
   {
     points.clear();
@@ -898,8 +938,8 @@ private:
       }
 
       if (started_movable_part && have_previous) {
-        const tf2::Vector3 start = point_from_kdl(previous_frame.p);
-        const tf2::Vector3 end = point_from_kdl(current_frame.p);
+        const tf2::Vector3 start = common_from_chain_base * point_from_kdl(previous_frame.p);
+        const tf2::Vector3 end = common_from_chain_base * point_from_kdl(current_frame.p);
         const double length = (end - start).length();
         const int steps = std::max(1, static_cast<int>(std::ceil(length / collision_sample_spacing_)));
         for (int step = 0; step <= steps; ++step) {
@@ -927,9 +967,11 @@ private:
     std::vector<tf2::Vector3> own_points;
     std::vector<tf2::Vector3> other_points;
     if (!sample_collision_points(
-        own_collision_chain_, *own_collision_fk_solver_, own_collision_q, own_points) ||
+        own_collision_chain_, *own_collision_fk_solver_, own_collision_q,
+        collision_common_from_own_base_, own_points) ||
       !sample_collision_points(
-        other_collision_chain_, *other_collision_fk_solver_, other_collision_q, other_points))
+        other_collision_chain_, *other_collision_fk_solver_, other_collision_q,
+        collision_common_from_other_base_, other_points))
     {
       return false;
     }
@@ -1475,6 +1517,10 @@ private:
   std::vector<std::string> collision_other_joint_names_;
   std::vector<std::string> own_collision_joint_names_;
   std::vector<std::string> other_collision_joint_names_;
+  std::vector<double> collision_own_base_xyz_;
+  std::vector<double> collision_own_base_rpy_;
+  std::vector<double> collision_other_base_xyz_;
+  std::vector<double> collision_other_base_rpy_;
 
   KDL::Chain chain_;
   KDL::Chain own_collision_chain_;
@@ -1555,6 +1601,8 @@ private:
   tf2::Quaternion equilibrium_orientation_{0.0, 0.0, 0.0, 1.0};
   tf2::Vector3 latest_target_position_{0.0, 0.0, 0.0};
   tf2::Quaternion latest_target_orientation_{0.0, 0.0, 0.0, 1.0};
+  tf2::Transform collision_common_from_own_base_{tf2::Transform::getIdentity()};
+  tf2::Transform collision_common_from_other_base_{tf2::Transform::getIdentity()};
   bool equilibrium_initialized_{false};
 
   rclcpp::Time last_update_time_{0, 0, RCL_ROS_TIME};

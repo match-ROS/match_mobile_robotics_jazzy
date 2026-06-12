@@ -131,13 +131,13 @@ def declare_arguments():
         ),
         DeclareLaunchArgument(
             'integrated_controller_pose_error_gain',
-            default_value='1.2 1.2 1.0 0.4 0.4 0.4',
+            default_value='1.9 1.9 1.7 0.75 0.75 0.75',
         ),
-        DeclareLaunchArgument('integrated_controller_max_linear_velocity', default_value='0.10'),
-        DeclareLaunchArgument('integrated_controller_max_angular_velocity', default_value='0.35'),
+        DeclareLaunchArgument('integrated_controller_max_linear_velocity', default_value='0.16'),
+        DeclareLaunchArgument('integrated_controller_max_angular_velocity', default_value='0.55'),
         DeclareLaunchArgument('integrated_controller_max_joint_velocity', default_value='0.6'),
-        DeclareLaunchArgument('integrated_controller_max_joint_acceleration', default_value='0.4'),
-        DeclareLaunchArgument('integrated_controller_max_joint_jerk', default_value='1.0'),
+        DeclareLaunchArgument('integrated_controller_max_joint_acceleration', default_value='1.4'),
+        DeclareLaunchArgument('integrated_controller_max_joint_jerk', default_value='6.0'),
         DeclareLaunchArgument('integrated_controller_joint_limit_margin', default_value='0.02'),
         DeclareLaunchArgument('integrated_controller_reset_equilibrium_on_zero_command', default_value='auto'),
         DeclareLaunchArgument('integrated_controller_enable_collision_avoidance', default_value='true'),
@@ -944,6 +944,14 @@ def launch_setup(context, *args, **kwargs):
         6,
         'integrated_controller_pose_error_gain',
     )
+    ur_mount_xyz = {
+        'l': parse_float_list(ur_l_xyz, 3, 'ur_l_xyz'),
+        'r': parse_float_list(ur_r_xyz, 3, 'ur_r_xyz'),
+    }
+    ur_mount_rpy = {
+        'l': parse_float_list(ur_l_rpy, 3, 'ur_l_rpy'),
+        'r': parse_float_list(ur_r_rpy, 3, 'ur_r_rpy'),
+    }
     print(
         "[mur_620.launch] integrated admittance: "
         f"use_ft={integrated_use_ft_sensor}, "
@@ -1031,6 +1039,10 @@ def launch_setup(context, *args, **kwargs):
             'collision_other_prefix': other_arm_name,
             'collision_other_base_link': f'{other_arm_name}/base_link',
             'collision_other_tip_link': f'{other_arm_name}/tool0',
+            'collision_own_base_xyz': ur_mount_xyz[side],
+            'collision_own_base_rpy': ur_mount_rpy[side],
+            'collision_other_base_xyz': ur_mount_xyz[other_side],
+            'collision_other_base_rpy': ur_mount_rpy[other_side],
             'collision_other_joint_names': [
                 f'{other_arm_name}/shoulder_pan_joint',
                 f'{other_arm_name}/shoulder_lift_joint',
