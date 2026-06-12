@@ -516,20 +516,18 @@ public:
   }
 
 protected:
-  std::vector<hardware_interface::CommandInterface::SharedPtr>
-  on_export_reference_interfaces_list() override
+  std::vector<hardware_interface::CommandInterface> on_export_reference_interfaces() override
   {
     reference_interfaces_.assign(6, 0.0);
-    exported_reference_interface_names_ = {
-      "linear.x", "linear.y", "linear.z", "angular.x", "angular.y", "angular.z"};
-    ordered_exported_reference_interfaces_.clear();
-    ordered_exported_reference_interfaces_.reserve(exported_reference_interface_names_.size());
-    for (std::size_t i = 0; i < exported_reference_interface_names_.size(); ++i) {
-      ordered_exported_reference_interfaces_.push_back(
-        std::make_shared<hardware_interface::CommandInterface>(
-          get_node()->get_name(), exported_reference_interface_names_[i], &reference_interfaces_[i]));
-    }
-    return ordered_exported_reference_interfaces_;
+    std::vector<hardware_interface::CommandInterface> exported_reference_interfaces;
+    exported_reference_interfaces.reserve(reference_interfaces_.size());
+    exported_reference_interfaces.emplace_back(get_node()->get_name(), "linear.x", &reference_interfaces_[0]);
+    exported_reference_interfaces.emplace_back(get_node()->get_name(), "linear.y", &reference_interfaces_[1]);
+    exported_reference_interfaces.emplace_back(get_node()->get_name(), "linear.z", &reference_interfaces_[2]);
+    exported_reference_interfaces.emplace_back(get_node()->get_name(), "angular.x", &reference_interfaces_[3]);
+    exported_reference_interfaces.emplace_back(get_node()->get_name(), "angular.y", &reference_interfaces_[4]);
+    exported_reference_interfaces.emplace_back(get_node()->get_name(), "angular.z", &reference_interfaces_[5]);
+    return exported_reference_interfaces;
   }
 
   std::vector<hardware_interface::StateInterface::SharedPtr>
