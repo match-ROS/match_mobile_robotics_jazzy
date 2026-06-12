@@ -113,14 +113,29 @@ def declare_arguments():
         DeclareLaunchArgument('integrated_controller_command_timeout', default_value='0.12'),
         DeclareLaunchArgument('integrated_controller_wrench_timeout', default_value='0.5'),
         DeclareLaunchArgument('integrated_controller_wrench_bias_duration', default_value='1.0'),
-        DeclareLaunchArgument('integrated_controller_wrench_filter_alpha', default_value='0.02'),
+        DeclareLaunchArgument('integrated_controller_wrench_filter_alpha', default_value='0.05'),
+        DeclareLaunchArgument('integrated_controller_wrench_in_tcp_frame', default_value='true'),
+        DeclareLaunchArgument(
+            'integrated_controller_wrench_sign',
+            default_value='1.0 1.0 1.0 1.0 1.0 1.0',
+        ),
+        DeclareLaunchArgument('integrated_controller_force_deadband', default_value='1.0'),
+        DeclareLaunchArgument('integrated_controller_torque_deadband', default_value='0.05'),
+        DeclareLaunchArgument(
+            'integrated_controller_admittance',
+            default_value='0.0024 0.0024 0.0025 0.0 0.0 0.0',
+        ),
+        DeclareLaunchArgument(
+            'integrated_controller_pose_error_gain',
+            default_value='0.8 0.8 0.8 0.4 0.4 0.4',
+        ),
         DeclareLaunchArgument('integrated_controller_max_linear_velocity', default_value='0.10'),
         DeclareLaunchArgument('integrated_controller_max_angular_velocity', default_value='0.35'),
         DeclareLaunchArgument('integrated_controller_max_joint_velocity', default_value='0.6'),
         DeclareLaunchArgument('integrated_controller_max_joint_acceleration', default_value='0.4'),
         DeclareLaunchArgument('integrated_controller_max_joint_jerk', default_value='1.0'),
         DeclareLaunchArgument('integrated_controller_joint_limit_margin', default_value='0.02'),
-        DeclareLaunchArgument('integrated_controller_reset_equilibrium_on_zero_command', default_value='true'),
+        DeclareLaunchArgument('integrated_controller_reset_equilibrium_on_zero_command', default_value='auto'),
         DeclareLaunchArgument('launch_moveit', default_value='false'),
         DeclareLaunchArgument('launch_moveit_rviz', default_value='false'),
         DeclareLaunchArgument('moveit_rviz_delay', default_value='5.0'),
@@ -804,6 +819,15 @@ def as_launch_bool(value):
     return str(value).lower() if str(value).lower() in ('true', 'false') else str(value)
 
 
+def parse_float_list(value, expected_size, name):
+    parts = str(value).replace(',', ' ').split()
+    if len(parts) != expected_size:
+        raise RuntimeError(
+            f"Launch argument '{name}' expects {expected_size} numeric values, got {len(parts)}: {value}"
+        )
+    return [float(part) for part in parts]
+
+
 def launch_setup(context, *args, **kwargs):
     robot_name = LaunchConfiguration('robot_name').perform(context)
     ur_type = LaunchConfiguration('ur_type').perform(context)
@@ -878,6 +902,39 @@ def launch_setup(context, *args, **kwargs):
         f"mount_xyz='{ur_r_xyz}', mount_rpy='{ur_r_rpy}'"
     )
 
+    integrated_use_ft_sensor = (
+        LaunchConfiguration('integrated_controller_use_ft_sensor').perform(context) == 'true'
+    )
+    integrated_reset_equilibrium = LaunchConfiguration(
+        'integrated_controller_reset_equilibrium_on_zero_command').perform(context).strip().lower()
+    if integrated_reset_equilibrium == 'auto':
+        integrated_reset_equilibrium_on_zero = not integrated_use_ft_sensor
+    else:
+        integrated_reset_equilibrium_on_zero = integrated_reset_equilibrium == 'true'
+    integrated_admittance = parse_float_list(
+        LaunchConfiguration('integrated_controller_admittance').perform(context),
+        6,
+        'integrated_controller_admittance',
+    )
+    integrated_wrench_sign = parse_float_list(
+        LaunchConfiguration('integrated_controller_wrench_sign').perform(context),
+        6,
+        'integrated_controller_wrench_sign',
+    )
+    integrated_pose_error_gain = parse_float_list(
+        LaunchConfiguration('integrated_controller_pose_error_gain').perform(context),
+        6,
+        'integrated_controller_pose_error_gain',
+    )
+    print(
+        "[mur_620.launch] integrated admittance: "
+        f"use_ft={integrated_use_ft_sensor}, "
+        f"reset_equilibrium_on_zero={integrated_reset_equilibrium_on_zero}, "
+        f"wrench_in_tcp_frame={LaunchConfiguration('integrated_controller_wrench_in_tcp_frame').perform(context)}, "
+        f"admittance={integrated_admittance}, pose_error_gain={integrated_pose_error_gain}, "
+        f"wrench_sign={integrated_wrench_sign}"
+    )
+
     def integrated_controller_params(side):
         arm_name = f'UR10_{side}'
         return {
@@ -906,10 +963,11 @@ def launch_setup(context, *args, **kwargs):
                 f'{arm_name}/wrist_2_joint',
                 f'{arm_name}/wrist_3_joint',
             ],
-            'use_ft_sensor': LaunchConfiguration(
-                'integrated_controller_use_ft_sensor').perform(context) == 'true',
+            'use_ft_sensor': integrated_use_ft_sensor,
             'require_wrench': LaunchConfiguration(
                 'integrated_controller_require_wrench').perform(context) == 'true',
+            'wrench_in_tcp_frame': LaunchConfiguration(
+                'integrated_controller_wrench_in_tcp_frame').perform(context) == 'true',
             'ft_sensor_name': f'{arm_name}/tcp_fts_sensor',
             'ft_state_interface_names': [
                 f'{arm_name}/tcp_fts_sensor/force.x',
@@ -927,6 +985,13 @@ def launch_setup(context, *args, **kwargs):
                 'integrated_controller_wrench_bias_duration').perform(context)),
             'wrench_filter_alpha': float(LaunchConfiguration(
                 'integrated_controller_wrench_filter_alpha').perform(context)),
+            'force_deadband': float(LaunchConfiguration(
+                'integrated_controller_force_deadband').perform(context)),
+            'torque_deadband': float(LaunchConfiguration(
+                'integrated_controller_torque_deadband').perform(context)),
+            'admittance': integrated_admittance,
+            'pose_error_gain': integrated_pose_error_gain,
+            'wrench_sign': integrated_wrench_sign,
             'max_linear_velocity': float(LaunchConfiguration(
                 'integrated_controller_max_linear_velocity').perform(context)),
             'max_angular_velocity': float(LaunchConfiguration(
@@ -939,8 +1004,7 @@ def launch_setup(context, *args, **kwargs):
                 'integrated_controller_max_joint_jerk').perform(context)),
             'joint_limit_margin': float(LaunchConfiguration(
                 'integrated_controller_joint_limit_margin').perform(context)),
-            'reset_equilibrium_on_zero_command': LaunchConfiguration(
-                'integrated_controller_reset_equilibrium_on_zero_command').perform(context) == 'true',
+            'reset_equilibrium_on_zero_command': integrated_reset_equilibrium_on_zero,
             'publish_state_rate_hz': 50.0,
         }
 
