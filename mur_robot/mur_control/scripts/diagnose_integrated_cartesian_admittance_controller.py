@@ -2,6 +2,7 @@
 """Diagnose the integrated ros2_control Cartesian arm controller."""
 
 import argparse
+import json
 import math
 import time
 from dataclasses import dataclass, field
@@ -11,9 +12,13 @@ from pathlib import Path
 import rclpy
 from controller_manager_msgs.srv import ListControllers
 from geometry_msgs.msg import PoseStamped, TwistStamped, WrenchStamped
+from rcl_interfaces.msg import ParameterType
+from rcl_interfaces.srv import GetParameters
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
+from std_msgs.msg import Float64
 from std_msgs.msg import Float64MultiArray
+from std_msgs.msg import String
 
 
 AXIS_INDEX = {
@@ -33,6 +38,7 @@ class TopicState:
     count: int = 0
     max_abs: float = 0.0
     samples: list = field(default_factory=list)
+    last_text: str = ''
 
     def update(self, values):
         self.last_time = time.monotonic()
@@ -42,6 +48,13 @@ class TopicState:
             self.max_abs = max(self.max_abs, max(finite))
             self.samples.append(values)
             self.samples = self.samples[-8:]
+
+    def update_text(self, text):
+        self.last_time = time.monotonic()
+        self.count += 1
+        self.last_text = str(text)
+        self.samples.append(self.last_text)
+        self.samples = self.samples[-8:]
 
     def age(self):
         if self.last_time <= 0.0:
@@ -87,7 +100,13 @@ def array_values(msg):
     return list(msg.data)
 
 
+def float_value(msg):
+    return [msg.data]
+
+
 def fmt(values):
+    if isinstance(values, str):
+        return values
     return '[' + ' '.join(f'{value:.4f}' for value in values) + ']'
 
 
@@ -98,6 +117,8 @@ class IntegratedCartesianDiagnoser(Node):
         self.robot_name = args.robot_name
         self.arm = args.arm
         self.arm_name = f'UR10_{self.arm}'
+        self.other_arm = 'l' if self.arm == 'r' else 'r'
+        self.other_arm_name = f'UR10_{self.other_arm}'
         self.controller_name = args.controller_name
         self.controller_ns = f'/{self.robot_name}/{self.arm_name}/{self.controller_name}'
         self.command_frame = args.command_frame or f'{self.arm_name}/base_link'
@@ -107,6 +128,7 @@ class IntegratedCartesianDiagnoser(Node):
             self.log_path.parent.mkdir(parents=True, exist_ok=True)
             self.log_handle = self.log_path.open('w', encoding='utf-8')
             self._print(f'Logging diagnostic output to {self.log_path}')
+        self.json_path = self._make_json_path()
 
         self.topics = {
             'input': TopicState(args.input_topic or f'{self.controller_ns}/equilibrium_twist_cmd'),
@@ -115,6 +137,12 @@ class IntegratedCartesianDiagnoser(Node):
             'filtered_wrench': TopicState(args.filtered_wrench_topic or f'{self.controller_ns}/filtered_wrench'),
             'equilibrium_pose': TopicState(args.equilibrium_pose_topic or f'{self.controller_ns}/equilibrium_pose'),
             'target_pose': TopicState(args.target_pose_topic or f'{self.controller_ns}/target_pose'),
+            'collision_min_clearance': TopicState(
+                args.collision_min_clearance_topic or f'{self.controller_ns}/collision_min_clearance'
+            ),
+            'collision_status': TopicState(
+                args.collision_status_topic or f'{self.controller_ns}/collision_status'
+            ),
             'joint_states': TopicState(args.joint_states_topic or '/joint_states'),
         }
         self.joint_names = [
@@ -125,7 +153,17 @@ class IntegratedCartesianDiagnoser(Node):
             f'{self.arm_name}/wrist_2_joint',
             f'{self.arm_name}/wrist_3_joint',
         ]
+        self.other_joint_names = [
+            f'{self.other_arm_name}/shoulder_pan_joint',
+            f'{self.other_arm_name}/shoulder_lift_joint',
+            f'{self.other_arm_name}/elbow_joint',
+            f'{self.other_arm_name}/wrist_1_joint',
+            f'{self.other_arm_name}/wrist_2_joint',
+            f'{self.other_arm_name}/wrist_3_joint',
+        ]
         self.joint_positions = {}
+        self.other_joint_positions = {}
+        self.controller_parameters = {}
 
         self.create_subscription(TwistStamped, self.topics['input'].name, self._cb('input', twist_values), 10)
         self.create_subscription(Float64MultiArray, self.topics['debug_twist'].name, self._cb('debug_twist', array_values), 10)
@@ -133,6 +171,13 @@ class IntegratedCartesianDiagnoser(Node):
         self.create_subscription(WrenchStamped, self.topics['filtered_wrench'].name, self._cb('filtered_wrench', wrench_values), 10)
         self.create_subscription(PoseStamped, self.topics['equilibrium_pose'].name, self._cb('equilibrium_pose', pose_values), 10)
         self.create_subscription(PoseStamped, self.topics['target_pose'].name, self._cb('target_pose', pose_values), 10)
+        self.create_subscription(
+            Float64,
+            self.topics['collision_min_clearance'].name,
+            self._cb('collision_min_clearance', float_value),
+            10,
+        )
+        self.create_subscription(String, self.topics['collision_status'].name, self._string_cb('collision_status'), 10)
         self.create_subscription(JointState, self.topics['joint_states'].name, self._joint_cb, rclpy.qos.qos_profile_sensor_data)
         self.test_pub = self.create_publisher(TwistStamped, self.topics['input'].name, 10)
 
@@ -144,6 +189,13 @@ class IntegratedCartesianDiagnoser(Node):
         stamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         name = f'integrated_cartesian_admittance_{self.args.robot_name}_{self.args.arm}_{stamp}.log'
         return Path(self.args.log_dir).expanduser() / name
+
+    def _make_json_path(self):
+        if self.log_path is None:
+            stamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            name = f'integrated_cartesian_admittance_{self.args.robot_name}_{self.args.arm}_{stamp}.json'
+            return Path(self.args.log_dir).expanduser() / name
+        return self.log_path.with_suffix('.json')
 
     def _print(self, *parts):
         text = ' '.join(str(part) for part in parts)
@@ -157,13 +209,21 @@ class IntegratedCartesianDiagnoser(Node):
             self.topics[key].update(extractor(msg))
         return callback
 
+    def _string_cb(self, key):
+        def callback(msg):
+            self.topics[key].update_text(msg.data)
+        return callback
+
     def _joint_cb(self, msg):
         values = []
         for index, name in enumerate(msg.name):
-            if name not in self.joint_names:
+            if name not in self.joint_names and name not in self.other_joint_names:
                 continue
             if index < len(msg.position) and math.isfinite(msg.position[index]):
-                self.joint_positions[name] = msg.position[index]
+                if name in self.joint_names:
+                    self.joint_positions[name] = msg.position[index]
+                if name in self.other_joint_names:
+                    self.other_joint_positions[name] = msg.position[index]
                 values.append(msg.position[index])
         self.topics['joint_states'].update(values)
 
@@ -184,6 +244,7 @@ class IntegratedCartesianDiagnoser(Node):
 
     def run(self):
         self.print_overview()
+        self.read_controller_parameters()
         start = time.monotonic()
         end = start + self.args.duration
         test_end = start + self.args.test_duration
@@ -207,8 +268,10 @@ class IntegratedCartesianDiagnoser(Node):
                 rclpy.spin_once(self, timeout_sec=0.01)
                 time.sleep(0.02)
         self.print_summary()
+        self.write_json_summary()
         if self.log_path is not None:
             self._print(f'\nLog file: {self.log_path}')
+        self._print(f'JSON file: {self.json_path}')
 
     def print_overview(self):
         self._print('\n=== Integrated Cartesian Admittance Controller Diagnostic ===')
@@ -226,6 +289,60 @@ class IntegratedCartesianDiagnoser(Node):
                 f'{state.name} pub_types={pub_types or "-"} sub_types={sub_types or "-"}'
             )
         self.print_controllers()
+
+    def read_controller_parameters(self):
+        service = f'{self.controller_ns}/get_parameters'
+        client = self.create_client(GetParameters, service)
+        names = [
+            'enable_collision_avoidance',
+            'collision_common_link',
+            'collision_other_prefix',
+            'collision_other_base_link',
+            'collision_other_tip_link',
+            'collision_own_base_xyz',
+            'collision_own_base_rpy',
+            'collision_other_base_xyz',
+            'collision_other_base_rpy',
+            'collision_sample_spacing',
+            'collision_sphere_radius',
+            'collision_activation_clearance',
+            'collision_stop_clearance',
+            'collision_joint_state_timeout',
+            'collision_fail_safe_stop',
+        ]
+        if not client.wait_for_service(timeout_sec=self.args.controller_timeout):
+            self._print(f'\nParameter service not reachable: {service}')
+            return
+        future = client.call_async(GetParameters.Request(names=names))
+        rclpy.spin_until_future_complete(self, future, timeout_sec=self.args.controller_timeout)
+        if not future.done() or future.result() is None:
+            self._print(f'\nParameter service did not answer: {service}')
+            return
+        self._print('\n--- Collision Parameters ---')
+        for name, value in zip(names, future.result().values):
+            parsed = self.parameter_value_to_python(value)
+            self.controller_parameters[name] = parsed
+            self._print(f'  {name}: {parsed}')
+
+    @staticmethod
+    def parameter_value_to_python(value):
+        if value.type == ParameterType.PARAMETER_BOOL:
+            return value.bool_value
+        if value.type == ParameterType.PARAMETER_INTEGER:
+            return value.integer_value
+        if value.type == ParameterType.PARAMETER_DOUBLE:
+            return value.double_value
+        if value.type == ParameterType.PARAMETER_STRING:
+            return value.string_value
+        if value.type == ParameterType.PARAMETER_DOUBLE_ARRAY:
+            return list(value.double_array_value)
+        if value.type == ParameterType.PARAMETER_STRING_ARRAY:
+            return list(value.string_array_value)
+        if value.type == ParameterType.PARAMETER_BOOL_ARRAY:
+            return list(value.bool_array_value)
+        if value.type == ParameterType.PARAMETER_INTEGER_ARRAY:
+            return list(value.integer_array_value)
+        return None
 
     def print_controllers(self):
         service = f'/{self.robot_name}/{self.arm_name}/controller_manager/list_controllers'
@@ -261,7 +378,15 @@ class IntegratedCartesianDiagnoser(Node):
         self._print(
             'tick ' + ', '.join(
                 brief(key)
-                for key in ('input', 'debug_twist', 'singular_values', 'filtered_wrench', 'joint_states')
+                for key in (
+                    'input',
+                    'debug_twist',
+                    'singular_values',
+                    'filtered_wrench',
+                    'collision_status',
+                    'collision_min_clearance',
+                    'joint_states',
+                )
             )
         )
 
@@ -278,9 +403,22 @@ class IntegratedCartesianDiagnoser(Node):
                 self._print(f'  last values: {fmt(state.samples[-1])}')
         missing = [name for name in self.joint_names if name not in self.joint_positions]
         if missing:
-            self._print('\nMissing joint states:')
+            self._print('\nMissing own arm joint states:')
             for name in missing:
                 self._print(f'  {name}')
+        other_missing = [name for name in self.other_joint_names if name not in self.other_joint_positions]
+        if other_missing:
+            self._print('\nMissing other arm joint states:')
+            for name in other_missing:
+                self._print(f'  {name}')
+        if not missing:
+            self._print('\nOwn arm joint positions:')
+            for name in self.joint_names:
+                self._print(f'  {name}: {self.joint_positions[name]: .6f}')
+        if not other_missing:
+            self._print('\nOther arm joint positions:')
+            for name in self.other_joint_names:
+                self._print(f'  {name}: {self.other_joint_positions[name]: .6f}')
         self._print('\n--- Interpretation hints ---')
         if self.topics['debug_twist'].count == 0:
             self._print('* No debug_twist received. Check whether integrated_cartesian_admittance_controller is active.')
@@ -290,6 +428,43 @@ class IntegratedCartesianDiagnoser(Node):
             self._print('* Integrated controller produced nonzero debug output for the test command.')
         if self.topics['joint_states'].count == 0:
             self._print('* No joint_states received; the controller cannot compute FK/Jacobian without state interfaces.')
+        if self.topics['collision_status'].count == 0:
+            self._print('* No collision_status received. Check whether collision avoidance is enabled and the controller is configured.')
+        elif self.topics['collision_status'].last_text == 'stale_other_arm':
+            self._print('* Collision status is stale_other_arm: start both arms or disable collision avoidance for one-arm tests.')
+        if self.topics['collision_min_clearance'].samples:
+            clearance = self.topics['collision_min_clearance'].samples[-1][0]
+            if clearance < 0.0:
+                self._print(
+                    '* Collision clearance is negative. If the arms are visually separated, suspect wrong '
+                    'mount transforms or sampled base/link points that overlap near the robot center.'
+                )
+
+    def write_json_summary(self):
+        self.json_path.parent.mkdir(parents=True, exist_ok=True)
+        data = {
+            'created_at': datetime.now().isoformat(timespec='seconds'),
+            'robot_name': self.robot_name,
+            'arm': self.arm,
+            'controller_ns': self.controller_ns,
+            'topics': {
+                key: {
+                    'name': state.name,
+                    'count': state.count,
+                    'age': state.age(),
+                    'max_abs': state.max_abs,
+                    'last_text': state.last_text,
+                    'last_sample': state.samples[-1] if state.samples else None,
+                }
+                for key, state in self.topics.items()
+            },
+            'controller_parameters': self.controller_parameters,
+            'own_joint_positions': self.joint_positions,
+            'other_joint_positions': self.other_joint_positions,
+            'args': vars(self.args),
+        }
+        with self.json_path.open('w', encoding='utf-8') as stream:
+            json.dump(data, stream, indent=2)
 
 
 def parse_args():
@@ -309,6 +484,8 @@ def parse_args():
     parser.add_argument('--filtered-wrench-topic')
     parser.add_argument('--equilibrium-pose-topic')
     parser.add_argument('--target-pose-topic')
+    parser.add_argument('--collision-status-topic')
+    parser.add_argument('--collision-min-clearance-topic')
     parser.add_argument('--joint-states-topic')
     parser.add_argument('--controller-timeout', type=float, default=2.0)
     parser.add_argument('--log-dir', default='~/integrated_cartesian_admittance_diagnostics')

@@ -841,6 +841,11 @@ def parse_float_list(value, expected_size, name):
     return [float(part) for part in parts]
 
 
+def add_float_lists(*vectors):
+    size = len(vectors[0])
+    return [sum(vector[index] for vector in vectors) for index in range(size)]
+
+
 def launch_setup(context, *args, **kwargs):
     robot_name = LaunchConfiguration('robot_name').perform(context)
     ur_type = LaunchConfiguration('ur_type').perform(context)
@@ -952,6 +957,14 @@ def launch_setup(context, *args, **kwargs):
         'l': parse_float_list(ur_l_rpy, 3, 'ur_l_rpy'),
         'r': parse_float_list(ur_r_rpy, 3, 'ur_r_rpy'),
     }
+    ur_ideal_base_xyz = {
+        'l': [0.549, 0.318, 0.832 - 0.49 + 0.555],
+        'r': [0.549, -0.318, 0.832 - 0.49 + 0.555],
+    }
+    ur_collision_base_xyz = {
+        side: add_float_lists(ur_ideal_base_xyz[side], ur_mount_xyz[side])
+        for side in ('l', 'r')
+    }
     print(
         "[mur_620.launch] integrated admittance: "
         f"use_ft={integrated_use_ft_sensor}, "
@@ -959,6 +972,11 @@ def launch_setup(context, *args, **kwargs):
         f"wrench_in_tcp_frame={LaunchConfiguration('integrated_controller_wrench_in_tcp_frame').perform(context)}, "
         f"admittance={integrated_admittance}, pose_error_gain={integrated_pose_error_gain}, "
         f"wrench_twist_gain={integrated_wrench_twist_gain}, wrench_sign={integrated_wrench_sign}"
+    )
+    print(
+        "[mur_620.launch] integrated collision base transforms: "
+        f"UR10_l xyz={ur_collision_base_xyz['l']} rpy={ur_mount_rpy['l']}, "
+        f"UR10_r xyz={ur_collision_base_xyz['r']} rpy={ur_mount_rpy['r']}"
     )
 
     def integrated_controller_params(side):
@@ -1039,9 +1057,9 @@ def launch_setup(context, *args, **kwargs):
             'collision_other_prefix': other_arm_name,
             'collision_other_base_link': f'{other_arm_name}/base_link',
             'collision_other_tip_link': f'{other_arm_name}/tool0',
-            'collision_own_base_xyz': ur_mount_xyz[side],
+            'collision_own_base_xyz': ur_collision_base_xyz[side],
             'collision_own_base_rpy': ur_mount_rpy[side],
-            'collision_other_base_xyz': ur_mount_xyz[other_side],
+            'collision_other_base_xyz': ur_collision_base_xyz[other_side],
             'collision_other_base_rpy': ur_mount_rpy[other_side],
             'collision_other_joint_names': [
                 f'{other_arm_name}/shoulder_pan_joint',
