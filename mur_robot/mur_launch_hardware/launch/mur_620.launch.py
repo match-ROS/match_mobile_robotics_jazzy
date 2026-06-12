@@ -8,8 +8,16 @@ import xacro
 import yaml
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, GroupAction, IncludeLaunchDescription, OpaqueFunction, TimerAction
+from launch.actions import (
+    DeclareLaunchArgument,
+    GroupAction,
+    IncludeLaunchDescription,
+    OpaqueFunction,
+    RegisterEventHandler,
+    TimerAction,
+)
 from launch.conditions import IfCondition, UnlessCondition
+from launch.event_handlers import OnProcessExit
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import AndSubstitution, LaunchConfiguration, NotSubstitution, PathJoinSubstitution
 from launch_ros.actions import Node, PushRosNamespace, SetRemap
@@ -149,8 +157,8 @@ def declare_arguments():
         DeclareLaunchArgument('integrated_controller_collision_joint_state_timeout', default_value='0.1'),
         DeclareLaunchArgument('integrated_controller_collision_sample_spacing', default_value='0.08'),
         DeclareLaunchArgument('integrated_controller_collision_sphere_radius', default_value='0.04'),
-        DeclareLaunchArgument('integrated_controller_collision_activation_clearance', default_value='0.12'),
-        DeclareLaunchArgument('integrated_controller_collision_stop_clearance', default_value='0.04'),
+        DeclareLaunchArgument('integrated_controller_collision_activation_clearance', default_value='0.08'),
+        DeclareLaunchArgument('integrated_controller_collision_stop_clearance', default_value='0.035'),
         DeclareLaunchArgument('integrated_controller_collision_fail_safe_stop', default_value='true'),
         DeclareLaunchArgument('launch_moveit', default_value='false'),
         DeclareLaunchArgument('launch_moveit_rviz', default_value='false'),
@@ -502,9 +510,19 @@ def make_ur_driver(side, robot_name, controllers_file, update_rate_config_file, 
         if use_mock_hardware.perform(context) == 'true' and 'tcp_pose_broadcaster' in active:
             active.remove('tcp_pose_broadcaster')
 
+        active_spawner = controller_spawner(namespace, active)
+        inactive_spawner = controller_spawner(namespace, inactive, active=False)
+        startup_after_spawners = RegisterEventHandler(
+            OnProcessExit(
+                target_action=inactive_spawner,
+                on_exit=[startup_enable_node],
+            )
+        )
+
         return [
-            controller_spawner(namespace, active),
-            controller_spawner(namespace, inactive, active=False),
+            active_spawner,
+            inactive_spawner,
+            startup_after_spawners,
         ]
 
     return GroupAction(
@@ -517,7 +535,6 @@ def make_ur_driver(side, robot_name, controllers_file, update_rate_config_file, 
             controller_stopper_node,
             ur_rsp,
             trajectory_until_node,
-            startup_enable_node,
             OpaqueFunction(function=add_selected_controller),
         ],
         condition=IfCondition(LaunchConfiguration(f'launch_ur_{side}')),

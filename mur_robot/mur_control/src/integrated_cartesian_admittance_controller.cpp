@@ -300,6 +300,7 @@ struct TwistReference
 struct CollisionJointState
 {
   std::map<std::string, double> positions;
+  std::map<std::string, rclcpp::Time> stamps;
   rclcpp::Time stamp{0, 0, RCL_ROS_TIME};
   bool valid{false};
 };
@@ -506,13 +507,16 @@ public:
       collision_joint_state_sub_ = get_node()->create_subscription<sensor_msgs::msg::JointState>(
         collision_joint_states_topic_, rclcpp::SensorDataQoS(),
         [this](const sensor_msgs::msg::JointState::SharedPtr msg) {
-          CollisionJointState snapshot;
-          snapshot.stamp = msg->header.stamp.sec == 0 && msg->header.stamp.nanosec == 0 ?
+          CollisionJointState snapshot =
+            received_collision_joint_state_.try_get().value_or(CollisionJointState{});
+          const rclcpp::Time stamp = msg->header.stamp.sec == 0 && msg->header.stamp.nanosec == 0 ?
             get_node()->now() : rclcpp::Time(msg->header.stamp);
+          snapshot.stamp = stamp;
           snapshot.valid = true;
           for (std::size_t i = 0; i < msg->name.size(); ++i) {
             if (i < msg->position.size() && std::isfinite(msg->position[i])) {
               snapshot.positions[msg->name[i]] = msg->position[i];
+              snapshot.stamps[msg->name[i]] = stamp;
             }
           }
           received_collision_joint_state_.set(snapshot);
@@ -871,6 +875,7 @@ private:
   bool fill_collision_q(
     const std::vector<std::string> & collision_joint_names,
     const CollisionJointState & joint_state,
+    const rclcpp::Time & time,
     const KDL::JntArray * own_q,
     KDL::JntArray & q) const
   {
@@ -891,6 +896,12 @@ private:
       if (!assigned) {
         const auto state_it = joint_state.positions.find(joint_name);
         if (state_it == joint_state.positions.end() || !std::isfinite(state_it->second)) {
+          return false;
+        }
+        const auto stamp_it = joint_state.stamps.find(joint_name);
+        if (stamp_it == joint_state.stamps.end() || stamp_it->second.nanoseconds() == 0 ||
+          (time - stamp_it->second).seconds() > collision_joint_state_timeout_)
+        {
           return false;
         }
         q(static_cast<unsigned int>(i)) = state_it->second;
@@ -1015,8 +1026,8 @@ private:
 
     KDL::JntArray own_collision_q;
     KDL::JntArray other_collision_q;
-    if (!fill_collision_q(own_collision_joint_names_, joint_state, &own_q, own_collision_q) ||
-      !fill_collision_q(other_collision_joint_names_, joint_state, nullptr, other_collision_q))
+    if (!fill_collision_q(own_collision_joint_names_, joint_state, time, &own_q, own_collision_q) ||
+      !fill_collision_q(other_collision_joint_names_, joint_state, time, nullptr, other_collision_q))
     {
       latest_collision_status_ = "stale_other_arm";
       latest_collision_scale_ = 0.0;
