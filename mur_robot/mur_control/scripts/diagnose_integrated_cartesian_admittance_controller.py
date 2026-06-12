@@ -93,7 +93,7 @@ def fmt(values):
 
 class IntegratedCartesianDiagnoser(Node):
     def __init__(self, args):
-        super().__init__('diagnose_integrated_cartesian_controller')
+        super().__init__('diagnose_integrated_cartesian_admittance_controller')
         self.args = args
         self.robot_name = args.robot_name
         self.arm = args.arm
@@ -142,7 +142,7 @@ class IntegratedCartesianDiagnoser(Node):
         if self.args.log_file:
             return Path(self.args.log_file).expanduser()
         stamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        name = f'integrated_cartesian_{self.args.robot_name}_{self.args.arm}_{stamp}.log'
+        name = f'integrated_cartesian_admittance_{self.args.robot_name}_{self.args.arm}_{stamp}.log'
         return Path(self.args.log_dir).expanduser() / name
 
     def _print(self, *parts):
@@ -211,7 +211,7 @@ class IntegratedCartesianDiagnoser(Node):
             self._print(f'\nLog file: {self.log_path}')
 
     def print_overview(self):
-        self._print('\n=== Integrated Cartesian Controller Diagnostic ===')
+        self._print('\n=== Integrated Cartesian Admittance Controller Diagnostic ===')
         self._print(f'robot={self.robot_name} arm={self.arm} controller={self.controller_name}')
         self._print(f'controller_ns={self.controller_ns}')
         self._print(f'command_frame={self.command_frame}')
@@ -283,7 +283,7 @@ class IntegratedCartesianDiagnoser(Node):
                 self._print(f'  {name}')
         self._print('\n--- Interpretation hints ---')
         if self.topics['debug_twist'].count == 0:
-            self._print('* No debug_twist received. Check whether integrated_cartesian_arm_controller is active.')
+            self._print('* No debug_twist received. Check whether integrated_cartesian_admittance_controller is active.')
         elif self.args.send_test_command and self.topics['debug_twist'].max_abs < 1.0e-6:
             self._print('* Test command was sent, but debug output stayed zero. Check command topic and controller state.')
         elif self.args.send_test_command:
@@ -296,7 +296,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--robot-name', default='mur620')
     parser.add_argument('--arm', choices=['l', 'r'], default='r')
-    parser.add_argument('--controller-name', default='integrated_cartesian_arm_controller')
+    parser.add_argument('--controller-name', default='integrated_cartesian_admittance_controller')
     parser.add_argument('--duration', type=float, default=6.0)
     parser.add_argument('--send-test-command', action='store_true')
     parser.add_argument('--test-duration', type=float, default=2.0)
@@ -311,7 +311,7 @@ def parse_args():
     parser.add_argument('--target-pose-topic')
     parser.add_argument('--joint-states-topic')
     parser.add_argument('--controller-timeout', type=float, default=2.0)
-    parser.add_argument('--log-dir', default='~/integrated_cartesian_diagnostics')
+    parser.add_argument('--log-dir', default='~/integrated_cartesian_admittance_diagnostics')
     parser.add_argument(
         '--log-file',
         default='',

@@ -1,10 +1,10 @@
-<library path="integrated_cartesian_arm_controller">
+<library path="integrated_cartesian_admittance_controller">
   <class
-    name="mur_control/IntegratedCartesianArmController"
-    type="mur_control::IntegratedCartesianArmController"
+    name="mur_control/IntegratedCartesianAdmittanceController"
+    type="mur_control::IntegratedCartesianAdmittanceController"
     base_class_type="controller_interface::ChainableControllerInterface">
     <description>
-      Integrated Cartesian arm controller with admittance, J-PARSE inverse differential kinematics,
+      Integrated Cartesian admittance controller with J-PARSE inverse differential kinematics,
       and joint velocity, acceleration, jerk, and position limiting.
     </description>
   </class>

@@ -53,10 +53,10 @@ ament_target_dependencies(cartesian_admittance_controller
   tf2_ros
 )
 
-add_library(integrated_cartesian_arm_controller SHARED
-  src/integrated_cartesian_arm_controller.cpp
+add_library(integrated_cartesian_admittance_controller SHARED
+  src/integrated_cartesian_admittance_controller.cpp
 )
-ament_target_dependencies(integrated_cartesian_arm_controller
+ament_target_dependencies(integrated_cartesian_admittance_controller
   controller_interface
   geometry_msgs
   hardware_interface
@@ -70,7 +70,7 @@ ament_target_dependencies(integrated_cartesian_arm_controller
   tf2
   tf2_ros
 )
-target_link_libraries(integrated_cartesian_arm_controller
+target_link_libraries(integrated_cartesian_admittance_controller
   Eigen3::Eigen
 )
 pluginlib_export_plugin_description_file(
@@ -85,7 +85,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 install(TARGETS
   arm_velocity_safety_node
   cartesian_admittance_controller
-  integrated_cartesian_arm_controller
+  integrated_cartesian_admittance_controller
   jparse_velocity_controller
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -99,7 +99,7 @@ install(FILES
 
 install(PROGRAMS
   scripts/diagnose_cartesian_admittance.py
-  scripts/diagnose_integrated_cartesian_controller.py
+  scripts/diagnose_integrated_cartesian_admittance_controller.py
   scripts/jparse_move_action_server.py
   scripts/jparse_simple_goal.py
   scripts/moveit_trajectory_controller_proxy.py

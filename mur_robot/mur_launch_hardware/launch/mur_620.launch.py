@@ -101,7 +101,7 @@ def declare_arguments():
         DeclareLaunchArgument('cartesian_admittance_wrench_filter_alpha', default_value='0.02'),
         DeclareLaunchArgument('cartesian_admittance_max_linear_velocity', default_value='0.10'),
         DeclareLaunchArgument('cartesian_admittance_max_angular_velocity', default_value='0.35'),
-        DeclareLaunchArgument('use_integrated_cartesian_controller', default_value='false'),
+        DeclareLaunchArgument('use_integrated_cartesian_admittance_controller', default_value='false'),
         DeclareLaunchArgument('integrated_controller_initial_active', default_value='false'),
         DeclareLaunchArgument('integrated_controller_use_ft_sensor', default_value='false'),
         DeclareLaunchArgument('integrated_controller_require_wrench', default_value='false'),
@@ -258,10 +258,10 @@ def make_arm_controllers_file(source_file, robot_name, arm_name, integrated_cont
     namespaced[f'/{namespace}/controller_manager'] = controller_manager_config
 
     controller_params = controller_manager_config.get('ros__parameters', {})
-    controller_params['integrated_cartesian_arm_controller'] = {
-        'type': 'mur_control/IntegratedCartesianArmController',
+    controller_params['integrated_cartesian_admittance_controller'] = {
+        'type': 'mur_control/IntegratedCartesianAdmittanceController',
     }
-    namespaced['integrated_cartesian_arm_controller'] = {
+    namespaced['integrated_cartesian_admittance_controller'] = {
         'ros__parameters': integrated_controller_params,
     }
     for controller_name, controller_config in controller_params.items():
@@ -398,7 +398,7 @@ def make_ur_driver(side, robot_name, controllers_file, update_rate_config_file):
                 'tcp_pose_broadcaster',
                 'ur_configuration_controller',
                 'forward_velocity_controller',
-                'integrated_cartesian_arm_controller',
+                'integrated_cartesian_admittance_controller',
                 'scaled_joint_trajectory_controller',
                 'joint_trajectory_controller',
             ]},
@@ -453,7 +453,7 @@ def make_ur_driver(side, robot_name, controllers_file, update_rate_config_file):
         selected = selected_controller(context)
         active = list(controllers_active)
         inactive = list(controllers_inactive)
-        use_integrated = LaunchConfiguration('use_integrated_cartesian_controller').perform(context) == 'true'
+        use_integrated = LaunchConfiguration('use_integrated_cartesian_admittance_controller').perform(context) == 'true'
         integrated_active = (
             LaunchConfiguration('integrated_controller_initial_active').perform(context) == 'true'
         )
@@ -462,10 +462,10 @@ def make_ur_driver(side, robot_name, controllers_file, update_rate_config_file):
             if selected in inactive:
                 inactive.remove(selected)
         if use_integrated:
-            inactive.append('integrated_cartesian_arm_controller')
+            inactive.append('integrated_cartesian_admittance_controller')
             if integrated_active:
-                active.append('integrated_cartesian_arm_controller')
-                inactive.remove('integrated_cartesian_arm_controller')
+                active.append('integrated_cartesian_admittance_controller')
+                inactive.remove('integrated_cartesian_admittance_controller')
                 if 'forward_velocity_controller' in active:
                     active.remove('forward_velocity_controller')
                 if 'forward_velocity_controller' not in inactive:

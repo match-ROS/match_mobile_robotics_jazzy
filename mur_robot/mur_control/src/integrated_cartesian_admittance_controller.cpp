@@ -272,11 +272,11 @@ struct TwistReference
   bool valid{false};
 };
 
-class IntegratedCartesianArmController
+class IntegratedCartesianAdmittanceController
   : public controller_interface::ChainableControllerInterface
 {
 public:
-  IntegratedCartesianArmController() = default;
+  IntegratedCartesianAdmittanceController() = default;
 
   CallbackReturn on_init() override
   {
@@ -1166,5 +1166,5 @@ private:
 }  // namespace mur_control
 
 PLUGINLIB_EXPORT_CLASS(
-  mur_control::IntegratedCartesianArmController,
+  mur_control::IntegratedCartesianAdmittanceController,
   controller_interface::ChainableControllerInterface)

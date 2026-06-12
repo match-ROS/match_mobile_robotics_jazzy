@@ -116,9 +116,9 @@ echo "[start_mur620_hardware_logged] inspect command: source ${ENV_FILE} && ros2
 echo "[start_mur620_hardware_logged] build_before_launch=${BUILD_BEFORE_LAUNCH}"
 echo "[start_mur620_hardware_logged] build_packages=${BUILD_PACKAGES}"
 echo "[start_mur620_hardware_logged] clean_start=${CLEAN_START}"
-echo "[start_mur620_hardware_logged] integrated_cartesian_active=${INTEGRATED_CARTESIAN_ACTIVE}"
-echo "[start_mur620_hardware_logged] integrated_cartesian_use_ft=${INTEGRATED_CARTESIAN_USE_FT}"
-echo "[start_mur620_hardware_logged] integrated_cartesian_require_wrench=${INTEGRATED_CARTESIAN_REQUIRE_WRENCH}"
+echo "[start_mur620_hardware_logged] integrated_cartesian_admittance_active=${INTEGRATED_CARTESIAN_ACTIVE}"
+echo "[start_mur620_hardware_logged] integrated_cartesian_admittance_use_ft=${INTEGRATED_CARTESIAN_USE_FT}"
+echo "[start_mur620_hardware_logged] integrated_cartesian_admittance_require_wrench=${INTEGRATED_CARTESIAN_REQUIRE_WRENCH}"
 echo "[start_mur620_hardware_logged] moveit_with_integrated_cartesian=${MOVEIT_WITH_INTEGRATED_CARTESIAN}"
 echo "[start_mur620_hardware_logged] extra args: $*"
 echo
@@ -147,14 +147,14 @@ fi
 declare -a LAUNCH_ARGS=("$@")
 if [[ "${INTEGRATED_CARTESIAN_ACTIVE}" == "true" ]]; then
   LAUNCH_ARGS+=(
-    "use_integrated_cartesian_controller:=true"
+    "use_integrated_cartesian_admittance_controller:=true"
     "integrated_controller_initial_active:=true"
     "integrated_controller_use_ft_sensor:=${INTEGRATED_CARTESIAN_USE_FT}"
     "integrated_controller_require_wrench:=${INTEGRATED_CARTESIAN_REQUIRE_WRENCH}"
   )
 fi
 if [[ "${MOVEIT_WITH_INTEGRATED_CARTESIAN}" == "true" ]]; then
-  LAUNCH_ARGS+=("moveit_velocity_controller:=integrated_cartesian_arm_controller")
+  LAUNCH_ARGS+=("moveit_velocity_controller:=integrated_cartesian_admittance_controller")
 fi
 
 echo "[start_mur620_hardware_logged] Starting launch..."
