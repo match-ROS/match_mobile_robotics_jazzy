@@ -102,6 +102,7 @@ install(PROGRAMS
   scripts/diagnose_integrated_cartesian_admittance_controller.py
   scripts/jparse_move_action_server.py
   scripts/jparse_simple_goal.py
+  scripts/log_integrated_cartesian_step_response.py
   scripts/moveit_trajectory_controller_proxy.py
   scripts/log_jparse_axis_response.py
   scripts/test_cartesian_admittance_controller.py
