@@ -37,6 +37,8 @@
 	<xacro:arg name="ur_type" default="ur10e"/>
 	<xacro:arg name="joint_limit_params" default="$(find mur_moveit_config)/config/joint_limits.yaml"/>
 	<xacro:arg name="kinematics_params" default="$(find ur_description)/config/$(arg ur_type)/default_kinematics.yaml"/>
+	<xacro:arg name="kinematics_params_l" default="$(arg kinematics_params)"/>
+	<xacro:arg name="kinematics_params_r" default="$(arg kinematics_params)"/>
 	<xacro:arg name="physical_params" default="$(find ur_description)/config/$(arg ur_type)/physical_parameters.yaml"/>
 	<xacro:arg name="visual_params" default="$(find ur_description)/config/$(arg ur_type)/visual_parameters.yaml"/>
 	<xacro:arg name="transmission_hw_interface" default=""/>
@@ -91,7 +93,7 @@
 			tf_prefix="UR10_l/"
 			parent="UR10_l/base_ideal"
 			joint_limits_parameters_file="$(arg joint_limit_params)"
-			kinematics_parameters_file="$(arg kinematics_params)"
+			kinematics_parameters_file="$(arg kinematics_params_l)"
 			physical_parameters_file="$(arg physical_params)"
 			visual_parameters_file="$(arg visual_params)"
 			safety_limits="$(arg safety_limits)"
@@ -107,7 +109,7 @@
 			tf_prefix="UR10_r/"
 			parent="UR10_r/base_ideal"
 			joint_limits_parameters_file="$(arg joint_limit_params)"
-			kinematics_parameters_file="$(arg kinematics_params)"
+			kinematics_parameters_file="$(arg kinematics_params_r)"
 			physical_parameters_file="$(arg physical_params)"
 			visual_parameters_file="$(arg visual_params)"
 			safety_limits="$(arg safety_limits)"

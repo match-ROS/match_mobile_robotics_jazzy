@@ -22,13 +22,18 @@ def declare_arguments():
 
     return [
         DeclareLaunchArgument('robot_name', default_value='mur620'),
+        DeclareLaunchArgument('robot_profile', default_value='mur620d'),
+        DeclareLaunchArgument(
+            'robot_profile_file',
+            default_value=os.path.join(mur_launch_hardware, 'config', 'mur_robot_profiles.yaml'),
+        ),
         DeclareLaunchArgument('ur_type', default_value='ur10'),
         DeclareLaunchArgument('use_sim_time', default_value='false'),
         DeclareLaunchArgument('publish_mur_tf', default_value='true'),
         DeclareLaunchArgument('use_arms', default_value='true'),
         DeclareLaunchArgument('use_camera', default_value='true'),
         DeclareLaunchArgument('use_lidar', default_value='true'),
-        DeclareLaunchArgument('use_lift', default_value='true'),
+        DeclareLaunchArgument('use_lift', default_value=''),
         DeclareLaunchArgument('use_simple_collisions', default_value='false'),
         DeclareLaunchArgument('use_simple_visuals', default_value='false'),
         DeclareLaunchArgument('use_high_quality_visuals', default_value='false'),
@@ -37,8 +42,8 @@ def declare_arguments():
         DeclareLaunchArgument('use_wheel_visual_mesh', default_value='false'),
         DeclareLaunchArgument('use_caster_visual_mesh', default_value='false'),
         DeclareLaunchArgument('use_lift_visual_mesh', default_value='false'),
-        DeclareLaunchArgument('launch_lift_l', default_value='true'),
-        DeclareLaunchArgument('launch_lift_r', default_value='true'),
+        DeclareLaunchArgument('launch_lift_l', default_value=''),
+        DeclareLaunchArgument('launch_lift_r', default_value=''),
         DeclareLaunchArgument('publish_fake_mir_wheel_joints', default_value='true'),
         DeclareLaunchArgument('fake_mir_wheel_joint_frequency', default_value='10.0'),
         # Matches the ROS 1 hardware launch wiring for the MUR620 lifts.
@@ -56,14 +61,14 @@ def declare_arguments():
         DeclareLaunchArgument('use_laser_visual_mesh', default_value='false'),
         DeclareLaunchArgument(
             'ur_l_xyz',
-            default_value='0.0 0.0 0.0',
+            default_value='',
         ),
-        DeclareLaunchArgument('ur_l_rpy', default_value='0.0 0.0 0.0'),
+        DeclareLaunchArgument('ur_l_rpy', default_value=''),
         DeclareLaunchArgument(
             'ur_r_xyz',
-            default_value='0.0 0.0 0.0',
+            default_value='',
         ),
-        DeclareLaunchArgument('ur_r_rpy', default_value='0.0 0.0 3.14159265359'),
+        DeclareLaunchArgument('ur_r_rpy', default_value=''),
         DeclareLaunchArgument('launch_ur_l', default_value='true'),
         DeclareLaunchArgument('launch_ur_r', default_value='true'),
         DeclareLaunchArgument('robot_ip_l', default_value='UR10_l'),
@@ -115,6 +120,7 @@ def declare_arguments():
         DeclareLaunchArgument('integrated_controller_max_joint_acceleration', default_value='0.4'),
         DeclareLaunchArgument('integrated_controller_max_joint_jerk', default_value='1.0'),
         DeclareLaunchArgument('integrated_controller_joint_limit_margin', default_value='0.02'),
+        DeclareLaunchArgument('integrated_controller_reset_equilibrium_on_zero_command', default_value='true'),
         DeclareLaunchArgument('launch_moveit', default_value='false'),
         DeclareLaunchArgument('launch_moveit_rviz', default_value='false'),
         DeclareLaunchArgument('moveit_rviz_delay', default_value='5.0'),
@@ -178,31 +184,23 @@ def declare_arguments():
         ),
         DeclareLaunchArgument(
             'kinematics_params_file_l',
-            default_value=os.path.join(
-                mur_launch_hardware,
-                'calibration',
-                'calibration_UR10_18.yaml',
-            ),
+            default_value='',
         ),
         DeclareLaunchArgument(
             'kinematics_params_file_r',
-            default_value=os.path.join(
-                mur_launch_hardware,
-                'calibration',
-                'calibration_UR10_12.yaml',
-            ),
+            default_value='',
         ),
     ]
 
 
-def ur_description_arguments(side):
+def ur_description_arguments(side, kinematics_params_file):
     return {
         'ur_type': LaunchConfiguration('ur_type'),
         'robot_ip': LaunchConfiguration(f'robot_ip_{side}'),
         'safety_limits': LaunchConfiguration('safety_limits'),
         'safety_pos_margin': LaunchConfiguration('safety_pos_margin'),
         'safety_k_position': LaunchConfiguration('safety_k_position'),
-        'kinematics_params_file': LaunchConfiguration(f'kinematics_params_file_{side}'),
+        'kinematics_params_file': kinematics_params_file,
         'tf_prefix': f'UR10_{side}/',
         'use_mock_hardware': LaunchConfiguration('use_mock_hardware'),
         'mock_sensor_commands': LaunchConfiguration('mock_sensor_commands'),
@@ -281,7 +279,7 @@ def make_arm_controllers_file(source_file, robot_name, arm_name, integrated_cont
     return out_file
 
 
-def make_ur_driver(side, robot_name, controllers_file, update_rate_config_file):
+def make_ur_driver(side, robot_name, controllers_file, update_rate_config_file, kinematics_params_file):
     arm_name = f'UR10_{side}'
     namespace = f'{robot_name}/{arm_name}'
     ur_robot_driver_share = get_package_share_directory('ur_robot_driver')
@@ -445,7 +443,7 @@ def make_ur_driver(side, robot_name, controllers_file, update_rate_config_file):
         SetRemap(src='/tf_static', dst=f'/{namespace}/unused_tf_static'),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(ur_rsp_launch),
-            launch_arguments=ur_description_arguments(side).items(),
+            launch_arguments=ur_description_arguments(side, kinematics_params_file).items(),
         ),
     ])
 
@@ -495,7 +493,7 @@ def make_ur_driver(side, robot_name, controllers_file, update_rate_config_file):
     )
 
 
-def make_lift_driver(side, robot_name):
+def make_lift_driver(side, robot_name, launch_condition):
     side_name = 'left' if side == 'l' else 'right'
     namespace = f'{robot_name}/ewellix_lift_{side}'
 
@@ -534,7 +532,7 @@ def make_lift_driver(side, robot_name):
                 output='screen',
             ),
         ],
-        condition=IfCondition(LaunchConfiguration(f'launch_lift_{side}')),
+        condition=IfCondition(launch_condition),
     )
 
 
@@ -771,11 +769,47 @@ def make_cartesian_admittance_nodes(robot_name):
     )
 
 
+def load_robot_profile(profile_file, profile_name, robot_name):
+    selected_profile = profile_name.strip()
+    if selected_profile in ('', 'auto'):
+        selected_profile = robot_name
+
+    if not os.path.exists(profile_file):
+        print(f"[mur_620.launch] Robot profile file does not exist: {profile_file}")
+        return selected_profile, {}
+
+    with open(profile_file, 'r', encoding='utf-8') as config:
+        profiles = yaml.safe_load(config) or {}
+
+    profile = profiles.get('robots', {}).get(selected_profile, {})
+    if not profile:
+        print(
+            f"[mur_620.launch] Robot profile '{selected_profile}' not found in {profile_file}; "
+            "using generic fallback values."
+        )
+    return selected_profile, profile
+
+
+def resolve_profile_path(package_share, path):
+    if not path:
+        return path
+    if os.path.isabs(path):
+        return path
+    return os.path.join(package_share, path)
+
+
+def as_launch_bool(value):
+    if isinstance(value, bool):
+        return 'true' if value else 'false'
+    return str(value).lower() if str(value).lower() in ('true', 'false') else str(value)
+
+
 def launch_setup(context, *args, **kwargs):
     robot_name = LaunchConfiguration('robot_name').perform(context)
     ur_type = LaunchConfiguration('ur_type').perform(context)
     use_sim_time = LaunchConfiguration('use_sim_time').perform(context) == 'true'
 
+    mur_launch_hardware = get_package_share_directory('mur_launch_hardware')
     mur_description_path = get_package_share_directory('mur_description')
     ur_robot_driver_path = get_package_share_directory('ur_robot_driver')
     xacro_file = os.path.join(mur_description_path, 'urdf', 'mur_620.gazebo.xacro')
@@ -784,6 +818,64 @@ def launch_setup(context, *args, **kwargs):
         ur_robot_driver_path,
         'config',
         f'{ur_type}_update_rate.yaml',
+    )
+    profile_name, robot_profile = load_robot_profile(
+        LaunchConfiguration('robot_profile_file').perform(context),
+        LaunchConfiguration('robot_profile').perform(context),
+        robot_name,
+    )
+    arm_profiles = robot_profile.get('arms', {})
+
+    def profile_value(arg_name, profile_key, fallback):
+        launch_value = LaunchConfiguration(arg_name).perform(context).strip()
+        if launch_value:
+            return launch_value
+        if profile_key in robot_profile:
+            return as_launch_bool(robot_profile[profile_key])
+        return fallback
+
+    def arm_profile_value(side, arg_name, profile_key, fallback, *, path=False):
+        launch_value = LaunchConfiguration(arg_name).perform(context).strip()
+        if launch_value:
+            return launch_value
+        value = arm_profiles.get(side, {}).get(profile_key, fallback)
+        if path:
+            return resolve_profile_path(mur_launch_hardware, value)
+        return str(value)
+
+    use_lift = profile_value('use_lift', 'use_lift', 'true')
+    launch_lift_l = profile_value('launch_lift_l', 'use_lift', use_lift)
+    launch_lift_r = profile_value('launch_lift_r', 'use_lift', use_lift)
+    ur_l_xyz = arm_profile_value('l', 'ur_l_xyz', 'mount_xyz', '0.0 0.0 0.0')
+    ur_l_rpy = arm_profile_value('l', 'ur_l_rpy', 'mount_rpy', '0.0 0.0 0.0')
+    ur_r_xyz = arm_profile_value('r', 'ur_r_xyz', 'mount_xyz', '0.0 0.0 0.0')
+    ur_r_rpy = arm_profile_value('r', 'ur_r_rpy', 'mount_rpy', '0.0 0.0 3.14159265359')
+    kinematics_params_file_l = arm_profile_value(
+        'l',
+        'kinematics_params_file_l',
+        'kinematics_params_file',
+        os.path.join(mur_launch_hardware, 'calibration', 'calibration_UR10_18.yaml'),
+        path=True,
+    )
+    kinematics_params_file_r = arm_profile_value(
+        'r',
+        'kinematics_params_file_r',
+        'kinematics_params_file',
+        os.path.join(mur_launch_hardware, 'calibration', 'calibration_UR10_12.yaml'),
+        path=True,
+    )
+
+    print(
+        f"[mur_620.launch] robot_name={robot_name}, robot_profile={profile_name}, "
+        f"use_lift={use_lift}, launch_lift_l={launch_lift_l}, launch_lift_r={launch_lift_r}"
+    )
+    print(
+        f"[mur_620.launch] UR10_l kinematics={kinematics_params_file_l}, "
+        f"mount_xyz='{ur_l_xyz}', mount_rpy='{ur_l_rpy}'"
+    )
+    print(
+        f"[mur_620.launch] UR10_r kinematics={kinematics_params_file_r}, "
+        f"mount_xyz='{ur_r_xyz}', mount_rpy='{ur_r_rpy}'"
     )
 
     def integrated_controller_params(side):
@@ -847,6 +939,8 @@ def launch_setup(context, *args, **kwargs):
                 'integrated_controller_max_joint_jerk').perform(context)),
             'joint_limit_margin': float(LaunchConfiguration(
                 'integrated_controller_joint_limit_margin').perform(context)),
+            'reset_equilibrium_on_zero_command': LaunchConfiguration(
+                'integrated_controller_reset_equilibrium_on_zero_command').perform(context) == 'true',
             'publish_state_rate_hz': 50.0,
         }
 
@@ -869,15 +963,17 @@ def launch_setup(context, *args, **kwargs):
         'use_arms': LaunchConfiguration('use_arms').perform(context),
         'use_camera': LaunchConfiguration('use_camera').perform(context),
         'use_lidar': LaunchConfiguration('use_lidar').perform(context),
-        'use_lift': LaunchConfiguration('use_lift').perform(context),
+        'use_lift': use_lift,
         'use_simple_collisions': LaunchConfiguration('use_simple_collisions').perform(context),
         'use_simple_visuals': LaunchConfiguration('use_simple_visuals').perform(context),
         'use_high_quality_visuals': LaunchConfiguration('use_high_quality_visuals').perform(context),
         'ur_type': ur_type,
-        'ur_l_xyz': LaunchConfiguration('ur_l_xyz').perform(context),
-        'ur_l_rpy': LaunchConfiguration('ur_l_rpy').perform(context),
-        'ur_r_xyz': LaunchConfiguration('ur_r_xyz').perform(context),
-        'ur_r_rpy': LaunchConfiguration('ur_r_rpy').perform(context),
+        'kinematics_params_l': kinematics_params_file_l,
+        'kinematics_params_r': kinematics_params_file_r,
+        'ur_l_xyz': ur_l_xyz,
+        'ur_l_rpy': ur_l_rpy,
+        'ur_r_xyz': ur_r_xyz,
+        'ur_r_rpy': ur_r_rpy,
         **visual_mesh_flags,
     })
 
@@ -904,8 +1000,8 @@ def launch_setup(context, *args, **kwargs):
         make_jparse_nodes(robot_name),
         make_cartesian_admittance_nodes(robot_name),
         make_moveit_launch(robot_name),
-        make_lift_driver('l', robot_name),
-        make_lift_driver('r', robot_name),
+        make_lift_driver('l', robot_name, launch_lift_l),
+        make_lift_driver('r', robot_name, launch_lift_r),
         make_ur_driver(
             'l',
             robot_name,
@@ -916,6 +1012,7 @@ def launch_setup(context, *args, **kwargs):
                 integrated_controller_params('l'),
             ),
             update_rate_config_file,
+            kinematics_params_file_l,
         ),
         make_ur_driver(
             'r',
@@ -927,6 +1024,7 @@ def launch_setup(context, *args, **kwargs):
                 integrated_controller_params('r'),
             ),
             update_rate_config_file,
+            kinematics_params_file_r,
         ),
     ]
 

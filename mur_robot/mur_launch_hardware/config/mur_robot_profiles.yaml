@@ -1,0 +1,56 @@
+robots:
+  mur620a:
+    description: "ROS 1 hardware profile for MUR620a."
+    use_lift: false
+    battery_node_id: "0x0340"
+    arms:
+      l:
+        mount_xyz: "-0.007900118242505472 -0.0028563536871674122 -0.058"
+        mount_rpy: "0.0 0.0 0.006501019574732006"
+        kinematics_params_file: "calibration/calibration_UR10_24.yaml"
+      r:
+        mount_xyz: "-0.011620549670083302 0.0007995423928620626 -0.058"
+        mount_rpy: "0.0 0.0 3.1171118645045235"
+        kinematics_params_file: "calibration/calibration_UR10_25.yaml"
+
+  mur620b:
+    description: "ROS 1 hardware profile for MUR620b."
+    use_lift: false
+    battery_node_id: "0x0140"
+    arms:
+      l:
+        mount_xyz: "-0.00617375304968204 -0.00244890445606738 -0.058"
+        mount_rpy: "0.0 0.0 -0.005862635332569227"
+        kinematics_params_file: "calibration/calibration_UR10_19.yaml"
+      r:
+        mount_xyz: "-0.005024661116701745 0.002099082867471458 -0.058"
+        mount_rpy: "0.0 0.0 3.136863644067947"
+        kinematics_params_file: "calibration/calibration_UR10_17.yaml"
+
+  mur620c:
+    description: "ROS 1 hardware profile for MUR620c."
+    use_lift: true
+    battery_node_id: "0x0240"
+    arms:
+      l:
+        mount_xyz: "-0.008759885687255942 -0.0009479599747381218 0.0"
+        mount_rpy: "0.0 0.0 -0.272637882"
+        kinematics_params_file: "calibration/calibration_UR10_18.yaml"
+      r:
+        mount_xyz: "-0.006734587278734772 0.003396998921764205 0.0"
+        mount_rpy: "0.0 0.0 3.343631968"
+        kinematics_params_file: "calibration/calibration_UR10_12.yaml"
+
+  mur620d:
+    description: "ROS 1 hardware profile for MUR620d."
+    use_lift: true
+    battery_node_id: "0x0440"
+    arms:
+      l:
+        mount_xyz: "-0.016336416303694423 -0.005028832374393943 0.0"
+        mount_rpy: "0.0 0.0 -0.23640963340626803"
+        kinematics_params_file: "calibration/calibration_UR10_09.yaml"
+      r:
+        mount_xyz: "-0.014413717596175157 0.001884619443986657 0.0"
+        mount_rpy: "0.0 0.0 2.908743319735608"
+        kinematics_params_file: "calibration/calibration_UR10_13.yaml"

@@ -18,6 +18,7 @@ BUILD_BEFORE_LAUNCH="${BUILD_BEFORE_LAUNCH:-true}"
 CLEAN_START="${CLEAN_START:-true}"
 CLEAN_START_FORCE_KILL="${CLEAN_START_FORCE_KILL:-true}"
 BUILD_PACKAGES="${BUILD_PACKAGES:-serial ewellix_driver mur_control mur_moveit_config mur_launch_hardware}"
+ROBOT_PROFILE="${ROBOT_PROFILE:-mur620d}"
 INTEGRATED_CARTESIAN_ACTIVE="${INTEGRATED_CARTESIAN_ACTIVE:-false}"
 INTEGRATED_CARTESIAN_USE_FT="${INTEGRATED_CARTESIAN_USE_FT:-false}"
 INTEGRATED_CARTESIAN_REQUIRE_WRENCH="${INTEGRATED_CARTESIAN_REQUIRE_WRENCH:-false}"
@@ -116,6 +117,7 @@ echo "[start_mur620_hardware_logged] inspect command: source ${ENV_FILE} && ros2
 echo "[start_mur620_hardware_logged] build_before_launch=${BUILD_BEFORE_LAUNCH}"
 echo "[start_mur620_hardware_logged] build_packages=${BUILD_PACKAGES}"
 echo "[start_mur620_hardware_logged] clean_start=${CLEAN_START}"
+echo "[start_mur620_hardware_logged] robot_profile=${ROBOT_PROFILE}"
 echo "[start_mur620_hardware_logged] integrated_cartesian_admittance_active=${INTEGRATED_CARTESIAN_ACTIVE}"
 echo "[start_mur620_hardware_logged] integrated_cartesian_admittance_use_ft=${INTEGRATED_CARTESIAN_USE_FT}"
 echo "[start_mur620_hardware_logged] integrated_cartesian_admittance_require_wrench=${INTEGRATED_CARTESIAN_REQUIRE_WRENCH}"
@@ -145,6 +147,21 @@ elif [[ -f install/setup.bash ]]; then
 fi
 
 declare -a LAUNCH_ARGS=("$@")
+has_launch_arg() {
+  local key="$1"
+  shift
+  local arg
+  for arg in "$@"; do
+    if [[ "$arg" == "${key}:="* ]]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+if ! has_launch_arg "robot_profile" "${LAUNCH_ARGS[@]}"; then
+  LAUNCH_ARGS+=("robot_profile:=${ROBOT_PROFILE}")
+fi
 if [[ "${INTEGRATED_CARTESIAN_ACTIVE}" == "true" ]]; then
   LAUNCH_ARGS+=(
     "use_integrated_cartesian_admittance_controller:=true"

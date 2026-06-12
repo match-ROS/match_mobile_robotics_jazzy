@@ -68,6 +68,13 @@ double clamp_abs(double value, double limit)
   return std::clamp(value, -abs_limit, abs_limit);
 }
 
+bool vector_below_deadband(const Vector6 & values, double deadband_value)
+{
+  return std::all_of(values.begin(), values.end(), [deadband_value](double value) {
+    return std::abs(value) <= deadband_value;
+  });
+}
+
 tf2::Quaternion quaternion_from_rotation_vector(const tf2::Vector3 & rotation_vector)
 {
   const double angle = rotation_vector.length();
@@ -343,6 +350,7 @@ public:
       joint_limit_margin_ = std::max(0.0, auto_declare<double>("joint_limit_margin", 0.02));
       preserve_command_direction_ = auto_declare<bool>("preserve_command_direction", true);
       immediate_zero_on_zero_command_ = auto_declare<bool>("immediate_zero_on_zero_command", true);
+      reset_equilibrium_on_zero_command_ = auto_declare<bool>("reset_equilibrium_on_zero_command", true);
       zero_command_deadband_ = std::max(0.0, auto_declare<double>("zero_command_deadband", 1.0e-5));
       publish_state_rate_hz_ = std::max(0.0, auto_declare<double>("publish_state_rate_hz", 50.0));
 
@@ -595,7 +603,13 @@ protected:
     }
 
     Vector6 command = active_reference();
-    integrate_equilibrium(command, dt);
+    if (reset_equilibrium_on_zero_command_ && vector_below_deadband(command, zero_command_deadband_)) {
+      equilibrium_position_ = current_tcp.getOrigin();
+      equilibrium_orientation_ = current_tcp.getRotation();
+      equilibrium_orientation_.normalize();
+    } else {
+      integrate_equilibrium(command, dt);
+    }
 
     const tf2::Vector3 admittance_translation(
       filtered_wrench_[0] * admittance_[0],
@@ -1126,6 +1140,7 @@ private:
   bool wrench_in_tcp_frame_{true};
   bool preserve_command_direction_{true};
   bool immediate_zero_on_zero_command_{true};
+  bool reset_equilibrium_on_zero_command_{true};
 
   std::vector<double> admittance_;
   std::vector<double> pose_error_gain_;
