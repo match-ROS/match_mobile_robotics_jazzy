@@ -113,21 +113,25 @@ def declare_arguments():
         DeclareLaunchArgument('integrated_controller_command_timeout', default_value='0.12'),
         DeclareLaunchArgument('integrated_controller_wrench_timeout', default_value='0.5'),
         DeclareLaunchArgument('integrated_controller_wrench_bias_duration', default_value='1.0'),
-        DeclareLaunchArgument('integrated_controller_wrench_filter_alpha', default_value='0.05'),
+        DeclareLaunchArgument('integrated_controller_wrench_filter_alpha', default_value='0.20'),
         DeclareLaunchArgument('integrated_controller_wrench_in_tcp_frame', default_value='true'),
         DeclareLaunchArgument(
             'integrated_controller_wrench_sign',
             default_value='1.0 1.0 1.0 1.0 1.0 1.0',
         ),
-        DeclareLaunchArgument('integrated_controller_force_deadband', default_value='1.0'),
+        DeclareLaunchArgument('integrated_controller_force_deadband', default_value='0.2'),
         DeclareLaunchArgument('integrated_controller_torque_deadband', default_value='0.05'),
         DeclareLaunchArgument(
             'integrated_controller_admittance',
             default_value='0.0024 0.0024 0.0025 0.0 0.0 0.0',
         ),
         DeclareLaunchArgument(
+            'integrated_controller_wrench_twist_gain',
+            default_value='0.0015 0.0015 0.0012 0.0 0.0 0.0',
+        ),
+        DeclareLaunchArgument(
             'integrated_controller_pose_error_gain',
-            default_value='0.8 0.8 0.8 0.4 0.4 0.4',
+            default_value='1.2 1.2 1.0 0.4 0.4 0.4',
         ),
         DeclareLaunchArgument('integrated_controller_max_linear_velocity', default_value='0.10'),
         DeclareLaunchArgument('integrated_controller_max_angular_velocity', default_value='0.35'),
@@ -921,6 +925,11 @@ def launch_setup(context, *args, **kwargs):
         6,
         'integrated_controller_wrench_sign',
     )
+    integrated_wrench_twist_gain = parse_float_list(
+        LaunchConfiguration('integrated_controller_wrench_twist_gain').perform(context),
+        6,
+        'integrated_controller_wrench_twist_gain',
+    )
     integrated_pose_error_gain = parse_float_list(
         LaunchConfiguration('integrated_controller_pose_error_gain').perform(context),
         6,
@@ -932,7 +941,7 @@ def launch_setup(context, *args, **kwargs):
         f"reset_equilibrium_on_zero={integrated_reset_equilibrium_on_zero}, "
         f"wrench_in_tcp_frame={LaunchConfiguration('integrated_controller_wrench_in_tcp_frame').perform(context)}, "
         f"admittance={integrated_admittance}, pose_error_gain={integrated_pose_error_gain}, "
-        f"wrench_sign={integrated_wrench_sign}"
+        f"wrench_twist_gain={integrated_wrench_twist_gain}, wrench_sign={integrated_wrench_sign}"
     )
 
     def integrated_controller_params(side):
@@ -990,6 +999,7 @@ def launch_setup(context, *args, **kwargs):
             'torque_deadband': float(LaunchConfiguration(
                 'integrated_controller_torque_deadband').perform(context)),
             'admittance': integrated_admittance,
+            'wrench_twist_gain': integrated_wrench_twist_gain,
             'pose_error_gain': integrated_pose_error_gain,
             'wrench_sign': integrated_wrench_sign,
             'max_linear_velocity': float(LaunchConfiguration(

@@ -355,6 +355,7 @@ public:
       publish_state_rate_hz_ = std::max(0.0, auto_declare<double>("publish_state_rate_hz", 50.0));
 
       admittance_ = checked_vector("admittance", {0.0006, 0.0006, 0.0015, 0.0, 0.0, 0.0});
+      wrench_twist_gain_ = checked_vector("wrench_twist_gain", {0.0, 0.0, 0.0, 0.0, 0.0, 0.0});
       pose_error_gain_ = checked_vector("pose_error_gain", {0.5, 0.5, 0.5, 0.4, 0.4, 0.4});
       wrench_sign_ = checked_vector("wrench_sign", {1.0, 1.0, 1.0, 1.0, 1.0, 1.0});
       joint_lower_limits_ = checked_vector(
@@ -632,12 +633,30 @@ protected:
 
     Eigen::VectorXd target_twist(6);
     target_twist <<
-      clamp_abs(command[0] + position_error.x() * pose_error_gain_[0], max_linear_velocity_),
-      clamp_abs(command[1] + position_error.y() * pose_error_gain_[1], max_linear_velocity_),
-      clamp_abs(command[2] + position_error.z() * pose_error_gain_[2], max_linear_velocity_),
-      clamp_abs(command[3] + orientation_error.x() * pose_error_gain_[3], max_angular_velocity_),
-      clamp_abs(command[4] + orientation_error.y() * pose_error_gain_[4], max_angular_velocity_),
-      clamp_abs(command[5] + orientation_error.z() * pose_error_gain_[5], max_angular_velocity_);
+      clamp_abs(
+        command[0] + position_error.x() * pose_error_gain_[0] +
+          filtered_wrench_[0] * wrench_twist_gain_[0],
+        max_linear_velocity_),
+      clamp_abs(
+        command[1] + position_error.y() * pose_error_gain_[1] +
+          filtered_wrench_[1] * wrench_twist_gain_[1],
+        max_linear_velocity_),
+      clamp_abs(
+        command[2] + position_error.z() * pose_error_gain_[2] +
+          filtered_wrench_[2] * wrench_twist_gain_[2],
+        max_linear_velocity_),
+      clamp_abs(
+        command[3] + orientation_error.x() * pose_error_gain_[3] +
+          filtered_wrench_[3] * wrench_twist_gain_[3],
+        max_angular_velocity_),
+      clamp_abs(
+        command[4] + orientation_error.y() * pose_error_gain_[4] +
+          filtered_wrench_[4] * wrench_twist_gain_[4],
+        max_angular_velocity_),
+      clamp_abs(
+        command[5] + orientation_error.z() * pose_error_gain_[5] +
+          filtered_wrench_[5] * wrench_twist_gain_[5],
+        max_angular_velocity_);
 
     const Eigen::VectorXd qdot_raw = compute_joint_velocity(q, target_twist, time);
     if (qdot_raw.size() == 0) {
@@ -1143,6 +1162,7 @@ private:
   bool reset_equilibrium_on_zero_command_{true};
 
   std::vector<double> admittance_;
+  std::vector<double> wrench_twist_gain_;
   std::vector<double> pose_error_gain_;
   std::vector<double> wrench_sign_;
   std::vector<double> joint_lower_limits_;
