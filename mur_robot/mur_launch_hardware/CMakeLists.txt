@@ -6,6 +6,7 @@ find_package(ament_cmake REQUIRED)
 install(PROGRAMS
   scripts/ewellix_state_to_joint_state.py
   scripts/fake_mir_wheel_joint_states.py
+  scripts/open_integrated_collision_rviz.sh
   scripts/ur_startup_enable.py
   DESTINATION lib/${PROJECT_NAME}
 )

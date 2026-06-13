@@ -160,6 +160,8 @@ def declare_arguments():
         DeclareLaunchArgument('integrated_controller_collision_activation_clearance', default_value='0.08'),
         DeclareLaunchArgument('integrated_controller_collision_stop_clearance', default_value='0.035'),
         DeclareLaunchArgument('integrated_controller_collision_fail_safe_stop', default_value='true'),
+        DeclareLaunchArgument('integrated_controller_publish_collision_markers', default_value='false'),
+        DeclareLaunchArgument('integrated_controller_collision_marker_publish_rate_hz', default_value='10.0'),
         DeclareLaunchArgument('launch_moveit', default_value='false'),
         DeclareLaunchArgument('launch_moveit_rviz', default_value='false'),
         DeclareLaunchArgument('moveit_rviz_delay', default_value='5.0'),
@@ -1111,6 +1113,10 @@ def launch_setup(context, *args, **kwargs):
                 'integrated_controller_collision_stop_clearance').perform(context)),
             'collision_fail_safe_stop': LaunchConfiguration(
                 'integrated_controller_collision_fail_safe_stop').perform(context) == 'true',
+            'publish_collision_markers': LaunchConfiguration(
+                'integrated_controller_publish_collision_markers').perform(context) == 'true',
+            'collision_marker_publish_rate_hz': float(LaunchConfiguration(
+                'integrated_controller_collision_marker_publish_rate_hz').perform(context)),
             'publish_state_rate_hz': 50.0,
         }
 

@@ -20,6 +20,7 @@ find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(visualization_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 add_executable(jparse_velocity_controller src/jparse_velocity_controller.cpp)
@@ -69,6 +70,7 @@ ament_target_dependencies(integrated_cartesian_admittance_controller
   std_msgs
   tf2
   tf2_ros
+  visualization_msgs
 )
 target_link_libraries(integrated_cartesian_admittance_controller
   Eigen3::Eigen

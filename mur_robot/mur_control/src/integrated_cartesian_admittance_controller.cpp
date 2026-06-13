@@ -5,6 +5,7 @@
 #include <limits>
 #include <map>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -34,6 +35,7 @@
 #include <tf2/LinearMath/Transform.h>
 #include <tf2/LinearMath/Vector3.h>
 #include <tf2_ros/transform_broadcaster.h>
+#include <visualization_msgs/msg/marker_array.hpp>
 
 namespace mur_control
 {
@@ -397,6 +399,10 @@ public:
           collision_other_prefix_ + "/wrist_2_joint",
           collision_other_prefix_ + "/wrist_3_joint",
         });
+      collision_capsule_segments_ = auto_declare<std::vector<std::string>>(
+        "collision_capsule_segments", {});
+      collision_other_capsule_segments_ = auto_declare<std::vector<std::string>>(
+        "collision_other_capsule_segments", {});
       collision_common_link_ = auto_declare<std::string>("collision_common_link", "base_link");
       collision_own_base_xyz_ = checked_vector("collision_own_base_xyz", {0.0, 0.0, 0.0});
       collision_own_base_rpy_ = checked_vector("collision_own_base_rpy", {0.0, 0.0, 0.0});
@@ -414,6 +420,11 @@ public:
       collision_stop_clearance_ = std::max(
         0.0, auto_declare<double>("collision_stop_clearance", 0.04));
       collision_fail_safe_stop_ = auto_declare<bool>("collision_fail_safe_stop", true);
+      publish_collision_markers_ = auto_declare<bool>("publish_collision_markers", false);
+      collision_marker_publish_rate_hz_ = std::max(
+        0.0, auto_declare<double>("collision_marker_publish_rate_hz", 10.0));
+      collision_marker_topic_ = auto_declare<std::string>(
+        "collision_marker_topic", "~/collision_markers");
 
       admittance_ = checked_vector("admittance", {0.0006, 0.0006, 0.0015, 0.0, 0.0, 0.0});
       wrench_twist_gain_ = checked_vector("wrench_twist_gain", {0.0, 0.0, 0.0, 0.0, 0.0, 0.0});
@@ -550,6 +561,11 @@ public:
       get_node()->create_publisher<std_msgs::msg::Float64>("~/collision_min_clearance", 10);
     collision_status_pub_ =
       get_node()->create_publisher<std_msgs::msg::String>("~/collision_status", 10);
+    if (publish_collision_markers_) {
+      collision_markers_pub_ =
+        get_node()->create_publisher<visualization_msgs::msg::MarkerArray>(
+          collision_marker_topic_, 10);
+    }
     tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*get_node());
 
     RCLCPP_INFO(
@@ -787,12 +803,20 @@ protected:
     if (should_publish(time)) {
       publish_debug(time, target_twist);
       publish_collision_state(time);
+      publish_collision_markers(time);
       publish_state(time, current_tcp, false);
     }
     return return_type::OK;
   }
 
 private:
+  struct CollisionCapsule
+  {
+    std::string link_name;
+    tf2::Vector3 start;
+    tf2::Vector3 end;
+  };
+
   std::vector<double> checked_vector(
     const std::string & name,
     const std::vector<double> & defaults)
@@ -817,6 +841,103 @@ private:
       }
     }
     return names;
+  }
+
+  static std::string trim_copy(const std::string & value)
+  {
+    const auto first = value.find_first_not_of(" \t\n\r");
+    if (first == std::string::npos) {
+      return "";
+    }
+    const auto last = value.find_last_not_of(" \t\n\r");
+    return value.substr(first, last - first + 1);
+  }
+
+  static bool parse_vector3_token(const std::string & token, tf2::Vector3 & value)
+  {
+    std::istringstream stream(token);
+    std::string component;
+    std::array<double, 3> values{0.0, 0.0, 0.0};
+    for (std::size_t i = 0; i < values.size(); ++i) {
+      if (!std::getline(stream, component, ',')) {
+        return false;
+      }
+      try {
+        values[i] = std::stod(trim_copy(component));
+      } catch (const std::exception &) {
+        return false;
+      }
+    }
+    if (std::getline(stream, component, ',')) {
+      return false;
+    }
+    value = tf2::Vector3(values[0], values[1], values[2]);
+    return true;
+  }
+
+  static bool parse_collision_capsule(
+    const std::string & specification,
+    CollisionCapsule & capsule)
+  {
+    std::istringstream stream(specification);
+    std::string link;
+    std::string start;
+    std::string end;
+    if (!std::getline(stream, link, ':') || !std::getline(stream, start, ':') ||
+      !std::getline(stream, end, ':'))
+    {
+      return false;
+    }
+    std::string extra;
+    if (std::getline(stream, extra, ':')) {
+      return false;
+    }
+    capsule.link_name = trim_copy(link);
+    if (capsule.link_name.empty()) {
+      return false;
+    }
+    return parse_vector3_token(start, capsule.start) && parse_vector3_token(end, capsule.end);
+  }
+
+  static std::vector<CollisionCapsule> parse_collision_capsules(
+    const std::vector<std::string> & specifications,
+    const rclcpp::Logger & logger,
+    const std::string & parameter_name)
+  {
+    std::vector<CollisionCapsule> capsules;
+    capsules.reserve(specifications.size());
+    for (const auto & specification : specifications) {
+      CollisionCapsule capsule;
+      if (parse_collision_capsule(specification, capsule)) {
+        capsules.push_back(capsule);
+      } else {
+        RCLCPP_WARN(
+          logger,
+          "Ignoring invalid %s entry '%s'. Expected 'link:x1,y1,z1:x2,y2,z2'",
+          parameter_name.c_str(), specification.c_str());
+      }
+    }
+    return capsules;
+  }
+
+  static std::vector<CollisionCapsule> default_ur10e_collision_capsules(
+    const std::string & prefix)
+  {
+    const auto link = [&prefix](const std::string & name) {
+        return prefix + "/" + name;
+      };
+
+    return {
+      // Local capsule centerlines in the UR link frames. The long arm links use the
+      // visual/collision mesh offsets from the UR10e description instead of only
+      // connecting joint-frame origins; that avoids diagonal shortcuts through the arm.
+      {link("shoulder_link"), {0.0, 0.0, -0.06}, {0.0, 0.0, 0.10}},
+      {link("upper_arm_link"), {0.02, 0.0, 0.1762}, {-0.6127, 0.0, 0.1762}},
+      {link("forearm_link"), {0.02, 0.0, 0.0393}, {-0.57155, 0.0, 0.0393}},
+      {link("wrist_1_link"), {0.0, 0.0, -0.135}, {0.0, -0.11985, -0.02}},
+      {link("wrist_2_link"), {0.0, 0.0, -0.12}, {0.0, 0.11655, -0.02}},
+      {link("wrist_3_link"), {0.0, 0.0, -0.1168}, {0.0, 0.0, 0.02}},
+    };
   }
 
   bool configure_collision_chains(const KDL::Tree & tree)
@@ -860,15 +981,30 @@ private:
     other_collision_fk_solver_ =
       std::make_unique<KDL::ChainFkSolverPos_recursive>(other_collision_chain_);
 
+    own_collision_capsules_ = collision_capsule_segments_.empty() ?
+      default_ur10e_collision_capsules(prefix_) :
+      parse_collision_capsules(
+        collision_capsule_segments_, get_node()->get_logger(), "collision_capsule_segments");
+    const std::string other_capsule_prefix =
+      other_chain_from_robot_description ? collision_other_prefix_ : prefix_;
+    other_collision_capsules_ = collision_other_capsule_segments_.empty() ?
+      default_ur10e_collision_capsules(other_capsule_prefix) :
+      parse_collision_capsules(
+        collision_other_capsule_segments_, get_node()->get_logger(),
+        "collision_other_capsule_segments");
+
     RCLCPP_INFO(
       get_node()->get_logger(),
       "Configured collision avoidance for %s against %s: common=%s, own_chain=%s->%s, "
-      "other_chain=%s->%s%s, own_joints=%zu, other_joints=%zu",
+      "other_chain=%s->%s%s, own_joints=%zu, other_joints=%zu, own_capsules=%zu, "
+      "other_capsules=%zu, other_capsule_prefix=%s",
       prefix_.c_str(), collision_other_prefix_.c_str(), collision_common_link_.c_str(),
       base_link_.c_str(), tip_link_.c_str(),
       collision_other_base_link_.c_str(), collision_other_tip_link_.c_str(),
       other_chain_from_robot_description ? "" : " (reused geometry)",
-      own_collision_joint_names_.size(), other_collision_joint_names_.size());
+      own_collision_joint_names_.size(), other_collision_joint_names_.size(),
+      own_collision_capsules_.size(), other_collision_capsules_.size(),
+      other_capsule_prefix.c_str());
     return true;
   }
 
@@ -928,14 +1064,84 @@ private:
     return {vector.x(), vector.y(), vector.z()};
   }
 
+  static tf2::Transform transform_from_kdl(const KDL::Frame & frame)
+  {
+    double x = 0.0;
+    double y = 0.0;
+    double z = 0.0;
+    double w = 1.0;
+    frame.M.GetQuaternion(x, y, z, w);
+    tf2::Quaternion rotation(x, y, z, w);
+    rotation.normalize();
+
+    tf2::Transform transform;
+    transform.setOrigin(point_from_kdl(frame.p));
+    transform.setRotation(rotation);
+    return transform;
+  }
+
+  void append_sampled_segment(
+    const tf2::Vector3 & start,
+    const tf2::Vector3 & end,
+    std::vector<tf2::Vector3> & points) const
+  {
+    const double length = (end - start).length();
+    const int steps = std::max(1, static_cast<int>(std::ceil(length / collision_sample_spacing_)));
+    for (int step = 0; step <= steps; ++step) {
+      const double t = static_cast<double>(step) / static_cast<double>(steps);
+      points.push_back(start.lerp(end, t));
+    }
+  }
+
   bool sample_collision_points(
     const KDL::Chain & chain,
     KDL::ChainFkSolverPos_recursive & solver,
     const KDL::JntArray & q,
     const tf2::Transform & common_from_chain_base,
+    const std::vector<CollisionCapsule> & capsules,
     std::vector<tf2::Vector3> & points) const
   {
     points.clear();
+
+    if (!capsules.empty()) {
+      std::map<std::string, unsigned int> segment_index_by_link;
+      for (unsigned int i = 0; i < chain.getNrOfSegments(); ++i) {
+        segment_index_by_link[chain.getSegment(i).getName()] = i + 1;
+      }
+
+      for (const auto & capsule : capsules) {
+        const auto segment_it = segment_index_by_link.find(capsule.link_name);
+        if (segment_it == segment_index_by_link.end()) {
+          RCLCPP_WARN_THROTTLE(
+            get_node()->get_logger(), *get_node()->get_clock(), 5000,
+            "Collision capsule link '%s' is not part of chain '%s'->'%s'",
+            capsule.link_name.c_str(),
+            chain.getNrOfSegments() > 0 ? chain.getSegment(0).getName().c_str() : "",
+            chain.getNrOfSegments() > 0 ?
+            chain.getSegment(chain.getNrOfSegments() - 1).getName().c_str() : "");
+          continue;
+        }
+
+        KDL::Frame link_frame;
+        if (solver.JntToCart(q, link_frame, segment_it->second) < 0) {
+          return false;
+        }
+
+        const tf2::Transform common_from_link =
+          common_from_chain_base * transform_from_kdl(link_frame);
+        const tf2::Vector3 start = common_from_link * capsule.start;
+        const tf2::Vector3 end = common_from_link * capsule.end;
+        append_sampled_segment(start, end, points);
+      }
+
+      if (!points.empty()) {
+        return true;
+      }
+      RCLCPP_WARN_THROTTLE(
+        get_node()->get_logger(), *get_node()->get_clock(), 5000,
+        "No configured collision capsules matched the KDL chain; falling back to joint-frame sampling");
+    }
+
     KDL::Frame previous_frame;
     bool have_previous = false;
     bool started_movable_part = false;
@@ -954,12 +1160,7 @@ private:
       if (started_movable_part && have_previous) {
         const tf2::Vector3 start = common_from_chain_base * point_from_kdl(previous_frame.p);
         const tf2::Vector3 end = common_from_chain_base * point_from_kdl(current_frame.p);
-        const double length = (end - start).length();
-        const int steps = std::max(1, static_cast<int>(std::ceil(length / collision_sample_spacing_)));
-        for (int step = 0; step <= steps; ++step) {
-          const double t = static_cast<double>(step) / static_cast<double>(steps);
-          points.push_back(start.lerp(end, t));
-        }
+        append_sampled_segment(start, end, points);
       }
 
       previous_frame = current_frame;
@@ -969,12 +1170,25 @@ private:
     return !points.empty();
   }
 
+  void clear_latest_collision_points()
+  {
+    latest_own_collision_points_.clear();
+    latest_other_collision_points_.clear();
+    latest_nearest_own_collision_point_ = tf2::Vector3(0.0, 0.0, 0.0);
+    latest_nearest_other_collision_point_ = tf2::Vector3(0.0, 0.0, 0.0);
+    latest_collision_points_valid_ = false;
+  }
+
   bool compute_collision_clearance(
     const KDL::JntArray & own_collision_q,
     const KDL::JntArray & other_collision_q,
-    double & clearance) const
+    double & clearance,
+    bool store_debug_points = false)
   {
     if (!own_collision_fk_solver_ || !other_collision_fk_solver_) {
+      if (store_debug_points) {
+        clear_latest_collision_points();
+      }
       return false;
     }
 
@@ -982,24 +1196,44 @@ private:
     std::vector<tf2::Vector3> other_points;
     if (!sample_collision_points(
         own_collision_chain_, *own_collision_fk_solver_, own_collision_q,
-        collision_common_from_own_base_, own_points) ||
+        collision_common_from_own_base_, own_collision_capsules_, own_points) ||
       !sample_collision_points(
         other_collision_chain_, *other_collision_fk_solver_, other_collision_q,
-        collision_common_from_other_base_, other_points))
+        collision_common_from_other_base_, other_collision_capsules_, other_points))
     {
+      if (store_debug_points) {
+        clear_latest_collision_points();
+      }
       return false;
     }
 
     double min_center_distance = std::numeric_limits<double>::infinity();
+    tf2::Vector3 nearest_own;
+    tf2::Vector3 nearest_other;
     for (const auto & own_point : own_points) {
       for (const auto & other_point : other_points) {
-        min_center_distance = std::min(min_center_distance, (own_point - other_point).length());
+        const double center_distance = (own_point - other_point).length();
+        if (center_distance < min_center_distance) {
+          min_center_distance = center_distance;
+          nearest_own = own_point;
+          nearest_other = other_point;
+        }
       }
     }
     if (!std::isfinite(min_center_distance)) {
+      if (store_debug_points) {
+        clear_latest_collision_points();
+      }
       return false;
     }
     clearance = min_center_distance - 2.0 * collision_sphere_radius_;
+    if (store_debug_points) {
+      latest_own_collision_points_ = own_points;
+      latest_other_collision_points_ = other_points;
+      latest_nearest_own_collision_point_ = nearest_own;
+      latest_nearest_other_collision_point_ = nearest_other;
+      latest_collision_points_valid_ = true;
+    }
     return true;
   }
 
@@ -1013,6 +1247,7 @@ private:
     latest_collision_scale_ = 1.0;
 
     if (!enable_collision_avoidance_) {
+      clear_latest_collision_points();
       return qdot;
     }
 
@@ -1021,6 +1256,7 @@ private:
     if (!collision_joint_state_valid(joint_state, time)) {
       latest_collision_status_ = "stale_other_arm";
       latest_collision_scale_ = 0.0;
+      clear_latest_collision_points();
       return collision_fail_safe_stop_ ? std::vector<double>(qdot.size(), 0.0) : qdot;
     }
 
@@ -1031,13 +1267,15 @@ private:
     {
       latest_collision_status_ = "stale_other_arm";
       latest_collision_scale_ = 0.0;
+      clear_latest_collision_points();
       return collision_fail_safe_stop_ ? std::vector<double>(qdot.size(), 0.0) : qdot;
     }
 
     double clearance = std::numeric_limits<double>::quiet_NaN();
-    if (!compute_collision_clearance(own_collision_q, other_collision_q, clearance)) {
+    if (!compute_collision_clearance(own_collision_q, other_collision_q, clearance, true)) {
       latest_collision_status_ = "stale_other_arm";
       latest_collision_scale_ = 0.0;
+      clear_latest_collision_points();
       return collision_fail_safe_stop_ ? std::vector<double>(qdot.size(), 0.0) : qdot;
     }
     latest_collision_min_clearance_ = clearance;
@@ -1503,6 +1741,119 @@ private:
     collision_status_pub_->publish(status_msg);
   }
 
+  std::string collision_marker_frame() const
+  {
+    if (collision_common_link_.rfind(robot_name_ + "/", 0) == 0) {
+      return collision_common_link_;
+    }
+    return robot_name_ + "/" + collision_common_link_;
+  }
+
+  static geometry_msgs::msg::Point point_msg(const tf2::Vector3 & point)
+  {
+    geometry_msgs::msg::Point msg;
+    msg.x = point.x();
+    msg.y = point.y();
+    msg.z = point.z();
+    return msg;
+  }
+
+  visualization_msgs::msg::Marker base_collision_marker(
+    const rclcpp::Time & time,
+    int id,
+    const std::string & name_space,
+    int type) const
+  {
+    visualization_msgs::msg::Marker marker;
+    marker.header.stamp = time;
+    marker.header.frame_id = collision_marker_frame();
+    marker.ns = prefix_ + "_" + name_space;
+    marker.id = id;
+    marker.type = type;
+    marker.action = visualization_msgs::msg::Marker::ADD;
+    marker.pose.orientation.w = 1.0;
+    return marker;
+  }
+
+  void publish_collision_marker_delete_all(const rclcpp::Time & time)
+  {
+    if (!collision_markers_pub_) {
+      return;
+    }
+    visualization_msgs::msg::MarkerArray markers;
+    auto marker = base_collision_marker(
+      time, 0, "collision_delete_all", visualization_msgs::msg::Marker::SPHERE_LIST);
+    marker.action = visualization_msgs::msg::Marker::DELETEALL;
+    markers.markers.push_back(marker);
+    collision_markers_pub_->publish(markers);
+  }
+
+  void publish_collision_markers(const rclcpp::Time & time)
+  {
+    if (!publish_collision_markers_ || !collision_markers_pub_) {
+      return;
+    }
+    if (collision_marker_publish_rate_hz_ <= 0.0) {
+      return;
+    }
+    if (previous_collision_marker_publish_time_.nanoseconds() != 0 &&
+      (time - previous_collision_marker_publish_time_).seconds() <
+      1.0 / collision_marker_publish_rate_hz_)
+    {
+      return;
+    }
+    previous_collision_marker_publish_time_ = time;
+
+    if (!enable_collision_avoidance_ || !latest_collision_points_valid_) {
+      publish_collision_marker_delete_all(time);
+      return;
+    }
+
+    visualization_msgs::msg::MarkerArray markers;
+    auto own_marker = base_collision_marker(
+      time, 0, "own_collision_spheres", visualization_msgs::msg::Marker::SPHERE_LIST);
+    own_marker.scale.x = 2.0 * collision_sphere_radius_;
+    own_marker.scale.y = 2.0 * collision_sphere_radius_;
+    own_marker.scale.z = 2.0 * collision_sphere_radius_;
+    own_marker.color.r = 0.05;
+    own_marker.color.g = 0.35;
+    own_marker.color.b = 1.0;
+    own_marker.color.a = 0.55;
+    own_marker.points.reserve(latest_own_collision_points_.size());
+    for (const auto & point : latest_own_collision_points_) {
+      own_marker.points.push_back(point_msg(point));
+    }
+
+    auto other_marker = base_collision_marker(
+      time, 1, "other_collision_spheres", visualization_msgs::msg::Marker::SPHERE_LIST);
+    other_marker.scale.x = 2.0 * collision_sphere_radius_;
+    other_marker.scale.y = 2.0 * collision_sphere_radius_;
+    other_marker.scale.z = 2.0 * collision_sphere_radius_;
+    other_marker.color.r = 1.0;
+    other_marker.color.g = 0.45;
+    other_marker.color.b = 0.0;
+    other_marker.color.a = 0.55;
+    other_marker.points.reserve(latest_other_collision_points_.size());
+    for (const auto & point : latest_other_collision_points_) {
+      other_marker.points.push_back(point_msg(point));
+    }
+
+    auto nearest_marker = base_collision_marker(
+      time, 2, "nearest_collision_pair", visualization_msgs::msg::Marker::LINE_LIST);
+    nearest_marker.scale.x = 0.012;
+    nearest_marker.color.r = 1.0;
+    nearest_marker.color.g = 0.0;
+    nearest_marker.color.b = 0.0;
+    nearest_marker.color.a = 0.95;
+    nearest_marker.points.push_back(point_msg(latest_nearest_own_collision_point_));
+    nearest_marker.points.push_back(point_msg(latest_nearest_other_collision_point_));
+
+    markers.markers.push_back(own_marker);
+    markers.markers.push_back(other_marker);
+    markers.markers.push_back(nearest_marker);
+    collision_markers_pub_->publish(markers);
+  }
+
   bool should_publish(const rclcpp::Time & time)
   {
     if (publish_state_rate_hz_ <= 0.0) {
@@ -1565,6 +1916,7 @@ private:
   std::string collision_other_tip_link_;
   std::string collision_common_link_;
   std::string collision_joint_states_topic_;
+  std::string collision_marker_topic_;
   std::vector<std::string> joint_names_;
   std::vector<std::string> command_joint_names_;
   std::vector<std::string> chain_joint_names_;
@@ -1572,10 +1924,14 @@ private:
   std::vector<std::string> collision_other_joint_names_;
   std::vector<std::string> own_collision_joint_names_;
   std::vector<std::string> other_collision_joint_names_;
+  std::vector<std::string> collision_capsule_segments_;
+  std::vector<std::string> collision_other_capsule_segments_;
   std::vector<double> collision_own_base_xyz_;
   std::vector<double> collision_own_base_rpy_;
   std::vector<double> collision_other_base_xyz_;
   std::vector<double> collision_other_base_rpy_;
+  std::vector<CollisionCapsule> own_collision_capsules_;
+  std::vector<CollisionCapsule> other_collision_capsules_;
 
   KDL::Chain chain_;
   KDL::Chain own_collision_chain_;
@@ -1599,6 +1955,7 @@ private:
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr target_pose_pub_;
   rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr collision_min_clearance_pub_;
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr collision_status_pub_;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr collision_markers_pub_;
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 
   double gamma_{0.1};
@@ -1625,6 +1982,7 @@ private:
   double collision_sphere_radius_{0.04};
   double collision_activation_clearance_{0.12};
   double collision_stop_clearance_{0.04};
+  double collision_marker_publish_rate_hz_{10.0};
   bool require_wrench_{false};
   bool use_ft_sensor_{false};
   bool wrench_in_tcp_frame_{true};
@@ -1633,6 +1991,7 @@ private:
   bool reset_equilibrium_on_zero_command_{true};
   bool enable_collision_avoidance_{false};
   bool collision_fail_safe_stop_{true};
+  bool publish_collision_markers_{false};
 
   std::vector<double> admittance_;
   std::vector<double> wrench_twist_gain_;
@@ -1648,6 +2007,8 @@ private:
   std::vector<double> latest_qdot_raw_command_;
   std::vector<double> latest_qdot_after_collision_;
   std::vector<double> latest_qdot_after_safety_;
+  std::vector<tf2::Vector3> latest_own_collision_points_;
+  std::vector<tf2::Vector3> latest_other_collision_points_;
 
   Vector6 filtered_wrench_{0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   Vector6 wrench_bias_{0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
@@ -1661,12 +2022,16 @@ private:
   tf2::Quaternion latest_target_orientation_{0.0, 0.0, 0.0, 1.0};
   tf2::Transform collision_common_from_own_base_{tf2::Transform::getIdentity()};
   tf2::Transform collision_common_from_other_base_{tf2::Transform::getIdentity()};
+  tf2::Vector3 latest_nearest_own_collision_point_{0.0, 0.0, 0.0};
+  tf2::Vector3 latest_nearest_other_collision_point_{0.0, 0.0, 0.0};
   bool equilibrium_initialized_{false};
+  bool latest_collision_points_valid_{false};
 
   rclcpp::Time last_update_time_{0, 0, RCL_ROS_TIME};
   rclcpp::Time last_wrench_time_{0, 0, RCL_ROS_TIME};
   rclcpp::Time bias_start_time_{0, 0, RCL_ROS_TIME};
   rclcpp::Time previous_publish_time_{0, 0, RCL_ROS_TIME};
+  rclcpp::Time previous_collision_marker_publish_time_{0, 0, RCL_ROS_TIME};
 
   Eigen::VectorXd latest_singular_values_;
   Eigen::VectorXd latest_achieved_twist_{Eigen::VectorXd::Zero(6)};
