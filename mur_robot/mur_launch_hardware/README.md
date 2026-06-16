@@ -35,6 +35,34 @@ ros2 launch mur_launch_hardware mur_620.launch.py \
   ur_r_rpy:="0.0 0.0 2.9"
 ```
 
+
+## BMS battery state
+
+The hardware launch starts `bms_can_node.py` by default. It queries the
+superstructure BMS over SocketCAN and publishes:
+
+- `/<robot_name>/bms_status/SOC` as `std_msgs/msg/Float32` in percent, matching
+  the ROS 1 topic shape
+- `/<robot_name>/battery_state` as `sensor_msgs/msg/BatteryState`
+
+The selected `robot_profile` provides the default `battery_node_id`; override it
+when needed:
+
+```bash
+ros2 launch mur_launch_hardware mur_620.launch.py \
+  robot_profile:=mur620d \
+  battery_node_id:=0x0440
+```
+
+Bring up the SocketCAN interface before launching, for example:
+
+```bash
+sudo ip link set can0 up type can bitrate 250000
+```
+
+Alternatively, set `bms_configure_can_interface:=true` when the node has
+sufficient privileges. Disable the BMS node with `launch_bms:=false`.
+
 ## Ewellix lift columns
 
 The MUR620 launch starts one `ewellix_driver` node per lift column:

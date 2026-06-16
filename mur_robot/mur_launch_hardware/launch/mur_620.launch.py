@@ -54,6 +54,17 @@ def declare_arguments():
         DeclareLaunchArgument('launch_lift_r', default_value=''),
         DeclareLaunchArgument('publish_fake_mir_wheel_joints', default_value='true'),
         DeclareLaunchArgument('fake_mir_wheel_joint_frequency', default_value='10.0'),
+        DeclareLaunchArgument('launch_bms', default_value='true'),
+        DeclareLaunchArgument(
+            'battery_node_id',
+            default_value='',
+            description='BMS CAN node id. Empty uses the selected robot profile value.',
+        ),
+        DeclareLaunchArgument('bms_can_interface', default_value='can0'),
+        DeclareLaunchArgument('bms_can_bitrate', default_value='250000'),
+        DeclareLaunchArgument('bms_publish_frequency', default_value='1.0'),
+        DeclareLaunchArgument('bms_response_timeout', default_value='0.8'),
+        DeclareLaunchArgument('bms_configure_can_interface', default_value='false'),
         # Matches the ROS 1 hardware launch wiring for the MUR620 lifts.
         DeclareLaunchArgument('lift_port_l', default_value='/dev/ttyUSB1'),
         DeclareLaunchArgument('lift_port_r', default_value='/dev/ttyUSB0'),
@@ -606,6 +617,27 @@ def make_fake_mir_wheel_joint_publisher(robot_name):
     )
 
 
+def make_bms_can_node(robot_name, battery_node_id):
+    return Node(
+        package='mur_launch_hardware',
+        executable='bms_can_node.py',
+        name='bms_can_node',
+        namespace=robot_name,
+        parameters=[{
+            'battery_node_id': battery_node_id,
+            'can_interface': LaunchConfiguration('bms_can_interface'),
+            'can_bitrate': LaunchConfiguration('bms_can_bitrate'),
+            'publish_frequency': LaunchConfiguration('bms_publish_frequency'),
+            'response_timeout': LaunchConfiguration('bms_response_timeout'),
+            'configure_can_interface': LaunchConfiguration('bms_configure_can_interface'),
+            'soc_topic': 'bms_status/SOC',
+            'battery_state_topic': 'battery_state',
+        }],
+        condition=IfCondition(LaunchConfiguration('launch_bms')),
+        output='screen',
+    )
+
+
 def make_arm_velocity_safety_node(robot_name):
     return Node(
         package='mur_control',
@@ -917,6 +949,7 @@ def launch_setup(context, *args, **kwargs):
     use_lift = profile_value('use_lift', 'use_lift', 'true')
     launch_lift_l = profile_value('launch_lift_l', 'use_lift', use_lift)
     launch_lift_r = profile_value('launch_lift_r', 'use_lift', use_lift)
+    battery_node_id = profile_value('battery_node_id', 'battery_node_id', '0x0240')
     ur_l_xyz = arm_profile_value('l', 'ur_l_xyz', 'mount_xyz', '0.0 0.0 0.0')
     ur_l_rpy = arm_profile_value('l', 'ur_l_rpy', 'mount_rpy', '0.0 0.0 0.0')
     ur_r_xyz = arm_profile_value('r', 'ur_r_xyz', 'mount_xyz', '0.0 0.0 0.0')
@@ -944,7 +977,8 @@ def launch_setup(context, *args, **kwargs):
 
     print(
         f"[mur_620.launch] robot_name={robot_name}, robot_profile={profile_name}, "
-        f"use_lift={use_lift}, launch_lift_l={launch_lift_l}, launch_lift_r={launch_lift_r}"
+        f"use_lift={use_lift}, launch_lift_l={launch_lift_l}, "
+        f"launch_lift_r={launch_lift_r}, battery_node_id={battery_node_id}"
     )
     print(
         f"[mur_620.launch] UR10_l kinematics={kinematics_params_file_l}, "
@@ -1183,6 +1217,7 @@ def launch_setup(context, *args, **kwargs):
 
     return [
         robot_state_publisher,
+        make_bms_can_node(robot_name, battery_node_id),
         make_fake_mir_wheel_joint_publisher(robot_name),
         make_arm_velocity_safety_node(robot_name),
         make_moveit_controller_proxies(robot_name),

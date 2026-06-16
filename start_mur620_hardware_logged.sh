@@ -23,6 +23,9 @@ INTEGRATED_CARTESIAN_ACTIVE="${INTEGRATED_CARTESIAN_ACTIVE:-false}"
 INTEGRATED_CARTESIAN_USE_FT="${INTEGRATED_CARTESIAN_USE_FT:-false}"
 INTEGRATED_CARTESIAN_REQUIRE_WRENCH="${INTEGRATED_CARTESIAN_REQUIRE_WRENCH:-false}"
 MOVEIT_WITH_INTEGRATED_CARTESIAN="${MOVEIT_WITH_INTEGRATED_CARTESIAN:-false}"
+MUR_REQUIRE_HOST_PREFLIGHT="${MUR_REQUIRE_HOST_PREFLIGHT:-false}"
+HOST_SETUP_SCRIPT="${HOST_SETUP_SCRIPT:-${REPO}/setup_mur_hardware_host.sh}"
+HOST_DIAG_SCRIPT="${HOST_DIAG_SCRIPT:-${REPO}/diagnose_mur_hardware_host.sh}"
 
 TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
 LOG_FILE="${LOG_FILE:-${LOG_DIR}/${LAUNCH_PACKAGE}_${LAUNCH_FILE%.launch.py}_${TIMESTAMP}.log}"
@@ -93,9 +96,14 @@ stop_old_hardware() {
 
 report_serial_access() {
   local ports=("/dev/ttyUSB0" "/dev/ttyUSB1")
+  local serial_blocking=0
 
   if ! id -nG | tr ' ' '\n' | grep -qx "dialout"; then
     echo "[start_mur620_hardware_logged] WARN: user $(id -un) is not in group dialout; Ewellix serial ports may fail with Permission denied."
+    echo "MUR_PREFLIGHT: status=fail issue=dialout user=$(id -un)"
+    serial_blocking=1
+  else
+    echo "MUR_PREFLIGHT: status=ok issue=dialout user=$(id -un)"
   fi
 
   for port in "${ports[@]}"; do
@@ -103,12 +111,41 @@ report_serial_access() {
       ls -l "$port"
       if [[ ! -r "$port" || ! -w "$port" ]]; then
         echo "[start_mur620_hardware_logged] WARN: ${port} is not readable/writable for user $(id -un)."
+        echo "MUR_PREFLIGHT: status=fail issue=serial_permission port=${port}"
+        serial_blocking=1
+      else
+        echo "MUR_PREFLIGHT: status=ok issue=serial_permission port=${port}"
       fi
     else
       echo "[start_mur620_hardware_logged] WARN: ${port} does not exist right now."
+      echo "MUR_PREFLIGHT: status=warn issue=serial_missing port=${port}"
     fi
   done
+  if [[ "$serial_blocking" -ne 0 ]]; then
+    echo "MUR_PREFLIGHT: summary=fail blocking=serial_permission"
+  else
+    echo "MUR_PREFLIGHT: summary=ok blocking=none"
+  fi
   echo
+  return "$serial_blocking"
+}
+
+run_host_preflight() {
+  local preflight_status=0
+  if [[ -x "$HOST_SETUP_SCRIPT" ]]; then
+    "$HOST_SETUP_SCRIPT" --check || preflight_status="$?"
+  else
+    echo "MUR_HOST_CHECK: status=warn issue=setup_script_missing path=${HOST_SETUP_SCRIPT}"
+  fi
+
+  if [[ "$preflight_status" -ne 0 && "${MUR_REQUIRE_HOST_PREFLIGHT}" == "true" ]]; then
+    echo "[start_mur620_hardware_logged] ERROR: strict host preflight failed; refusing hardware launch."
+    echo "[start_mur620_hardware_logged] Run: ${HOST_SETUP_SCRIPT} --apply"
+    exit "$preflight_status"
+  fi
+  if [[ "$preflight_status" -ne 0 ]]; then
+    echo "[start_mur620_hardware_logged] WARN: host preflight reported blocking issues, but strict mode is disabled."
+  fi
 }
 
 echo "[start_mur620_hardware_logged] $(date --iso-8601=seconds)"
@@ -128,11 +165,13 @@ echo "[start_mur620_hardware_logged] integrated_cartesian_admittance_active=${IN
 echo "[start_mur620_hardware_logged] integrated_cartesian_admittance_use_ft=${INTEGRATED_CARTESIAN_USE_FT}"
 echo "[start_mur620_hardware_logged] integrated_cartesian_admittance_require_wrench=${INTEGRATED_CARTESIAN_REQUIRE_WRENCH}"
 echo "[start_mur620_hardware_logged] moveit_with_integrated_cartesian=${MOVEIT_WITH_INTEGRATED_CARTESIAN}"
+echo "[start_mur620_hardware_logged] mur_require_host_preflight=${MUR_REQUIRE_HOST_PREFLIGHT}"
 echo "[start_mur620_hardware_logged] extra args: $*"
 echo
 
 source_setup /opt/ros/jazzy/setup.bash
-report_serial_access
+run_host_preflight
+report_serial_access || true
 
 if [[ "${CLEAN_START}" == "true" ]]; then
   stop_old_hardware
@@ -193,5 +232,9 @@ echo
 echo "[start_mur620_hardware_logged] exit_code=${status}"
 echo "[start_mur620_hardware_logged] finished=$(date --iso-8601=seconds)"
 echo "[start_mur620_hardware_logged] latest=${LATEST_LOG}"
+if [[ -x "$HOST_DIAG_SCRIPT" ]]; then
+  echo "[start_mur620_hardware_logged] diagnosis summary:"
+  "$HOST_DIAG_SCRIPT" "$LOG_FILE" || true
+fi
 
 exit "$status"

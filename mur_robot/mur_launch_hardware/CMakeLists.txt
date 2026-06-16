@@ -4,6 +4,7 @@ project(mur_launch_hardware)
 find_package(ament_cmake REQUIRED)
 
 install(PROGRAMS
+  scripts/bms_can_node.py
   scripts/ewellix_dual_state_to_joint_state.py
   scripts/ewellix_state_to_joint_state.py
   scripts/fake_mir_wheel_joint_states.py
