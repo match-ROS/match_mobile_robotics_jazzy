@@ -131,11 +131,11 @@ def declare_arguments():
         DeclareLaunchArgument('integrated_controller_torque_deadband', default_value='0.05'),
         DeclareLaunchArgument(
             'integrated_controller_admittance',
-            default_value='0.0024 0.0024 0.0025 0.0 0.0 0.0',
+            default_value='0.0012 0.0012 0.0013 0.0 0.0 0.0',
         ),
         DeclareLaunchArgument(
             'integrated_controller_wrench_twist_gain',
-            default_value='0.0015 0.0015 0.0012 0.0 0.0 0.0',
+            default_value='0.0007 0.0007 0.0006 0.0 0.0 0.0',
         ),
         DeclareLaunchArgument(
             'integrated_controller_pose_error_gain',
@@ -438,6 +438,7 @@ def make_ur_driver(side, robot_name, controllers_file, update_rate_config_file, 
                 'ur_configuration_controller',
                 'forward_velocity_controller',
                 'integrated_cartesian_admittance_controller',
+                'freedrive_mode_controller',
                 'scaled_joint_trajectory_controller',
                 'joint_trajectory_controller',
             ]},
@@ -544,7 +545,6 @@ def make_ur_driver(side, robot_name, controllers_file, update_rate_config_file, 
 
 
 def make_lift_driver(side, robot_name, launch_condition):
-    side_name = 'left' if side == 'l' else 'right'
     namespace = f'{robot_name}/ewellix_lift_{side}'
 
     return GroupAction(
@@ -567,22 +567,27 @@ def make_lift_driver(side, robot_name, launch_condition):
                 }],
                 output='screen',
             ),
-            Node(
-                package='mur_launch_hardware',
-                executable='ewellix_state_to_joint_state.py',
-                name=f'{side_name}_lift_joint_state_bridge',
-                namespace=namespace,
-                parameters=[{
-                    'joint_name': f'{side_name}_lift_joint',
-                    'joint_count': LaunchConfiguration('lift_joint_count'),
-                    'conversion': LaunchConfiguration('lift_conversion'),
-                    'position_multiplier': LaunchConfiguration('lift_position_multiplier'),
-                    'joint_states_topic': '/joint_states',
-                }],
-                output='screen',
-            ),
         ],
         condition=IfCondition(launch_condition),
+    )
+
+
+def make_lift_joint_state_bridge(robot_name, launch_condition):
+    return Node(
+        package='mur_launch_hardware',
+        executable='ewellix_dual_state_to_joint_state.py',
+        name='ewellix_lift_joint_state_bridge',
+        namespace=robot_name,
+        parameters=[{
+            'robot_name': robot_name,
+            'joint_count': LaunchConfiguration('lift_joint_count'),
+            'conversion': LaunchConfiguration('lift_conversion'),
+            'position_multiplier': LaunchConfiguration('lift_position_multiplier'),
+            'publish_frequency': LaunchConfiguration('lift_frequency'),
+            'joint_states_topic': '/joint_states',
+        }],
+        condition=IfCondition(launch_condition),
+        output='screen',
     )
 
 
@@ -683,7 +688,7 @@ def make_moveit_controller_proxies(robot_name):
     )
 
 
-def make_moveit_launch(robot_name):
+def make_moveit_launch(robot_name, home_custom_l_shoulder_pan, home_custom_r_shoulder_pan):
     mur_moveit_path = get_package_share_directory('mur_moveit_config')
     moveit_launch = os.path.join(mur_moveit_path, 'launch', 'ur_moveit.launch.py')
     return IncludeLaunchDescription(
@@ -704,6 +709,8 @@ def make_moveit_launch(robot_name):
             'virtual_joint_parent_frame': f'{robot_name}/base_footprint',
             'default_velocity_scaling': LaunchConfiguration('moveit_default_velocity_scaling'),
             'default_acceleration_scaling': LaunchConfiguration('moveit_default_acceleration_scaling'),
+            'home_custom_l_shoulder_pan': home_custom_l_shoulder_pan,
+            'home_custom_r_shoulder_pan': home_custom_r_shoulder_pan,
         }.items(),
     )
 
@@ -914,6 +921,12 @@ def launch_setup(context, *args, **kwargs):
     ur_l_rpy = arm_profile_value('l', 'ur_l_rpy', 'mount_rpy', '0.0 0.0 0.0')
     ur_r_xyz = arm_profile_value('r', 'ur_r_xyz', 'mount_xyz', '0.0 0.0 0.0')
     ur_r_rpy = arm_profile_value('r', 'ur_r_rpy', 'mount_rpy', '0.0 0.0 3.14159265359')
+    home_custom_l_shoulder_pan = str(
+        arm_profiles.get('l', {}).get('home_custom_shoulder_pan', '0.0')
+    )
+    home_custom_r_shoulder_pan = str(
+        arm_profiles.get('r', {}).get('home_custom_shoulder_pan', '0.0')
+    )
     kinematics_params_file_l = arm_profile_value(
         'l',
         'kinematics_params_file_l',
@@ -1175,9 +1188,14 @@ def launch_setup(context, *args, **kwargs):
         make_moveit_controller_proxies(robot_name),
         make_jparse_nodes(robot_name),
         make_cartesian_admittance_nodes(robot_name),
-        make_moveit_launch(robot_name),
+        make_moveit_launch(
+            robot_name,
+            home_custom_l_shoulder_pan,
+            home_custom_r_shoulder_pan,
+        ),
         make_lift_driver('l', robot_name, launch_lift_l),
         make_lift_driver('r', robot_name, launch_lift_r),
+        make_lift_joint_state_bridge(robot_name, use_lift),
         make_ur_driver(
             'l',
             robot_name,

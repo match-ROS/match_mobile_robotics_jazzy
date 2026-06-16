@@ -49,8 +49,10 @@ robots:
       l:
         mount_xyz: "-0.016336416303694423 -0.005028832374393943 0.0"
         mount_rpy: "0.0 0.0 -0.23640963340626803"
+        home_custom_shoulder_pan: "0.23640963340626803"
         kinematics_params_file: "calibration/calibration_UR10_09.yaml"
       r:
         mount_xyz: "-0.014413717596175157 0.001884619443986657 0.0"
         mount_rpy: "0.0 0.0 2.908743319735608"
+        home_custom_shoulder_pan: "0.2328493338541851"
         kinematics_params_file: "calibration/calibration_UR10_13.yaml"

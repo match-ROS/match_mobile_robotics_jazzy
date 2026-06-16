@@ -8,7 +8,9 @@ import time
 import rclpy
 from action_msgs.msg import GoalStatus
 from control_msgs.action import FollowJointTrajectory
+from control_msgs.msg import JointTolerance
 from controller_manager_msgs.srv import ListControllers, SwitchController
+from geometry_msgs.msg import TwistStamped
 from rclpy.action import ActionClient, ActionServer, CancelResponse, GoalResponse
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
@@ -41,9 +43,19 @@ class MoveItTrajectoryControllerProxy(Node):
         self.controller_manager = args.controller_manager or f'/{args.robot_name}/controller_manager'
         self.velocity_controller = args.velocity_controller
         self.trajectory_controller = args.trajectory_controller
-        self.velocity_command_topic = args.velocity_command_topic or (
-            f'/{args.robot_name}/{self.velocity_controller}/commands'
+        self.arm_name = f'UR10_{args.arm}'
+        self.uses_integrated_velocity_controller = (
+            self.velocity_controller == 'integrated_cartesian_admittance_controller'
         )
+        if self.uses_integrated_velocity_controller:
+            self.velocity_command_topic = (
+                f'/{args.robot_name}/{self.arm_name}/'
+                f'{self.velocity_controller}/equilibrium_twist_cmd'
+            )
+        else:
+            self.velocity_command_topic = args.velocity_command_topic or (
+                f'/{args.robot_name}/{self.velocity_controller}/commands'
+            )
 
         self.switch_client = self.create_client(
             SwitchController,
@@ -61,11 +73,18 @@ class MoveItTrajectoryControllerProxy(Node):
             self.real_action,
             callback_group=self.callback_group,
         )
-        self.zero_velocity_pub = self.create_publisher(
-            Float64MultiArray,
-            self.velocity_command_topic,
-            10,
-        )
+        if self.uses_integrated_velocity_controller:
+            self.zero_velocity_pub = self.create_publisher(
+                TwistStamped,
+                self.velocity_command_topic,
+                10,
+            )
+        else:
+            self.zero_velocity_pub = self.create_publisher(
+                Float64MultiArray,
+                self.velocity_command_topic,
+                10,
+            )
         self.create_subscription(
             JointState,
             args.joint_states_topic,
@@ -181,9 +200,16 @@ class MoveItTrajectoryControllerProxy(Node):
         return True
 
     def _publish_zero_velocity(self):
-        msg = Float64MultiArray()
-        msg.data = [0.0] * ARM_JOINT_COUNT
-        for _ in range(3):
+        if self.uses_integrated_velocity_controller:
+            msg = TwistStamped()
+            msg.header.frame_id = f'{self.arm_name}/base_link'
+        else:
+            msg = Float64MultiArray()
+            msg.data = [0.0] * ARM_JOINT_COUNT
+
+        for _ in range(5):
+            if self.uses_integrated_velocity_controller:
+                msg.header.stamp = self.get_clock().now().to_msg()
             self.zero_velocity_pub.publish(msg)
             time.sleep(0.02)
 
@@ -244,6 +270,39 @@ class MoveItTrajectoryControllerProxy(Node):
             f"points={len(trajectory.points)}, duration={seconds:.3f}s"
         )
 
+    def _goal_with_execution_tolerances(self, request):
+        goal = FollowJointTrajectory.Goal()
+        goal.trajectory = request.trajectory
+        goal.multi_dof_trajectory = request.multi_dof_trajectory
+        goal.goal_time_tolerance = request.goal_time_tolerance
+
+        if request.path_tolerance:
+            goal.path_tolerance = request.path_tolerance
+        elif self.args.path_tolerance > 0.0:
+            goal.path_tolerance = [
+                JointTolerance(
+                    name=joint_name,
+                    position=self.args.path_tolerance,
+                    velocity=0.0,
+                    acceleration=0.0,
+                )
+                for joint_name in request.trajectory.joint_names
+            ]
+
+        if request.goal_tolerance:
+            goal.goal_tolerance = request.goal_tolerance
+        elif self.args.goal_tolerance > 0.0:
+            goal.goal_tolerance = [
+                JointTolerance(
+                    name=joint_name,
+                    position=self.args.goal_tolerance,
+                    velocity=0.0,
+                    acceleration=0.0,
+                )
+                for joint_name in request.trajectory.joint_names
+            ]
+        return goal
+
     def _looks_like_deactivate_cancel(self, result):
         error_string = (result.error_string or '').lower()
         return (
@@ -271,8 +330,9 @@ class MoveItTrajectoryControllerProxy(Node):
                 goal_handle.abort()
                 return result
 
+            forwarded_goal = self._goal_with_execution_tolerances(goal_handle.request)
             send_future = self.trajectory_client.send_goal_async(
-                goal_handle.request,
+                forwarded_goal,
                 feedback_callback=lambda feedback: goal_handle.publish_feedback(
                     feedback.feedback
                 ),
@@ -362,6 +422,8 @@ def parse_args():
     parser.add_argument('--action-timeout', type=float, default=10.0)
     parser.add_argument('--post-result-settle-sec', type=float, default=0.25)
     parser.add_argument('--goal-reached-tolerance', type=float, default=0.025)
+    parser.add_argument('--path-tolerance', type=float, default=0.35)
+    parser.add_argument('--goal-tolerance', type=float, default=0.12)
     args, _ = parser.parse_known_args()
     return args
 

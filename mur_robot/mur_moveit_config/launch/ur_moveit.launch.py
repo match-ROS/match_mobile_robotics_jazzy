@@ -266,6 +266,16 @@ def declare_arguments():
                 default_value="0.15",
                 description="Default MoveIt acceleration scaling factor for generated plans",
             ),
+            DeclareLaunchArgument(
+                "home_custom_l_shoulder_pan",
+                default_value="0.0",
+                description="Shoulder pan angle for the left Home_custom named state",
+            ),
+            DeclareLaunchArgument(
+                "home_custom_r_shoulder_pan",
+                default_value="0.0",
+                description="Shoulder pan angle for the right Home_custom named state",
+            ),
         ]
     )
 
@@ -297,6 +307,8 @@ def launch_setup(context, *args, **kwargs):
         LaunchConfiguration("default_acceleration_scaling"),
         value_type=float,
     )
+    home_custom_l_shoulder_pan = LaunchConfiguration("home_custom_l_shoulder_pan").perform(context)
+    home_custom_r_shoulder_pan = LaunchConfiguration("home_custom_r_shoulder_pan").perform(context)
     virtual_joint_parent_frame = LaunchConfiguration("virtual_joint_parent_frame").perform(context)
     if not virtual_joint_parent_frame:
         virtual_joint_parent_frame = f"{controller_namespace}/base_footprint"
@@ -316,6 +328,8 @@ def launch_setup(context, *args, **kwargs):
                 "prefix": "UR10",
                 "model_name": "mur620",
                 "virtual_joint_parent_frame": virtual_joint_parent_frame,
+                "home_custom_l_shoulder_pan": home_custom_l_shoulder_pan,
+                "home_custom_r_shoulder_pan": home_custom_r_shoulder_pan,
             },
         )
         .to_moveit_configs()

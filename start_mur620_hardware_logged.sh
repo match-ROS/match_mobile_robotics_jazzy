@@ -64,10 +64,16 @@ stop_old_hardware() {
     "ur_robot_driver/tool_communication.py"
     "ur_startup_enable.py"
     "ewellix_driver/ewellix_node"
+    "ewellix_dual_state_to_joint_state.py"
     "ewellix_state_to_joint_state.py"
+    "fake_mir_wheel_joint_states.py"
     "move_group"
     "moveit_trajectory_controller_proxy.py"
     "robot_state_publisher"
+    "virtual_object_state_node"
+    "virtual_object_tcp_transform_node"
+    "virtual_object_demo_runner"
+    "log_cooperative_tracking.py"
     "rviz2"
   )
 
