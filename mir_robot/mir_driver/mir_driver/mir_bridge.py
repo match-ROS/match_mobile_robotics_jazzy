@@ -552,8 +552,7 @@ class MiRBridgeNode(Node):
         except KeyError:
             self.get_logger().fatal('Parameter "hostname" is not set!')
             sys.exit(-1)
-        port = self.declare_parameter('port', 9090).value
-        assert isinstance(port, int), 'port parameter must be an integer'
+        port = int(self.declare_parameter('port', 9090).value)
 
         global tf_prefix
         self.declare_parameter('tf_prefix', '')

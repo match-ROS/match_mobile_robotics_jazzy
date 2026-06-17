@@ -75,7 +75,7 @@ class RosbridgeSetup:
         unsub = {"op": "unsubscribe", "topic": topic}
         self.send(unsub)
 
-    def callService(self, serviceName, callback=None, msg=None):
+    def callService(self, serviceName, callback=None, msg=None, timeout=None):
         id = self.generate_id()
         call = {"op": "call_service", "id": id, "service": serviceName}
         if msg is not None:
@@ -91,9 +91,14 @@ class RosbridgeSetup:
             self.addServiceCallback(id, internalCB)
             self.send(call)
 
+            start_time = time.monotonic()
             while self.resp is None:
+                if timeout is not None and time.monotonic() - start_time > timeout:
+                    self.service_callbacks.pop(id, None)
+                    raise TimeoutError("Timed out waiting for service response from {}".format(serviceName))
                 time.sleep(0.01)
 
+            self.service_callbacks.pop(id, None)
             return self.resp
 
         self.addServiceCallback(id, callback)
@@ -178,6 +183,7 @@ class RosbridgeWSConnection:
         )
         self.ws.on_open = self.on_open
         self.run_thread = threading.Thread(target=self.run)
+        self.run_thread.daemon = True
         self.run_thread.start()
         self.connected = False
         self.errored = False

@@ -403,6 +403,8 @@ public:
         "collision_capsule_segments", {});
       collision_other_capsule_segments_ = auto_declare<std::vector<std::string>>(
         "collision_other_capsule_segments", {});
+      collision_forbidden_box_specs_ = auto_declare<std::vector<std::string>>(
+        "collision_forbidden_boxes", {});
       collision_common_link_ = auto_declare<std::string>("collision_common_link", "base_link");
       collision_own_base_xyz_ = checked_vector("collision_own_base_xyz", {0.0, 0.0, 0.0});
       collision_own_base_rpy_ = checked_vector("collision_own_base_rpy", {0.0, 0.0, 0.0});
@@ -817,6 +819,13 @@ private:
     tf2::Vector3 end;
   };
 
+  struct ForbiddenBox
+  {
+    std::string name;
+    tf2::Vector3 center;
+    tf2::Vector3 size;
+  };
+
   std::vector<double> checked_vector(
     const std::string & name,
     const std::vector<double> & defaults)
@@ -920,6 +929,54 @@ private:
     return capsules;
   }
 
+  static bool parse_forbidden_box(
+    const std::string & specification,
+    ForbiddenBox & box)
+  {
+    std::istringstream stream(specification);
+    std::string name;
+    std::string center;
+    std::string size;
+    if (!std::getline(stream, name, ':') || !std::getline(stream, center, ':') ||
+      !std::getline(stream, size, ':'))
+    {
+      return false;
+    }
+    std::string extra;
+    if (std::getline(stream, extra, ':')) {
+      return false;
+    }
+    box.name = trim_copy(name);
+    if (box.name.empty()) {
+      return false;
+    }
+    if (!parse_vector3_token(center, box.center) || !parse_vector3_token(size, box.size)) {
+      return false;
+    }
+    return box.size.x() > 0.0 && box.size.y() > 0.0 && box.size.z() > 0.0;
+  }
+
+  static std::vector<ForbiddenBox> parse_forbidden_boxes(
+    const std::vector<std::string> & specifications,
+    const rclcpp::Logger & logger,
+    const std::string & parameter_name)
+  {
+    std::vector<ForbiddenBox> boxes;
+    boxes.reserve(specifications.size());
+    for (const auto & specification : specifications) {
+      ForbiddenBox box;
+      if (parse_forbidden_box(specification, box)) {
+        boxes.push_back(box);
+      } else {
+        RCLCPP_WARN(
+          logger,
+          "Ignoring invalid %s entry '%s'. Expected 'name:cx,cy,cz:sx,sy,sz' with positive size",
+          parameter_name.c_str(), specification.c_str());
+      }
+    }
+    return boxes;
+  }
+
   static std::vector<CollisionCapsule> default_ur10e_collision_capsules(
     const std::string & prefix)
   {
@@ -995,19 +1052,21 @@ private:
       parse_collision_capsules(
         collision_other_capsule_segments_, get_node()->get_logger(),
         "collision_other_capsule_segments");
+    collision_forbidden_boxes_ = parse_forbidden_boxes(
+      collision_forbidden_box_specs_, get_node()->get_logger(), "collision_forbidden_boxes");
 
     RCLCPP_INFO(
       get_node()->get_logger(),
       "Configured collision avoidance for %s against %s: common=%s, own_chain=%s->%s, "
       "other_chain=%s->%s%s, own_joints=%zu, other_joints=%zu, own_capsules=%zu, "
-      "other_capsules=%zu, other_capsule_prefix=%s",
+      "other_capsules=%zu, forbidden_boxes=%zu, other_capsule_prefix=%s",
       prefix_.c_str(), collision_other_prefix_.c_str(), collision_common_link_.c_str(),
       base_link_.c_str(), tip_link_.c_str(),
       collision_other_base_link_.c_str(), collision_other_tip_link_.c_str(),
       other_chain_from_robot_description ? "" : " (reused geometry)",
       own_collision_joint_names_.size(), other_collision_joint_names_.size(),
       own_collision_capsules_.size(), other_collision_capsules_.size(),
-      other_capsule_prefix.c_str());
+      collision_forbidden_boxes_.size(), other_capsule_prefix.c_str());
     return true;
   }
 
@@ -1182,6 +1241,49 @@ private:
     latest_collision_points_valid_ = false;
   }
 
+  static double signed_sphere_box_clearance(
+    const tf2::Vector3 & point,
+    const ForbiddenBox & box,
+    double sphere_radius,
+    tf2::Vector3 & nearest_box_point)
+  {
+    const tf2::Vector3 half_size = 0.5 * box.size;
+    const tf2::Vector3 delta = point - box.center;
+    const tf2::Vector3 abs_delta(std::abs(delta.x()), std::abs(delta.y()), std::abs(delta.z()));
+    const tf2::Vector3 box_min = box.center - half_size;
+    const tf2::Vector3 box_max = box.center + half_size;
+
+    nearest_box_point = tf2::Vector3(
+      std::clamp(point.x(), box_min.x(), box_max.x()),
+      std::clamp(point.y(), box_min.y(), box_max.y()),
+      std::clamp(point.z(), box_min.z(), box_max.z()));
+
+    const bool inside = abs_delta.x() <= half_size.x() &&
+      abs_delta.y() <= half_size.y() && abs_delta.z() <= half_size.z();
+    if (!inside) {
+      return (point - nearest_box_point).length() - sphere_radius;
+    }
+
+    const std::array<double, 3> margins{
+      half_size.x() - abs_delta.x(),
+      half_size.y() - abs_delta.y(),
+      half_size.z() - abs_delta.z()};
+    const auto axis_it = std::min_element(margins.begin(), margins.end());
+    const std::size_t axis = static_cast<std::size_t>(std::distance(margins.begin(), axis_it));
+    nearest_box_point = point;
+    const double sign = axis == 0 ? (delta.x() >= 0.0 ? 1.0 : -1.0) :
+      axis == 1 ? (delta.y() >= 0.0 ? 1.0 : -1.0) :
+      (delta.z() >= 0.0 ? 1.0 : -1.0);
+    if (axis == 0) {
+      nearest_box_point.setX(box.center.x() + sign * half_size.x());
+    } else if (axis == 1) {
+      nearest_box_point.setY(box.center.y() + sign * half_size.y());
+    } else {
+      nearest_box_point.setZ(box.center.z() + sign * half_size.z());
+    }
+    return -*axis_it - sphere_radius;
+  }
+
   bool compute_collision_clearance(
     const KDL::JntArray & own_collision_q,
     const KDL::JntArray & other_collision_q,
@@ -1210,26 +1312,37 @@ private:
       return false;
     }
 
-    double min_center_distance = std::numeric_limits<double>::infinity();
+    double min_clearance = std::numeric_limits<double>::infinity();
     tf2::Vector3 nearest_own;
     tf2::Vector3 nearest_other;
     for (const auto & own_point : own_points) {
       for (const auto & other_point : other_points) {
-        const double center_distance = (own_point - other_point).length();
-        if (center_distance < min_center_distance) {
-          min_center_distance = center_distance;
+        const double point_clearance =
+          (own_point - other_point).length() - 2.0 * collision_sphere_radius_;
+        if (point_clearance < min_clearance) {
+          min_clearance = point_clearance;
           nearest_own = own_point;
           nearest_other = other_point;
         }
       }
+      for (const auto & box : collision_forbidden_boxes_) {
+        tf2::Vector3 nearest_box_point;
+        const double box_clearance = signed_sphere_box_clearance(
+          own_point, box, collision_sphere_radius_, nearest_box_point);
+        if (box_clearance < min_clearance) {
+          min_clearance = box_clearance;
+          nearest_own = own_point;
+          nearest_other = nearest_box_point;
+        }
+      }
     }
-    if (!std::isfinite(min_center_distance)) {
+    if (!std::isfinite(min_clearance)) {
       if (store_debug_points) {
         clear_latest_collision_points();
       }
       return false;
     }
-    clearance = min_center_distance - 2.0 * collision_sphere_radius_;
+    clearance = min_clearance;
     if (store_debug_points) {
       latest_own_collision_points_ = own_points;
       latest_other_collision_points_ = other_points;
@@ -1807,7 +1920,11 @@ private:
     }
     previous_collision_marker_publish_time_ = time;
 
-    if (!enable_collision_avoidance_ || !latest_collision_points_valid_) {
+    if (!enable_collision_avoidance_) {
+      publish_collision_marker_delete_all(time);
+      return;
+    }
+    if (!latest_collision_points_valid_ && collision_forbidden_boxes_.empty()) {
       publish_collision_marker_delete_all(time);
       return;
     }
@@ -1848,12 +1965,31 @@ private:
     nearest_marker.color.g = 0.0;
     nearest_marker.color.b = 0.0;
     nearest_marker.color.a = 0.95;
-    nearest_marker.points.push_back(point_msg(latest_nearest_own_collision_point_));
-    nearest_marker.points.push_back(point_msg(latest_nearest_other_collision_point_));
+    if (latest_collision_points_valid_) {
+      nearest_marker.points.push_back(point_msg(latest_nearest_own_collision_point_));
+      nearest_marker.points.push_back(point_msg(latest_nearest_other_collision_point_));
+    }
 
     markers.markers.push_back(own_marker);
     markers.markers.push_back(other_marker);
     markers.markers.push_back(nearest_marker);
+
+    int box_id = 100;
+    for (const auto & box : collision_forbidden_boxes_) {
+      auto box_marker = base_collision_marker(
+        time, box_id++, "forbidden_zones", visualization_msgs::msg::Marker::CUBE);
+      box_marker.pose.position = point_msg(box.center);
+      box_marker.pose.orientation.w = 1.0;
+      box_marker.scale.x = box.size.x();
+      box_marker.scale.y = box.size.y();
+      box_marker.scale.z = box.size.z();
+      box_marker.color.r = 0.9;
+      box_marker.color.g = 0.0;
+      box_marker.color.b = 0.1;
+      box_marker.color.a = 0.25;
+      markers.markers.push_back(box_marker);
+    }
+
     collision_markers_pub_->publish(markers);
   }
 
@@ -1929,12 +2065,14 @@ private:
   std::vector<std::string> other_collision_joint_names_;
   std::vector<std::string> collision_capsule_segments_;
   std::vector<std::string> collision_other_capsule_segments_;
+  std::vector<std::string> collision_forbidden_box_specs_;
   std::vector<double> collision_own_base_xyz_;
   std::vector<double> collision_own_base_rpy_;
   std::vector<double> collision_other_base_xyz_;
   std::vector<double> collision_other_base_rpy_;
   std::vector<CollisionCapsule> own_collision_capsules_;
   std::vector<CollisionCapsule> other_collision_capsules_;
+  std::vector<ForbiddenBox> collision_forbidden_boxes_;
 
   KDL::Chain chain_;
   KDL::Chain own_collision_chain_;

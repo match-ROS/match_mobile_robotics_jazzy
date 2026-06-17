@@ -171,6 +171,15 @@ def declare_arguments():
         DeclareLaunchArgument('integrated_controller_collision_activation_clearance', default_value='0.08'),
         DeclareLaunchArgument('integrated_controller_collision_stop_clearance', default_value='0.035'),
         DeclareLaunchArgument('integrated_controller_collision_fail_safe_stop', default_value='true'),
+        DeclareLaunchArgument(
+            'integrated_controller_collision_forbidden_boxes',
+            default_value='default',
+            description=(
+                "Semicolon-separated forbidden boxes in collision_common_link as "
+                "name:cx,cy,cz:sx,sy,sz. 'default' blocks the MiR chassis/deck "
+                "and the opposite lift column for each arm; empty disables these boxes."
+            ),
+        ),
         DeclareLaunchArgument('integrated_controller_publish_collision_markers', default_value='false'),
         DeclareLaunchArgument('integrated_controller_collision_marker_publish_rate_hz', default_value='10.0'),
         DeclareLaunchArgument('launch_moveit', default_value='false'),
@@ -902,6 +911,10 @@ def parse_float_list(value, expected_size, name):
     return [float(part) for part in parts]
 
 
+def parse_semicolon_list(value):
+    return [entry.strip() for entry in str(value).split(';') if entry.strip()]
+
+
 def add_float_lists(*vectors):
     size = len(vectors[0])
     return [sum(vector[index] for vector in vectors) for index in range(size)]
@@ -1048,6 +1061,23 @@ def launch_setup(context, *args, **kwargs):
         f"UR10_r xyz={ur_collision_base_xyz['r']} rpy={ur_mount_rpy['r']}"
     )
 
+    forbidden_box_arg = LaunchConfiguration(
+        'integrated_controller_collision_forbidden_boxes').perform(context).strip()
+
+    def collision_forbidden_boxes_for_side(side):
+        if not forbidden_box_arg:
+            return []
+        if forbidden_box_arg.lower() != 'default':
+            return parse_semicolon_list(forbidden_box_arg)
+        other_side = 'r' if side == 'l' else 'l'
+        other_arm_name = f'UR10_{other_side}'
+        lift_y = 0.318 if other_side == 'l' else -0.318
+        return [
+            'mir_chassis:0.0,0.0,0.25:1.00,0.68,0.50',
+            'mir_top_deck:0.0,0.0,0.65:1.42,0.98,0.18',
+            f'{other_arm_name}_lift_column:0.549,{lift_y},0.742:0.30,0.30,0.80',
+        ]
+
     def integrated_controller_params(side):
         arm_name = f'UR10_{side}'
         other_side = 'r' if side == 'l' else 'l'
@@ -1160,6 +1190,7 @@ def launch_setup(context, *args, **kwargs):
                 'integrated_controller_collision_stop_clearance').perform(context)),
             'collision_fail_safe_stop': LaunchConfiguration(
                 'integrated_controller_collision_fail_safe_stop').perform(context) == 'true',
+            'collision_forbidden_boxes': collision_forbidden_boxes_for_side(side),
             'publish_collision_markers': LaunchConfiguration(
                 'integrated_controller_publish_collision_markers').perform(context) == 'true',
             'collision_marker_publish_rate_hz': float(LaunchConfiguration(

@@ -11,6 +11,7 @@
   <license>BSD</license>
   <license>Apache 2.0</license>
 
+  <depend>mir_msgs</depend>
   <depend>rclpy</depend>
   <depend>std_msgs</depend>
   <depend>std_srvs</depend>

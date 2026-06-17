@@ -49,6 +49,7 @@ def generate_launch_description():
             DeclareLaunchArgument('namespace', default_value='', description='Namespace to push all topics into.'),
             DeclareLaunchArgument('use_sim_time', default_value='false', description=''),
             DeclareLaunchArgument('mir_hostname', default_value='192.168.12.20', description=''),
+            DeclareLaunchArgument('mir_port', default_value='9090', description='rosbridge websocket port on the MiR.'),
             # DeclareLaunchArgument(
             #     'disable_map',
             #     default_value='false',
@@ -71,7 +72,12 @@ def generate_launch_description():
                 package='mir_driver',
                 executable='mir_bridge',
                 parameters=[
-                    {'use_sim_time': LaunchConfiguration('use_sim_time'), 'tf_prefix': LaunchConfiguration('namespace')}
+                    {
+                        'use_sim_time': LaunchConfiguration('use_sim_time'),
+                        'hostname': LaunchConfiguration('mir_hostname'),
+                        'port': LaunchConfiguration('mir_port'),
+                        'tf_prefix': LaunchConfiguration('namespace'),
+                    }
                 ],
                 namespace=LaunchConfiguration('namespace'),
                 output='screen',

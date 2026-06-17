@@ -31,6 +31,7 @@ set(msg_files
   "msg/HookStatus.msg"
   "msg/IOs.msg"
   "msg/JoystickVel.msg"
+  "msg/LightCmd.msg"
   "msg/LocalMapStat.msg"
   "msg/MirExtra.msg"
   # "msg/MirStatus.msg"
