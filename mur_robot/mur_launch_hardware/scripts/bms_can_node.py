@@ -54,7 +54,7 @@ class BmsCanNode(Node):
         self.declare_parameter('response_timeout', 0.8)
         self.declare_parameter('configure_can_interface', False)
         self.declare_parameter('soc_topic', 'bms_status/SOC')
-        self.declare_parameter('battery_state_topic', 'battery_state')
+        self.declare_parameter('battery_state_topic', 'bms_status/battery_state')
 
         self.battery_node_id = parse_int_parameter(self.get_parameter('battery_node_id').value)
         self.can_interface = str(self.get_parameter('can_interface').value)
@@ -152,7 +152,11 @@ class BmsCanNode(Node):
 
         battery_msg = BatteryState()
         battery_msg.header.stamp = self.get_clock().now().to_msg()
-        battery_msg.voltage = status.gathered_total_voltage
+        battery_msg.voltage = (
+            status.gathered_total_voltage
+            if status.gathered_total_voltage > 0.0
+            else status.cumulative_total_voltage
+        )
         battery_msg.current = status.current
         battery_msg.percentage = max(0.0, min(1.0, status.soc_percent / 100.0))
         battery_msg.power_supply_status = BatteryState.POWER_SUPPLY_STATUS_UNKNOWN
@@ -203,15 +207,17 @@ class BmsCanNode(Node):
                 continue
             if ((int(msg.arbitration_id) >> 16) & 0xff) != SOC_DATA_ID:
                 continue
-            return self.decode_soc_response(msg.data)
+
+            status = self.decode_soc_response(msg.data)
+            if status is not None:
+                return status
 
         return None
 
     def decode_soc_response(self, data):
         if len(data) < 8:
-            self.get_logger().warn(
-                f'Ignoring short BMS SOC response with {len(data)} bytes.',
-                throttle_duration_sec=5.0,
+            self.get_logger().debug(
+                f'Ignoring short BMS SOC frame with {len(data)} bytes.'
             )
             return None
 

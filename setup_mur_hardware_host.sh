@@ -7,6 +7,9 @@ REPO="${REPO:-${WS}/src/match_mobile_robotics_jazzy}"
 LIMITS_FILE="${MUR_REALTIME_LIMITS_FILE:-/etc/security/limits.d/99-ros-realtime.conf}"
 TTY_PORTS_DEFAULT="/dev/ttyUSB0 /dev/ttyUSB1"
 TTY_PORTS="${MUR_EWELLIX_PORTS:-${TTY_PORTS_DEFAULT}}"
+CHECK_UR_NETWORK="${MUR_CHECK_UR_NETWORK:-false}"
+UR_HOSTS="${MUR_UR_HOSTS:-UR10_l UR10_r}"
+UR_DASHBOARD_PORT="${MUR_UR_DASHBOARD_PORT:-29999}"
 MODE="check"
 
 usage() {
@@ -21,6 +24,8 @@ Checks or configures host settings needed by the MuR hardware stack.
 
 Environment:
   MUR_EWELLIX_PORTS       Space-separated serial ports to check.
+  MUR_CHECK_UR_NETWORK    true to require UR dashboard reachability.
+  MUR_UR_HOSTS            Space-separated UR hosts/IPs to check.
   MUR_REALTIME_LIMITS_FILE Limits file path.
 EOF
 }
@@ -161,6 +166,32 @@ if [[ "$rtprio" == "0" || "$rtprio" == "unknown" ]]; then
   warnings=1
 else
   echo "MUR_HOST_CHECK: status=ok issue=realtime_ulimit"
+fi
+
+if [[ "$CHECK_UR_NETWORK" == "true" ]]; then
+  for host in ${UR_HOSTS}; do
+    resolved="$(getent hosts "$host" | awk '{print $1}' | head -n 1 || true)"
+    if [[ -z "$resolved" ]]; then
+      echo "MUR_HOST_CHECK: status=fail issue=ur_network host=${host} detail=name_resolution_failed"
+      blocking=1
+      continue
+    fi
+    route="$(ip route get "$resolved" 2>/dev/null | head -n 1 || true)"
+    if [[ -z "$route" ]]; then
+      echo "MUR_HOST_CHECK: status=fail issue=ur_network host=${host} ip=${resolved} detail=no_route"
+      blocking=1
+      continue
+    fi
+    echo "MUR_HOST_CHECK: route host=${host} ip=${resolved} ${route}"
+    if timeout 1 bash -c "</dev/tcp/${resolved}/${UR_DASHBOARD_PORT}" >/dev/null 2>&1; then
+      echo "MUR_HOST_CHECK: status=ok issue=ur_network host=${host} ip=${resolved} port=${UR_DASHBOARD_PORT}"
+    else
+      echo "MUR_HOST_CHECK: status=fail issue=ur_network host=${host} ip=${resolved} port=${UR_DASHBOARD_PORT} detail=dashboard_unreachable"
+      blocking=1
+    fi
+  done
+else
+  echo "MUR_HOST_CHECK: status=skip issue=ur_network detail=MUR_CHECK_UR_NETWORK_not_true"
 fi
 
 if python3 -c 'import can' >/dev/null 2>&1; then

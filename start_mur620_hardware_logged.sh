@@ -70,6 +70,7 @@ stop_old_hardware() {
     "ewellix_dual_state_to_joint_state.py"
     "ewellix_state_to_joint_state.py"
     "fake_mir_wheel_joint_states.py"
+    "bms_can_node.py"
     "move_group"
     "moveit_trajectory_controller_proxy.py"
     "robot_state_publisher"

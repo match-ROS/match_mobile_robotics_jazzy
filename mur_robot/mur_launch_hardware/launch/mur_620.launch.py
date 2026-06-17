@@ -631,7 +631,7 @@ def make_bms_can_node(robot_name, battery_node_id):
             'response_timeout': LaunchConfiguration('bms_response_timeout'),
             'configure_can_interface': LaunchConfiguration('bms_configure_can_interface'),
             'soc_topic': 'bms_status/SOC',
-            'battery_state_topic': 'battery_state',
+            'battery_state_topic': 'bms_status/battery_state',
         }],
         condition=IfCondition(LaunchConfiguration('launch_bms')),
         output='screen',

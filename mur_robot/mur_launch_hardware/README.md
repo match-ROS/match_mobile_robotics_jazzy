@@ -43,7 +43,7 @@ superstructure BMS over SocketCAN and publishes:
 
 - `/<robot_name>/bms_status/SOC` as `std_msgs/msg/Float32` in percent, matching
   the ROS 1 topic shape
-- `/<robot_name>/battery_state` as `sensor_msgs/msg/BatteryState`
+- `/<robot_name>/bms_status/battery_state` as `sensor_msgs/msg/BatteryState`
 
 The selected `robot_profile` provides the default `battery_node_id`; override it
 when needed:
