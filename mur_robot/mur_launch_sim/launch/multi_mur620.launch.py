@@ -28,6 +28,31 @@ ROBOT_POSES = [
     ('mur620b', 46.0, 44.0, 0.07, 0.0),
 ]
 
+INTEGRATED_CONTROLLER_ARGUMENT_DEFAULTS = {
+    'use_integrated_cartesian_admittance_controller': 'false',
+    'integrated_controller_initial_active': 'false',
+    'integrated_controller_use_ft_sensor': 'false',
+    'integrated_controller_require_wrench': 'false',
+    'integrated_controller_enable_collision_avoidance': 'true',
+    'integrated_controller_publish_collision_markers': 'false',
+    'integrated_controller_admittance': '0.0 0.0 0.0 0.0 0.0 0.0',
+    'integrated_controller_wrench_twist_gain': '0.0 0.0 0.0 0.0 0.0 0.0',
+}
+
+
+def integrated_launch_arguments():
+    return [
+        DeclareLaunchArgument(name, default_value=default)
+        for name, default in INTEGRATED_CONTROLLER_ARGUMENT_DEFAULTS.items()
+    ]
+
+
+def integrated_forward_arguments():
+    return {
+        name: LaunchConfiguration(name)
+        for name in INTEGRATED_CONTROLLER_ARGUMENT_DEFAULTS
+    }
+
 
 def parse_robot_selection(value):
     known_robots = [robot[0] for robot in ROBOT_POSES]
@@ -89,6 +114,11 @@ def declare_args():
             default_value=os.path.join(mir_gazebo_path, 'maps', 'scale.yaml'),
         ),
         DeclareLaunchArgument('use_sim_time', default_value='true'),
+        DeclareLaunchArgument(
+            'gazebo_gui',
+            default_value='false',
+            description='Start Gazebo GUI in addition to the server.',
+        ),
         DeclareLaunchArgument(
             'spawn_interval',
             default_value='12.0',
@@ -177,7 +207,7 @@ def declare_args():
             ),
         ),
         DeclareLaunchArgument('ur_type', default_value='ur10e'),
-    ]
+    ] + integrated_launch_arguments()
 
 
 def amcl_params(robot_name, use_sim_time, x, y, yaw):
@@ -221,6 +251,7 @@ def launch_setup(context, *args, **kwargs):
     world = LaunchConfiguration('world').perform(context)
     map_yaml = LaunchConfiguration('map').perform(context)
     use_sim_time = LaunchConfiguration('use_sim_time').perform(context).lower() == 'true'
+    gazebo_gui = LaunchConfiguration('gazebo_gui').perform(context).lower() == 'true'
     start_map_server = (
         LaunchConfiguration('map_server').perform(context).lower() == 'true'
     )
@@ -262,7 +293,13 @@ def launch_setup(context, *args, **kwargs):
         ),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(gz_sim_launch),
-            launch_arguments={'gz_args': f'{world}.world -v 4 -r'}.items(),
+            launch_arguments={
+                'gz_args': (
+                    f'{world}.world -v 4 -r'
+                    if gazebo_gui
+                    else f'-s {world}.world -v 4 -r'
+                )
+            }.items(),
         ),
         Node(
             package='ros_gz_bridge',
@@ -322,6 +359,7 @@ def launch_setup(context, *args, **kwargs):
                 'Y': str(yaw),
                 'use_sim_time': LaunchConfiguration('use_sim_time'),
                 'include_gz': 'false',
+                'gazebo_gui': LaunchConfiguration('gazebo_gui'),
                 'lidar_bridge': 'false' if start_fake_localization else LaunchConfiguration('lidar_bridge'),
                 'load_controllers': LaunchConfiguration('load_controllers'),
                 'laser_merger': 'false' if start_fake_localization else LaunchConfiguration('laser_merger'),
@@ -364,6 +402,7 @@ def launch_setup(context, *args, **kwargs):
                 'launch_servo': LaunchConfiguration('launch_servo'),
                 'rviz_delay': LaunchConfiguration('rviz_delay'),
                 'ur_type': LaunchConfiguration('ur_type'),
+                **integrated_forward_arguments(),
             }.items(),
         )
         actions.append(TimerAction(period=index * spawn_interval, actions=[robot]))

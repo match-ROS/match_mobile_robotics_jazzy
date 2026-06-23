@@ -17,6 +17,7 @@ Arguments:
   x,y,z,Y (float)          Spawn pose (z default 0.07)
   use_sim_time (bool)      Use simulation time (default true)
   include_gz (bool)        Whether to start gz sim and /clock bridge (default true)
+  gazebo_gui (bool)        Start Gazebo GUI in addition to the server (default false)
   lidar_bridge (bool)      Whether to bridge the robot's /scan topic (default true)
   start_controller_manager (bool) Start standalone ros2_control_node (default false)
   load_controllers (bool)  Spawn Gazebo ros2_control controllers (default true)
@@ -34,6 +35,7 @@ Arguments:
   use_*_visual_mesh (bool) With use_simple_visuals=true, selectively re-enable visual mesh groups.
 """
 
+import importlib.util
 import os
 import re
 import tempfile
@@ -66,6 +68,7 @@ def declare_args():
         DeclareLaunchArgument('Y', default_value='0.0'),
         DeclareLaunchArgument('use_sim_time', default_value='true'),
         DeclareLaunchArgument('include_gz', default_value='true'),
+        DeclareLaunchArgument('gazebo_gui', default_value='false'),
         DeclareLaunchArgument('lidar_bridge', default_value='true'),
         DeclareLaunchArgument('start_controller_manager', default_value='false'),
         DeclareLaunchArgument('load_controllers', default_value='true'),
@@ -86,6 +89,58 @@ def declare_args():
         DeclareLaunchArgument('use_caster_visual_mesh', default_value='false'),
         DeclareLaunchArgument('use_lift_visual_mesh', default_value='false'),
         DeclareLaunchArgument('use_laser_visual_mesh', default_value='false'),
+        DeclareLaunchArgument('ur_l_xyz', default_value='0.0 0.0 0.0'),
+        DeclareLaunchArgument('ur_l_rpy', default_value='0.0 0.0 0.0'),
+        DeclareLaunchArgument('ur_r_xyz', default_value='0.0 0.0 0.0'),
+        DeclareLaunchArgument('ur_r_rpy', default_value='0.0 0.0 3.14159265359'),
+        DeclareLaunchArgument('use_integrated_cartesian_admittance_controller', default_value='false'),
+        DeclareLaunchArgument('integrated_controller_use_ft_sensor', default_value='false'),
+        DeclareLaunchArgument('integrated_controller_require_wrench', default_value='false'),
+        DeclareLaunchArgument('integrated_controller_command_timeout', default_value='0.12'),
+        DeclareLaunchArgument('integrated_controller_wrench_timeout', default_value='0.5'),
+        DeclareLaunchArgument('integrated_controller_wrench_bias_duration', default_value='1.0'),
+        DeclareLaunchArgument('integrated_controller_wrench_filter_alpha', default_value='0.20'),
+        DeclareLaunchArgument('integrated_controller_wrench_in_tcp_frame', default_value='true'),
+        DeclareLaunchArgument(
+            'integrated_controller_wrench_sign',
+            default_value='1.0 1.0 1.0 1.0 1.0 1.0',
+        ),
+        DeclareLaunchArgument('integrated_controller_force_deadband', default_value='0.2'),
+        DeclareLaunchArgument('integrated_controller_torque_deadband', default_value='0.05'),
+        DeclareLaunchArgument(
+            'integrated_controller_admittance',
+            default_value='0.0 0.0 0.0 0.0 0.0 0.0',
+        ),
+        DeclareLaunchArgument(
+            'integrated_controller_wrench_twist_gain',
+            default_value='0.0 0.0 0.0 0.0 0.0 0.0',
+        ),
+        DeclareLaunchArgument(
+            'integrated_controller_pose_error_gain',
+            default_value='1.9 1.9 1.7 0.75 0.75 0.75',
+        ),
+        DeclareLaunchArgument('integrated_controller_max_linear_velocity', default_value='0.16'),
+        DeclareLaunchArgument('integrated_controller_max_angular_velocity', default_value='0.55'),
+        DeclareLaunchArgument('integrated_controller_max_joint_velocity', default_value='0.6'),
+        DeclareLaunchArgument('integrated_controller_max_joint_acceleration', default_value='1.4'),
+        DeclareLaunchArgument('integrated_controller_max_joint_jerk', default_value='6.0'),
+        DeclareLaunchArgument('integrated_controller_joint_limit_margin', default_value='0.02'),
+        DeclareLaunchArgument('integrated_controller_preserve_command_direction', default_value='true'),
+        DeclareLaunchArgument('integrated_controller_immediate_zero_on_zero_command', default_value='true'),
+        DeclareLaunchArgument('integrated_controller_zero_command_deadband', default_value='1.0e-5'),
+        DeclareLaunchArgument('integrated_controller_reset_equilibrium_on_zero_command', default_value='auto'),
+        DeclareLaunchArgument('integrated_controller_enable_collision_avoidance', default_value='true'),
+        DeclareLaunchArgument('integrated_controller_collision_common_link', default_value='base_link'),
+        DeclareLaunchArgument('integrated_controller_collision_joint_states_topic', default_value='/joint_states'),
+        DeclareLaunchArgument('integrated_controller_collision_joint_state_timeout', default_value='0.1'),
+        DeclareLaunchArgument('integrated_controller_collision_sample_spacing', default_value='0.08'),
+        DeclareLaunchArgument('integrated_controller_collision_sphere_radius', default_value='0.04'),
+        DeclareLaunchArgument('integrated_controller_collision_activation_clearance', default_value='0.08'),
+        DeclareLaunchArgument('integrated_controller_collision_stop_clearance', default_value='0.035'),
+        DeclareLaunchArgument('integrated_controller_collision_fail_safe_stop', default_value='true'),
+        DeclareLaunchArgument('integrated_controller_collision_forbidden_boxes', default_value='default'),
+        DeclareLaunchArgument('integrated_controller_publish_collision_markers', default_value='false'),
+        DeclareLaunchArgument('integrated_controller_collision_marker_publish_rate_hz', default_value='10.0'),
         DeclareLaunchArgument(
             'map',
             default_value=os.path.join(
@@ -97,7 +152,28 @@ def declare_args():
     ]
 
 
-def make_controller_config(robot_name, source_yaml, *, enable_odom_tf=True):
+def load_integrated_controller_config():
+    helper_path = os.path.join(
+        get_package_share_directory('mur_launch_hardware'),
+        'launch',
+        'integrated_controller_config.py',
+    )
+    spec = importlib.util.spec_from_file_location(
+        'mur_launch_hardware_integrated_controller_config',
+        helper_path,
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def make_controller_config(
+    robot_name,
+    source_yaml,
+    *,
+    enable_odom_tf=True,
+    integrated_params_by_side=None,
+):
     with open(source_yaml, 'r', encoding='utf-8') as config_file:
         config = yaml.safe_load(config_file)
 
@@ -118,6 +194,20 @@ def make_controller_config(robot_name, source_yaml, *, enable_odom_tf=True):
         )
 
     controller_manager_params = config['controller_manager']['ros__parameters']
+    if integrated_params_by_side:
+        for side in ('l', 'r'):
+            arm_name = f'UR10_{side}'
+            controller_name = f'{arm_name}_integrated_cartesian_admittance_controller'
+            controller_manager_params[controller_name] = {
+                'type': 'mur_control/IntegratedCartesianAdmittanceController',
+            }
+            config[controller_name] = {
+                'ros__parameters': integrated_params_by_side[side],
+            }
+        namespaced_config[f'/{robot_name}/controller_manager'] = deepcopy(
+            config['controller_manager']
+        )
+
     for controller_name, controller_config in controller_manager_params.items():
         if controller_name == 'update_rate':
             continue
@@ -515,6 +605,7 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
     Y = LaunchConfiguration('Y').perform(context)
     use_sim_time = LaunchConfiguration('use_sim_time').perform(context) == 'true'
     include_gz = LaunchConfiguration('include_gz').perform(context) == 'true'
+    gazebo_gui = LaunchConfiguration('gazebo_gui').perform(context) == 'true'
     lidar_bridge = LaunchConfiguration('lidar_bridge').perform(context) == 'true'
     start_controller_manager = (
         LaunchConfiguration('start_controller_manager').perform(context) == 'true'
@@ -560,15 +651,35 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
         )
     }
     map_yaml = LaunchConfiguration('map').perform(context)
+    ur_l_xyz = LaunchConfiguration('ur_l_xyz').perform(context)
+    ur_l_rpy = LaunchConfiguration('ur_l_rpy').perform(context)
+    ur_r_xyz = LaunchConfiguration('ur_r_xyz').perform(context)
+    ur_r_rpy = LaunchConfiguration('ur_r_rpy').perform(context)
+    use_integrated = (
+        LaunchConfiguration('use_integrated_cartesian_admittance_controller').perform(context)
+        == 'true'
+    )
 
     mur_description_path = get_package_share_directory('mur_description')
     mir_description_path = get_package_share_directory('mir_description')
     xacro_file = os.path.join(mur_description_path, 'urdf', 'mur_620.gazebo.xacro')
     base_controllers_yaml = os.path.join(mir_description_path, 'config', 'mur_controllers.yaml')
+    integrated_params_by_side = None
+    if use_integrated:
+        integrated_config = load_integrated_controller_config().make_integrated_controller_params(
+            context,
+            robot_name=robot_name,
+            ur_l_xyz=ur_l_xyz,
+            ur_l_rpy=ur_l_rpy,
+            ur_r_xyz=ur_r_xyz,
+            ur_r_rpy=ur_r_rpy,
+        )
+        integrated_params_by_side = integrated_config['params_by_side']
     controllers_yaml = make_controller_config(
         robot_name,
         base_controllers_yaml,
         enable_odom_tf=not fake_localization,
+        integrated_params_by_side=integrated_params_by_side,
     )
     doc = xacro.process_file(xacro_file, mappings={
         'use_sim': 'true',
@@ -584,6 +695,10 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
             'true' if use_high_quality_visuals else 'false'
         ),
         'use_lidar': 'true' if use_lidar else 'false',
+        'ur_l_xyz': ur_l_xyz,
+        'ur_l_rpy': ur_l_rpy,
+        'ur_r_xyz': ur_r_xyz,
+        'ur_r_rpy': ur_r_rpy,
         **{
             name: 'true' if enabled else 'false'
             for name, enabled in visual_mesh_flags.items()
@@ -595,6 +710,7 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
 
     if include_gz:
         mir_gazebo_path = get_package_share_directory('mir_gazebo')
+        gz_args = f'{world}.world -v 4 -r' if gazebo_gui else f'-s {world}.world -v 4 -r'
         nodes.append(
             SetEnvironmentVariable(
                 name='GZ_SIM_RESOURCE_PATH',
@@ -610,7 +726,7 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
                 PythonLaunchDescriptionSource(
                     os.path.join(get_package_share_directory('ros_gz_sim'), 'launch', 'gz_sim.launch.py')
                 ),
-                launch_arguments={'gz_args': f'{world}.world -v 4 -r'}.items(),
+                launch_arguments={'gz_args': gz_args}.items(),
             )
         )
         # clock bridge only once

@@ -1,6 +1,7 @@
 """Generic hardware launch for a MUR620 with two UR arms."""
 
 from copy import deepcopy
+import importlib.util
 import os
 import tempfile
 
@@ -902,22 +903,19 @@ def as_launch_bool(value):
     return str(value).lower() if str(value).lower() in ('true', 'false') else str(value)
 
 
-def parse_float_list(value, expected_size, name):
-    parts = str(value).replace(',', ' ').split()
-    if len(parts) != expected_size:
-        raise RuntimeError(
-            f"Launch argument '{name}' expects {expected_size} numeric values, got {len(parts)}: {value}"
-        )
-    return [float(part) for part in parts]
-
-
-def parse_semicolon_list(value):
-    return [entry.strip() for entry in str(value).split(';') if entry.strip()]
-
-
-def add_float_lists(*vectors):
-    size = len(vectors[0])
-    return [sum(vector[index] for vector in vectors) for index in range(size)]
+def load_integrated_controller_config():
+    helper_path = os.path.join(
+        get_package_share_directory('mur_launch_hardware'),
+        'launch',
+        'integrated_controller_config.py',
+    )
+    spec = importlib.util.spec_from_file_location(
+        'mur_launch_hardware_integrated_controller_config',
+        helper_path,
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def launch_setup(context, *args, **kwargs):
@@ -1002,201 +1000,33 @@ def launch_setup(context, *args, **kwargs):
         f"mount_xyz='{ur_r_xyz}', mount_rpy='{ur_r_rpy}'"
     )
 
-    integrated_use_ft_sensor = (
-        LaunchConfiguration('integrated_controller_use_ft_sensor').perform(context) == 'true'
+    integrated_config = load_integrated_controller_config().make_integrated_controller_params(
+        context,
+        robot_name=robot_name,
+        ur_l_xyz=ur_l_xyz,
+        ur_l_rpy=ur_l_rpy,
+        ur_r_xyz=ur_r_xyz,
+        ur_r_rpy=ur_r_rpy,
     )
-    integrated_reset_equilibrium = LaunchConfiguration(
-        'integrated_controller_reset_equilibrium_on_zero_command').perform(context).strip().lower()
-    if integrated_reset_equilibrium == 'auto':
-        integrated_reset_equilibrium_on_zero = not integrated_use_ft_sensor
-    else:
-        integrated_reset_equilibrium_on_zero = integrated_reset_equilibrium == 'true'
-    integrated_admittance = parse_float_list(
-        LaunchConfiguration('integrated_controller_admittance').perform(context),
-        6,
-        'integrated_controller_admittance',
-    )
-    integrated_wrench_sign = parse_float_list(
-        LaunchConfiguration('integrated_controller_wrench_sign').perform(context),
-        6,
-        'integrated_controller_wrench_sign',
-    )
-    integrated_wrench_twist_gain = parse_float_list(
-        LaunchConfiguration('integrated_controller_wrench_twist_gain').perform(context),
-        6,
-        'integrated_controller_wrench_twist_gain',
-    )
-    integrated_pose_error_gain = parse_float_list(
-        LaunchConfiguration('integrated_controller_pose_error_gain').perform(context),
-        6,
-        'integrated_controller_pose_error_gain',
-    )
-    ur_mount_xyz = {
-        'l': parse_float_list(ur_l_xyz, 3, 'ur_l_xyz'),
-        'r': parse_float_list(ur_r_xyz, 3, 'ur_r_xyz'),
-    }
-    ur_mount_rpy = {
-        'l': parse_float_list(ur_l_rpy, 3, 'ur_l_rpy'),
-        'r': parse_float_list(ur_r_rpy, 3, 'ur_r_rpy'),
-    }
-    ur_ideal_base_xyz = {
-        'l': [0.549, 0.318, 0.832 - 0.49 + 0.555],
-        'r': [0.549, -0.318, 0.832 - 0.49 + 0.555],
-    }
-    ur_collision_base_xyz = {
-        side: add_float_lists(ur_ideal_base_xyz[side], ur_mount_xyz[side])
-        for side in ('l', 'r')
-    }
+    integrated_inputs = integrated_config['inputs']
+    integrated_params_by_side = integrated_config['params_by_side']
+    ur_mount_rpy = integrated_config['ur_mount_rpy']
+    ur_collision_base_xyz = integrated_config['ur_collision_base_xyz']
     print(
         "[mur_620.launch] integrated admittance: "
-        f"use_ft={integrated_use_ft_sensor}, "
-        f"reset_equilibrium_on_zero={integrated_reset_equilibrium_on_zero}, "
+        f"use_ft={integrated_inputs['use_ft_sensor']}, "
+        f"reset_equilibrium_on_zero={integrated_inputs['reset_equilibrium_on_zero']}, "
         f"wrench_in_tcp_frame={LaunchConfiguration('integrated_controller_wrench_in_tcp_frame').perform(context)}, "
-        f"admittance={integrated_admittance}, pose_error_gain={integrated_pose_error_gain}, "
-        f"wrench_twist_gain={integrated_wrench_twist_gain}, wrench_sign={integrated_wrench_sign}"
+        f"admittance={integrated_inputs['admittance']}, "
+        f"pose_error_gain={integrated_inputs['pose_error_gain']}, "
+        f"wrench_twist_gain={integrated_inputs['wrench_twist_gain']}, "
+        f"wrench_sign={integrated_inputs['wrench_sign']}"
     )
     print(
         "[mur_620.launch] integrated collision base transforms: "
         f"UR10_l xyz={ur_collision_base_xyz['l']} rpy={ur_mount_rpy['l']}, "
         f"UR10_r xyz={ur_collision_base_xyz['r']} rpy={ur_mount_rpy['r']}"
     )
-
-    forbidden_box_arg = LaunchConfiguration(
-        'integrated_controller_collision_forbidden_boxes').perform(context).strip()
-
-    def collision_forbidden_boxes_for_side(side):
-        if not forbidden_box_arg:
-            return []
-        if forbidden_box_arg.lower() != 'default':
-            return parse_semicolon_list(forbidden_box_arg)
-        other_side = 'r' if side == 'l' else 'l'
-        other_arm_name = f'UR10_{other_side}'
-        lift_y = 0.318 if other_side == 'l' else -0.318
-        return [
-            'mir_chassis:0.0,0.0,0.25:1.00,0.68,0.50',
-            'mir_top_deck:0.0,0.0,0.65:1.42,0.98,0.18',
-            f'{other_arm_name}_lift_column:0.549,{lift_y},0.742:0.30,0.30,0.80',
-        ]
-
-    def integrated_controller_params(side):
-        arm_name = f'UR10_{side}'
-        other_side = 'r' if side == 'l' else 'l'
-        other_arm_name = f'UR10_{other_side}'
-        return {
-            'robot_name': robot_name,
-            'arm': side,
-            'prefix': arm_name,
-            'base_link': f'{arm_name}/base_link',
-            'tip_link': f'{arm_name}/tool0',
-            'debug_base_frame': f'{robot_name}/{arm_name}/base_link',
-            'command_frame': f'{arm_name}/base_link',
-            'equilibrium_frame': f'{robot_name}/{arm_name}/admittance_equilibrium_pose',
-            'target_frame': f'{robot_name}/{arm_name}/admittance_target_pose',
-            'joints': [
-                f'{arm_name}/shoulder_pan_joint',
-                f'{arm_name}/shoulder_lift_joint',
-                f'{arm_name}/elbow_joint',
-                f'{arm_name}/wrist_1_joint',
-                f'{arm_name}/wrist_2_joint',
-                f'{arm_name}/wrist_3_joint',
-            ],
-            'command_joints': [
-                f'{arm_name}/shoulder_pan_joint',
-                f'{arm_name}/shoulder_lift_joint',
-                f'{arm_name}/elbow_joint',
-                f'{arm_name}/wrist_1_joint',
-                f'{arm_name}/wrist_2_joint',
-                f'{arm_name}/wrist_3_joint',
-            ],
-            'use_ft_sensor': integrated_use_ft_sensor,
-            'require_wrench': LaunchConfiguration(
-                'integrated_controller_require_wrench').perform(context) == 'true',
-            'wrench_in_tcp_frame': LaunchConfiguration(
-                'integrated_controller_wrench_in_tcp_frame').perform(context) == 'true',
-            'ft_sensor_name': f'{arm_name}/tcp_fts_sensor',
-            'ft_state_interface_names': [
-                f'{arm_name}/tcp_fts_sensor/force.x',
-                f'{arm_name}/tcp_fts_sensor/force.y',
-                f'{arm_name}/tcp_fts_sensor/force.z',
-                f'{arm_name}/tcp_fts_sensor/torque.x',
-                f'{arm_name}/tcp_fts_sensor/torque.y',
-                f'{arm_name}/tcp_fts_sensor/torque.z',
-            ],
-            'command_timeout': float(LaunchConfiguration(
-                'integrated_controller_command_timeout').perform(context)),
-            'wrench_timeout': float(LaunchConfiguration(
-                'integrated_controller_wrench_timeout').perform(context)),
-            'wrench_bias_duration': float(LaunchConfiguration(
-                'integrated_controller_wrench_bias_duration').perform(context)),
-            'wrench_filter_alpha': float(LaunchConfiguration(
-                'integrated_controller_wrench_filter_alpha').perform(context)),
-            'force_deadband': float(LaunchConfiguration(
-                'integrated_controller_force_deadband').perform(context)),
-            'torque_deadband': float(LaunchConfiguration(
-                'integrated_controller_torque_deadband').perform(context)),
-            'admittance': integrated_admittance,
-            'wrench_twist_gain': integrated_wrench_twist_gain,
-            'pose_error_gain': integrated_pose_error_gain,
-            'wrench_sign': integrated_wrench_sign,
-            'max_linear_velocity': float(LaunchConfiguration(
-                'integrated_controller_max_linear_velocity').perform(context)),
-            'max_angular_velocity': float(LaunchConfiguration(
-                'integrated_controller_max_angular_velocity').perform(context)),
-            'max_joint_velocity': float(LaunchConfiguration(
-                'integrated_controller_max_joint_velocity').perform(context)),
-            'max_joint_acceleration': float(LaunchConfiguration(
-                'integrated_controller_max_joint_acceleration').perform(context)),
-            'max_joint_jerk': float(LaunchConfiguration(
-                'integrated_controller_max_joint_jerk').perform(context)),
-            'joint_limit_margin': float(LaunchConfiguration(
-                'integrated_controller_joint_limit_margin').perform(context)),
-            'preserve_command_direction': LaunchConfiguration(
-                'integrated_controller_preserve_command_direction').perform(context) == 'true',
-            'immediate_zero_on_zero_command': LaunchConfiguration(
-                'integrated_controller_immediate_zero_on_zero_command').perform(context) == 'true',
-            'zero_command_deadband': float(LaunchConfiguration(
-                'integrated_controller_zero_command_deadband').perform(context)),
-            'reset_equilibrium_on_zero_command': integrated_reset_equilibrium_on_zero,
-            'enable_collision_avoidance': LaunchConfiguration(
-                'integrated_controller_enable_collision_avoidance').perform(context) == 'true',
-            'collision_other_prefix': other_arm_name,
-            'collision_other_base_link': f'{other_arm_name}/base_link',
-            'collision_other_tip_link': f'{other_arm_name}/tool0',
-            'collision_own_base_xyz': ur_collision_base_xyz[side],
-            'collision_own_base_rpy': ur_mount_rpy[side],
-            'collision_other_base_xyz': ur_collision_base_xyz[other_side],
-            'collision_other_base_rpy': ur_mount_rpy[other_side],
-            'collision_other_joint_names': [
-                f'{other_arm_name}/shoulder_pan_joint',
-                f'{other_arm_name}/shoulder_lift_joint',
-                f'{other_arm_name}/elbow_joint',
-                f'{other_arm_name}/wrist_1_joint',
-                f'{other_arm_name}/wrist_2_joint',
-                f'{other_arm_name}/wrist_3_joint',
-            ],
-            'collision_common_link': LaunchConfiguration(
-                'integrated_controller_collision_common_link').perform(context),
-            'collision_joint_states_topic': LaunchConfiguration(
-                'integrated_controller_collision_joint_states_topic').perform(context),
-            'collision_joint_state_timeout': float(LaunchConfiguration(
-                'integrated_controller_collision_joint_state_timeout').perform(context)),
-            'collision_sample_spacing': float(LaunchConfiguration(
-                'integrated_controller_collision_sample_spacing').perform(context)),
-            'collision_sphere_radius': float(LaunchConfiguration(
-                'integrated_controller_collision_sphere_radius').perform(context)),
-            'collision_activation_clearance': float(LaunchConfiguration(
-                'integrated_controller_collision_activation_clearance').perform(context)),
-            'collision_stop_clearance': float(LaunchConfiguration(
-                'integrated_controller_collision_stop_clearance').perform(context)),
-            'collision_fail_safe_stop': LaunchConfiguration(
-                'integrated_controller_collision_fail_safe_stop').perform(context) == 'true',
-            'collision_forbidden_boxes': collision_forbidden_boxes_for_side(side),
-            'publish_collision_markers': LaunchConfiguration(
-                'integrated_controller_publish_collision_markers').perform(context) == 'true',
-            'collision_marker_publish_rate_hz': float(LaunchConfiguration(
-                'integrated_controller_collision_marker_publish_rate_hz').perform(context)),
-            'publish_state_rate_hz': 50.0,
-        }
 
     visual_mesh_flags = {
         name: LaunchConfiguration(name).perform(context)
@@ -1269,7 +1099,7 @@ def launch_setup(context, *args, **kwargs):
                 controllers_file,
                 robot_name,
                 'UR10_l',
-                integrated_controller_params('l'),
+                integrated_params_by_side['l'],
             ),
             update_rate_config_file,
             kinematics_params_file_l,
@@ -1281,7 +1111,7 @@ def launch_setup(context, *args, **kwargs):
                 controllers_file,
                 robot_name,
                 'UR10_r',
-                integrated_controller_params('r'),
+                integrated_params_by_side['r'],
             ),
             update_rate_config_file,
             kinematics_params_file_r,

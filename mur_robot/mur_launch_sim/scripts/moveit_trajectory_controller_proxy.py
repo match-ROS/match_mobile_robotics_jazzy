@@ -9,6 +9,7 @@ import rclpy
 from action_msgs.msg import GoalStatus
 from control_msgs.action import FollowJointTrajectory
 from controller_manager_msgs.srv import SwitchController
+from geometry_msgs.msg import TwistStamped
 from rclpy.action import ActionClient, ActionServer, CancelResponse, GoalResponse
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
@@ -41,11 +42,16 @@ class MoveItTrajectoryControllerProxy(Node):
             'follow_joint_trajectory'
         )
         self.controller_manager = f'/{args.robot_name}/controller_manager'
-        self.velocity_controller = f'forward_velocity_controller_{args.arm}'
+        self.velocity_controller = (
+            args.velocity_controller or f'forward_velocity_controller_{args.arm}'
+        )
         self.trajectory_controller = f'joint_trajectory_controller_{args.arm}'
         self.velocity_command_topic = (
-            f'/{args.robot_name}/{self.velocity_controller}/commands'
+            args.velocity_command_topic
+            or f'/{args.robot_name}/{self.velocity_controller}/commands'
         )
+        self.velocity_command_type = args.velocity_command_type
+        self.velocity_command_frame = args.velocity_command_frame or f'UR10_{args.arm}/base_link'
         self.lift_controller = f'lift_controller_{args.arm}'
         self.lift_joint = 'left_lift_joint' if args.arm == 'l' else 'right_lift_joint'
         self.lift_command_topic = f'/{args.robot_name}/{self.lift_controller}/commands'
@@ -61,10 +67,13 @@ class MoveItTrajectoryControllerProxy(Node):
             self.real_action,
             callback_group=self.callback_group,
         )
+        zero_msg_type = (
+            TwistStamped
+            if self.velocity_command_type == 'twist_stamped'
+            else Float64MultiArray
+        )
         self.zero_velocity_pub = self.create_publisher(
-            Float64MultiArray,
-            self.velocity_command_topic,
-            10,
+            zero_msg_type, self.velocity_command_topic, 10
         )
         self.lift_position_pub = self.create_publisher(
             Float64MultiArray,
@@ -142,9 +151,14 @@ class MoveItTrajectoryControllerProxy(Node):
         return True
 
     def _publish_zero_velocity(self):
-        msg = Float64MultiArray()
-        msg.data = [0.0] * ARM_JOINT_COUNT
         for _ in range(3):
+            if self.velocity_command_type == 'twist_stamped':
+                msg = TwistStamped()
+                msg.header.stamp = self.get_clock().now().to_msg()
+                msg.header.frame_id = self.velocity_command_frame
+            else:
+                msg = Float64MultiArray()
+                msg.data = [0.0] * ARM_JOINT_COUNT
             self.zero_velocity_pub.publish(msg)
             time.sleep(0.02)
 
@@ -367,6 +381,14 @@ def parse_args():
     parser.add_argument('--robot-name', default='mur620a')
     parser.add_argument('--arm', choices=['l', 'r'], required=True)
     parser.add_argument('--include-lift', action='store_true')
+    parser.add_argument('--velocity-controller', default='')
+    parser.add_argument('--velocity-command-topic', default='')
+    parser.add_argument(
+        '--velocity-command-type',
+        choices=['float64_multi_array', 'twist_stamped'],
+        default='float64_multi_array',
+    )
+    parser.add_argument('--velocity-command-frame', default='')
     parser.add_argument('--switch-timeout', type=float, default=5.0)
     parser.add_argument('--action-timeout', type=float, default=10.0)
     args, _ = parser.parse_known_args()

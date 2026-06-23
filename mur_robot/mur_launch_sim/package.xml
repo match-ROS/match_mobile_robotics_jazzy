@@ -33,6 +33,7 @@
   <exec_depend>moveit_configs_utils</exec_depend>
   <exec_depend>mur_description</exec_depend>
   <exec_depend>mur_control</exec_depend>
+  <exec_depend>mur_launch_hardware</exec_depend>
   <exec_depend>mur_moveit_config</exec_depend>
   <exec_depend>nav2_amcl</exec_depend>
   <exec_depend>nav2_behaviors</exec_depend>
