@@ -44,6 +44,7 @@ echo "MUR_DIAG: hardware_log_mtime=$(date --iso-8601=seconds -r "$LOG_FILE")"
 serial_count=0
 ur_estop_count=0
 ur_protective_count=0
+ur_reverse_count=0
 realtime_count=0
 bms_count=0
 octomap_count=0
@@ -67,16 +68,22 @@ if grep -Eqi 'PROTECTIVE_STOP|C161A0|Dashboard play failed|Failed to execute: pl
   grep -Ein 'PROTECTIVE_STOP|C161A0|Dashboard play failed|Failed to execute: play|UR program is not running yet' "$LOG_FILE" | tail -n 12 | sed 's/^/MUR_DIAG_DETAIL: /'
 fi
 
+if grep -Eqi 'Receive Program Failed|Connection to reverse interface dropped|Robot requested program|Robot connected to reverse interface|Failed to read from stream' "$LOG_FILE"; then
+  ur_reverse_count="$(grep -Ein 'Receive Program Failed|Connection to reverse interface dropped|Robot requested program|Robot connected to reverse interface|Failed to read from stream' "$LOG_FILE" | wc -l)"
+  echo "MUR_DIAG_ISSUE: severity=warn type=ur_reverse_interface count=${ur_reverse_count}"
+  grep -Ein 'Receive Program Failed|Connection to reverse interface dropped|Robot requested program|Robot connected to reverse interface|Failed to read from stream' "$LOG_FILE" | tail -n 16 | sed 's/^/MUR_DIAG_DETAIL: /'
+fi
+
 if grep -Eqi 'Could not enable FIFO RT scheduling|overruns:|missed its desired rate' "$LOG_FILE"; then
   realtime_count="$(grep -Ein 'Could not enable FIFO RT scheduling|overruns:|missed its desired rate' "$LOG_FILE" | wc -l)"
   echo "MUR_DIAG_ISSUE: severity=warn type=realtime_missing_or_overrun count=${realtime_count}"
   grep -Ein 'Could not enable FIFO RT scheduling|overruns:|missed its desired rate' "$LOG_FILE" | tail -n 10 | sed 's/^/MUR_DIAG_DETAIL: /'
 fi
 
-if grep -Eqi 'python-can is not installed|No module named .can.|bms_can_node' "$LOG_FILE"; then
-  bms_count="$(grep -Ein 'python-can is not installed|No module named .can.|bms_can_node' "$LOG_FILE" | wc -l)"
+if grep -Eqi 'python-can is not installed|No module named .can.|bms_can_node|Failed to send BMS request|Network is down' "$LOG_FILE"; then
+  bms_count="$(grep -Ein 'python-can is not installed|No module named .can.|bms_can_node|Failed to send BMS request|Network is down' "$LOG_FILE" | wc -l)"
   echo "MUR_DIAG_ISSUE: severity=info type=bms_can_ignored count=${bms_count}"
-  grep -Ein 'python-can is not installed|No module named .can.|bms_can_node' "$LOG_FILE" | tail -n 6 | sed 's/^/MUR_DIAG_DETAIL: /'
+  grep -Ein 'python-can is not installed|No module named .can.|bms_can_node|Failed to send BMS request|Network is down' "$LOG_FILE" | tail -n 8 | sed 's/^/MUR_DIAG_DETAIL: /'
 fi
 
 if grep -Eqi 'No 3D sensor plugin.*octomap' "$LOG_FILE"; then
@@ -90,8 +97,8 @@ if grep -Eqi 'No Ewellix state received|Missing left_lift_joint|Missing right_li
   grep -Ein 'No Ewellix state received|Missing left_lift_joint|Missing right_lift_joint' "$LOG_FILE" | tail -n 8 | sed 's/^/MUR_DIAG_DETAIL: /'
 fi
 
-if [[ "$serial_count" -eq 0 && "$ur_estop_count" -eq 0 && "$ur_protective_count" -eq 0 && "$realtime_count" -eq 0 && "$bms_count" -eq 0 && "$octomap_count" -eq 0 && "$ewellix_state_count" -eq 0 ]]; then
+if [[ "$serial_count" -eq 0 && "$ur_estop_count" -eq 0 && "$ur_protective_count" -eq 0 && "$ur_reverse_count" -eq 0 && "$realtime_count" -eq 0 && "$bms_count" -eq 0 && "$octomap_count" -eq 0 && "$ewellix_state_count" -eq 0 ]]; then
   echo "MUR_DIAG: summary=no_known_issues_found"
 else
-  echo "MUR_DIAG: summary=known_issues_found serial=${serial_count} ur=${ur_estop_count} ur_protective=${ur_protective_count} realtime=${realtime_count} bms_ignored=${bms_count} octomap_info=${octomap_count} lift_state=${ewellix_state_count}"
+  echo "MUR_DIAG: summary=known_issues_found serial=${serial_count} ur=${ur_estop_count} ur_protective=${ur_protective_count} ur_reverse=${ur_reverse_count} realtime=${realtime_count} bms_ignored=${bms_count} octomap_info=${octomap_count} lift_state=${ewellix_state_count}"
 fi

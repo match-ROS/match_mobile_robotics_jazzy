@@ -10,6 +10,7 @@ TTY_PORTS="${MUR_EWELLIX_PORTS:-${TTY_PORTS_DEFAULT}}"
 CHECK_UR_NETWORK="${MUR_CHECK_UR_NETWORK:-false}"
 UR_HOSTS="${MUR_UR_HOSTS:-UR10_l UR10_r}"
 UR_DASHBOARD_PORT="${MUR_UR_DASHBOARD_PORT:-29999}"
+EXPECTED_REVERSE_IP="${MUR_EXPECTED_REVERSE_IP:-}"
 MODE="check"
 
 usage() {
@@ -26,6 +27,7 @@ Environment:
   MUR_EWELLIX_PORTS       Space-separated serial ports to check.
   MUR_CHECK_UR_NETWORK    true to require UR dashboard reachability.
   MUR_UR_HOSTS            Space-separated UR hosts/IPs to check.
+  MUR_EXPECTED_REVERSE_IP Optional expected local source IP for UR reverse interface.
   MUR_REALTIME_LIMITS_FILE Limits file path.
 EOF
 }
@@ -76,6 +78,17 @@ sudo_cmd() {
   else
     sudo "$@"
   fi
+}
+
+route_src_ip() {
+  awk '{
+    for (i = 1; i < NF; i++) {
+      if ($i == "src") {
+        print $(i + 1)
+        exit
+      }
+    }
+  }'
 }
 
 apply_setup() {
@@ -183,6 +196,16 @@ if [[ "$CHECK_UR_NETWORK" == "true" ]]; then
       continue
     fi
     echo "MUR_HOST_CHECK: route host=${host} ip=${resolved} ${route}"
+    route_src="$(printf '%s\n' "$route" | route_src_ip)"
+    if [[ -z "$route_src" ]]; then
+      echo "MUR_HOST_CHECK: status=fail issue=ur_reverse_route host=${host} ip=${resolved} detail=missing_route_src"
+      blocking=1
+    elif [[ -n "$EXPECTED_REVERSE_IP" && "$route_src" != "$EXPECTED_REVERSE_IP" ]]; then
+      echo "MUR_HOST_CHECK: status=fail issue=ur_reverse_route host=${host} ip=${resolved} src=${route_src} expected=${EXPECTED_REVERSE_IP}"
+      blocking=1
+    else
+      echo "MUR_HOST_CHECK: status=ok issue=ur_reverse_route host=${host} ip=${resolved} src=${route_src}"
+    fi
     if timeout 1 bash -c "</dev/tcp/${resolved}/${UR_DASHBOARD_PORT}" >/dev/null 2>&1; then
       echo "MUR_HOST_CHECK: status=ok issue=ur_network host=${host} ip=${resolved} port=${UR_DASHBOARD_PORT}"
     else

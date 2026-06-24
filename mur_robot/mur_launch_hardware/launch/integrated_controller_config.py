@@ -71,13 +71,11 @@ def collision_forbidden_boxes(side, forbidden_box_arg):
         return []
     if forbidden_box_arg.lower() != "default":
         return parse_semicolon_list(forbidden_box_arg)
-    other_side = "r" if side == "l" else "l"
-    other_arm_name = f"UR10_{other_side}"
-    lift_y = 0.318 if other_side == "l" else -0.318
     return [
         "mir_chassis:0.0,0.0,0.25:1.00,0.68,0.50",
-        "mir_top_deck:0.0,0.0,0.65:1.42,0.98,0.18",
-        f"{other_arm_name}_lift_column:0.549,{lift_y},0.742:0.30,0.30,0.80",
+        "mir_top_surface_center:0.0,0.0,0.86:1.42,0.46,0.16",
+        "UR10_l_lift_column:0.549,0.318,0.742:0.30,0.30,0.80",
+        "UR10_r_lift_column:0.549,-0.318,0.742:0.30,0.30,0.80",
     ]
 
 

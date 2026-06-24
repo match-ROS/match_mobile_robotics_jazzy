@@ -1429,8 +1429,14 @@ private:
       closing_speed += gradient[i] * qdot[i];
     }
 
-    if (gradient_norm_sq <= 1.0e-12 || closing_speed >= 0.0) {
-      latest_collision_status_ = "clear";
+    if (gradient_norm_sq <= 1.0e-12) {
+      latest_collision_status_ = clearance < 0.0 ? "blocked" : "clear";
+      latest_collision_scale_ = clearance < 0.0 ? 0.0 : 1.0;
+      return clearance < 0.0 ? std::vector<double>(qdot.size(), 0.0) : qdot;
+    }
+
+    if (closing_speed >= 0.0) {
+      latest_collision_status_ = clearance < 0.0 ? "penetrating" : "clear";
       return qdot;
     }
 

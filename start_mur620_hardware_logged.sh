@@ -24,6 +24,10 @@ INTEGRATED_CARTESIAN_USE_FT="${INTEGRATED_CARTESIAN_USE_FT:-false}"
 INTEGRATED_CARTESIAN_REQUIRE_WRENCH="${INTEGRATED_CARTESIAN_REQUIRE_WRENCH:-false}"
 MOVEIT_WITH_INTEGRATED_CARTESIAN="${MOVEIT_WITH_INTEGRATED_CARTESIAN:-false}"
 MUR_REQUIRE_HOST_PREFLIGHT="${MUR_REQUIRE_HOST_PREFLIGHT:-false}"
+MUR_CHECK_UR_NETWORK="${MUR_CHECK_UR_NETWORK:-false}"
+MUR_UR_HOSTS="${MUR_UR_HOSTS:-UR10_l UR10_r}"
+MUR_AUTO_REVERSE_IP="${MUR_AUTO_REVERSE_IP:-true}"
+MUR_EXPECTED_REVERSE_IP="${MUR_EXPECTED_REVERSE_IP:-}"
 HOST_SETUP_SCRIPT="${HOST_SETUP_SCRIPT:-${REPO}/setup_mur_hardware_host.sh}"
 HOST_DIAG_SCRIPT="${HOST_DIAG_SCRIPT:-${REPO}/diagnose_mur_hardware_host.sh}"
 
@@ -205,6 +209,69 @@ has_launch_arg() {
   return 1
 }
 
+route_src_ip() {
+  awk '{
+    for (i = 1; i < NF; i++) {
+      if ($i == "src") {
+        print $(i + 1)
+        exit
+      }
+    }
+  }'
+}
+
+add_auto_reverse_ip() {
+  if [[ "${MUR_AUTO_REVERSE_IP}" != "true" ]]; then
+    echo "MUR_REVERSE_IP: status=skip reason=disabled"
+    return 0
+  fi
+  if has_launch_arg "reverse_ip" "${LAUNCH_ARGS[@]}"; then
+    echo "MUR_REVERSE_IP: status=skip reason=launch_arg_already_set"
+    return 0
+  fi
+  if [[ "${MUR_CHECK_UR_NETWORK}" != "true" ]]; then
+    echo "MUR_REVERSE_IP: status=skip reason=ur_network_check_disabled"
+    return 0
+  fi
+
+  local host resolved route src_ip reverse_ip=""
+  for host in ${MUR_UR_HOSTS}; do
+    resolved="$(getent hosts "$host" | awk '{print $1}' | head -n 1 || true)"
+    if [[ -z "$resolved" ]]; then
+      echo "MUR_REVERSE_IP: status=fail host=${host} detail=name_resolution_failed"
+      return 2
+    fi
+
+    route="$(ip route get "$resolved" 2>/dev/null | head -n 1 || true)"
+    src_ip="$(printf '%s\n' "$route" | route_src_ip)"
+    if [[ -z "$src_ip" ]]; then
+      echo "MUR_REVERSE_IP: status=fail host=${host} ip=${resolved} detail=missing_route_src route=$(printf '%q' "$route")"
+      return 2
+    fi
+
+    echo "MUR_REVERSE_IP: route host=${host} ip=${resolved} src=${src_ip} ${route}"
+    if [[ -z "$reverse_ip" ]]; then
+      reverse_ip="$src_ip"
+    elif [[ "$reverse_ip" != "$src_ip" ]]; then
+      echo "MUR_REVERSE_IP: status=fail detail=inconsistent_route_src first=${reverse_ip} host=${host} src=${src_ip}"
+      return 2
+    fi
+  done
+
+  if [[ -z "$reverse_ip" ]]; then
+    echo "MUR_REVERSE_IP: status=fail detail=no_ur_hosts"
+    return 2
+  fi
+
+  if [[ -n "$MUR_EXPECTED_REVERSE_IP" && "$reverse_ip" != "$MUR_EXPECTED_REVERSE_IP" ]]; then
+    echo "MUR_REVERSE_IP: status=fail detail=unexpected_reverse_ip expected=${MUR_EXPECTED_REVERSE_IP} actual=${reverse_ip}"
+    return 2
+  fi
+
+  LAUNCH_ARGS+=("reverse_ip:=${reverse_ip}")
+  echo "MUR_REVERSE_IP: status=ok value=${reverse_ip}"
+}
+
 if ! has_launch_arg "robot_profile" "${LAUNCH_ARGS[@]}"; then
   LAUNCH_ARGS+=("robot_profile:=${ROBOT_PROFILE}")
 fi
@@ -219,6 +286,7 @@ fi
 if [[ "${MOVEIT_WITH_INTEGRATED_CARTESIAN}" == "true" ]]; then
   LAUNCH_ARGS+=("moveit_velocity_controller:=integrated_cartesian_admittance_controller")
 fi
+add_auto_reverse_ip
 
 echo "[start_mur620_hardware_logged] Starting launch..."
 printf '[start_mur620_hardware_logged] full command: ros2 launch %s %s' "$LAUNCH_PACKAGE" "$LAUNCH_FILE"

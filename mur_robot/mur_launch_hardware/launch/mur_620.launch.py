@@ -74,7 +74,7 @@ def declare_arguments():
         DeclareLaunchArgument('lift_joint_count', default_value='2'),
         DeclareLaunchArgument('lift_conversion', default_value='3225.0'),
         DeclareLaunchArgument('lift_rated_effort', default_value='2000.0'),
-        DeclareLaunchArgument('lift_tolerance', default_value='0.005'),
+        DeclareLaunchArgument('lift_tolerance', default_value='0.002'),
         DeclareLaunchArgument('lift_frequency', default_value='10.0'),
         DeclareLaunchArgument('lift_allow_zero_command', default_value='false'),
         DeclareLaunchArgument('lift_position_multiplier', default_value='1.0'),
