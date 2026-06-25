@@ -204,7 +204,7 @@ class RosbridgeWSConnection:
         self.errored = True
         print("Error: %s" % error)
 
-    def on_close(self, ws):
+    def on_close(self, ws, close_status_code=None, close_msg=None):
         self.connected = False
         print("### ROS bridge closed ###")
 

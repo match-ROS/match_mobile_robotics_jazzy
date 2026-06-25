@@ -24,7 +24,8 @@ class MiRBatteryStatePublisher(Node):
         self.robot_ip = self.declare_parameter('mir_hostname', '192.168.12.20').value
         self.auth = self.declare_parameter('mir_restapi_auth', DEFAULT_AUTH).value
         self.period = float(self.declare_parameter('period', 2.0).value)
-        self.timeout = float(self.declare_parameter('timeout', 1.5).value)
+        self.timeout = float(self.declare_parameter('timeout', 3.0).value)
+        self.failed_reads = 0
         self.publisher = self.create_publisher(BatteryState, 'battery_state', 1)
         self.timer = self.create_timer(self.period, self.query_status)
 
@@ -49,9 +50,15 @@ class MiRBatteryStatePublisher(Node):
             msg.percentage = round(percentage / 100.0, 4)
             msg.power_supply_status = BatteryState.POWER_SUPPLY_STATUS_UNKNOWN
             self.publisher.publish(msg)
+            self.failed_reads = 0
             self.get_logger().info('[{}] Battery: {:.2f}%'.format(host, percentage), throttle_duration_sec=10.0)
         except Exception as exc:
-            self.get_logger().warning('Battery read failed from {}: {}'.format(host, exc), throttle_duration_sec=10.0)
+            self.failed_reads += 1
+            message = 'Battery read failed from {}: {}'.format(host, exc)
+            if self.failed_reads < 2:
+                self.get_logger().debug(message)
+            else:
+                self.get_logger().warning(message, throttle_duration_sec=10.0)
         finally:
             connection.close()
 

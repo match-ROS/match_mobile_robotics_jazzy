@@ -34,14 +34,47 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
-from launch.launch_description_sources import FrontendLaunchDescriptionSource
+from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch_ros.actions import Node
+import xacro
+
+
+def _mir_urdf_path(mir_description_dir, mir_type):
+    urdf_files = {
+        "mir_100": os.path.join(mir_description_dir, "urdf", "mir_100", "mir_100.urdf"),
+        "mir_200": os.path.join(mir_description_dir, "urdf", "mir_200", "mir_200.urdf"),
+        "mir_600": os.path.join(mir_description_dir, "urdf", "mir_600", "mir_600.urdf"),
+    }
+    return urdf_files.get(mir_type, os.path.join(mir_description_dir, "urdf", "mir.urdf.xacro"))
+
+
+def _make_robot_state_publisher(context):
+    mir_description_dir = get_package_share_directory("mir_description")
+    namespace = LaunchConfiguration("namespace").perform(context).strip("/")
+    mir_type = LaunchConfiguration("mir_type").perform(context)
+    use_sim_time = LaunchConfiguration("use_sim_time")
+    xacro_file = _mir_urdf_path(mir_description_dir, mir_type)
+    doc = xacro.process_file(xacro_file, mappings={"tf_prefix": namespace})
+    frame_prefix = f"{namespace}/" if namespace else ""
+
+    return [
+        Node(
+            package="robot_state_publisher",
+            executable="robot_state_publisher",
+            name="robot_state_publisher",
+            namespace=namespace,
+            parameters=[
+                {"robot_description": doc.toxml()},
+                {"use_sim_time": use_sim_time},
+                {"frame_prefix": frame_prefix},
+            ],
+            output="screen",
+        )
+    ]
 
 
 def generate_launch_description():
 
-    mir_description_dir = get_package_share_directory('mir_description')
     use_sim_time = LaunchConfiguration('use_sim_time')
 
     return LaunchDescription(
@@ -50,6 +83,7 @@ def generate_launch_description():
             DeclareLaunchArgument('use_sim_time', default_value='false', description=''),
             DeclareLaunchArgument('mir_hostname', default_value='192.168.12.20', description=''),
             DeclareLaunchArgument('mir_port', default_value='9090', description='rosbridge websocket port on the MiR.'),
+            DeclareLaunchArgument('mir_type', default_value='mir_600', description='MiR variant: mir_100, mir_200, or mir_600.'),
             # DeclareLaunchArgument(
             #     'disable_map',
             #     default_value='false',
@@ -68,6 +102,10 @@ def generate_launch_description():
             #    }.items(),
             #    condition=IfCondition(LaunchConfiguration('robot_state_publisher_enabled')),
             #),
+            OpaqueFunction(
+                function=_make_robot_state_publisher,
+                condition=IfCondition(LaunchConfiguration('robot_state_publisher_enabled')),
+            ),
             Node(
                 package='mir_driver',
                 executable='mir_bridge',
@@ -76,6 +114,7 @@ def generate_launch_description():
                         'use_sim_time': LaunchConfiguration('use_sim_time'),
                         'hostname': LaunchConfiguration('mir_hostname'),
                         'port': LaunchConfiguration('mir_port'),
+                        'mir_type': LaunchConfiguration('mir_type'),
                         'tf_prefix': LaunchConfiguration('namespace'),
                     }
                 ],

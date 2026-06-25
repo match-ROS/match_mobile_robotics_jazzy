@@ -18,18 +18,18 @@ class MirPoseSimple(Node):
 
         self.pose_pub = self.create_publisher(Pose, 'mir_pose_simple', 1)
         self.pose_stamped_pub = self.create_publisher(PoseStamped, 'mir_pose_stamped_simple', 1)
-        self.subscriptions = []
+        self._input_subscriptions = []
 
         if self.localization_type == 'amcl':
-            self.subscriptions.append(self.create_subscription(PoseWithCovarianceStamped, self.amcl_pose_topic, self.amcl_pose_callback, 10))
+            self._input_subscriptions.append(self.create_subscription(PoseWithCovarianceStamped, self.amcl_pose_topic, self.amcl_pose_callback, 10))
         elif self.localization_type == 'ground_truth':
-            self.subscriptions.append(self.create_subscription(Odometry, self.ground_truth_topic, self.odom_callback, 10))
+            self._input_subscriptions.append(self.create_subscription(Odometry, self.ground_truth_topic, self.odom_callback, 10))
         elif self.localization_type == 'odom':
-            self.subscriptions.append(self.create_subscription(Odometry, self.odom_topic, self.odom_callback, 10))
+            self._input_subscriptions.append(self.create_subscription(Odometry, self.odom_topic, self.odom_callback, 10))
         elif self.localization_type == 'mocap':
-            self.subscriptions.append(self.create_subscription(PoseStamped, self.mocap_topic, self.mocap_callback, 10))
+            self._input_subscriptions.append(self.create_subscription(PoseStamped, self.mocap_topic, self.mocap_callback, 10))
         elif self.localization_type == 'robot_pose':
-            self.subscriptions.append(self.create_subscription(Pose, self.robot_pose_topic, self.robot_pose_callback, 10))
+            self._input_subscriptions.append(self.create_subscription(Pose, self.robot_pose_topic, self.robot_pose_callback, 10))
         else:
             self.get_logger().warning('Unknown localization_type: {}'.format(self.localization_type))
 

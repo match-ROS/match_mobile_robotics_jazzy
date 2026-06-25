@@ -67,8 +67,8 @@ def declare_arguments():
         DeclareLaunchArgument('bms_response_timeout', default_value='0.8'),
         DeclareLaunchArgument('bms_configure_can_interface', default_value='false'),
         # Matches the ROS 1 hardware launch wiring for the MUR620 lifts.
-        DeclareLaunchArgument('lift_port_l', default_value='/dev/ttyUSB1'),
-        DeclareLaunchArgument('lift_port_r', default_value='/dev/ttyUSB0'),
+        DeclareLaunchArgument('lift_port_l', default_value='/dev/ttyUSB0'),
+        DeclareLaunchArgument('lift_port_r', default_value='/dev/ttyUSB1'),
         DeclareLaunchArgument('lift_baud', default_value='38400'),
         DeclareLaunchArgument('lift_timeout', default_value='1000'),
         DeclareLaunchArgument('lift_joint_count', default_value='2'),

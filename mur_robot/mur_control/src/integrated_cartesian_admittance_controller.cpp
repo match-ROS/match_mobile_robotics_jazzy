@@ -405,6 +405,11 @@ public:
         "collision_other_capsule_segments", {});
       collision_forbidden_box_specs_ = auto_declare<std::vector<std::string>>(
         "collision_forbidden_boxes", {});
+      collision_forbidden_box_exempt_own_links_ = auto_declare<std::vector<std::string>>(
+        "collision_forbidden_box_exempt_own_links", {prefix_ + "/shoulder_link"});
+      collision_forbidden_box_exempt_initial_segments_ = std::max(
+        0, static_cast<int>(
+          auto_declare<int>("collision_forbidden_box_exempt_initial_segments", 1)));
       collision_common_link_ = auto_declare<std::string>("collision_common_link", "base_link");
       collision_own_base_xyz_ = checked_vector("collision_own_base_xyz", {0.0, 0.0, 0.0});
       collision_own_base_rpy_ = checked_vector("collision_own_base_rpy", {0.0, 0.0, 0.0});
@@ -1155,15 +1160,27 @@ private:
     }
   }
 
+  bool forbidden_box_exempt_own_link(const std::string & link_name) const
+  {
+    return std::find(
+      collision_forbidden_box_exempt_own_links_.begin(),
+      collision_forbidden_box_exempt_own_links_.end(),
+      link_name) != collision_forbidden_box_exempt_own_links_.end();
+  }
+
   bool sample_collision_points(
     const KDL::Chain & chain,
     KDL::ChainFkSolverPos_recursive & solver,
     const KDL::JntArray & q,
     const tf2::Transform & common_from_chain_base,
     const std::vector<CollisionCapsule> & capsules,
-    std::vector<tf2::Vector3> & points) const
+    std::vector<tf2::Vector3> & points,
+    std::vector<tf2::Vector3> * forbidden_box_points = nullptr) const
   {
     points.clear();
+    if (forbidden_box_points != nullptr) {
+      forbidden_box_points->clear();
+    }
 
     if (!capsules.empty()) {
       std::map<std::string, unsigned int> segment_index_by_link;
@@ -1193,7 +1210,13 @@ private:
           common_from_chain_base * transform_from_kdl(link_frame);
         const tf2::Vector3 start = common_from_link * capsule.start;
         const tf2::Vector3 end = common_from_link * capsule.end;
-        append_sampled_segment(start, end, points);
+        std::vector<tf2::Vector3> segment_points;
+        append_sampled_segment(start, end, segment_points);
+        points.insert(points.end(), segment_points.begin(), segment_points.end());
+        if (forbidden_box_points != nullptr && !forbidden_box_exempt_own_link(capsule.link_name)) {
+          forbidden_box_points->insert(
+            forbidden_box_points->end(), segment_points.begin(), segment_points.end());
+        }
       }
 
       if (!points.empty()) {
@@ -1207,6 +1230,7 @@ private:
     KDL::Frame previous_frame;
     bool have_previous = false;
     bool started_movable_part = false;
+    int sampled_segment_index = 0;
 
     for (unsigned int i = 0; i < chain.getNrOfSegments(); ++i) {
       KDL::Frame current_frame;
@@ -1222,13 +1246,25 @@ private:
       if (started_movable_part && have_previous) {
         const tf2::Vector3 start = common_from_chain_base * point_from_kdl(previous_frame.p);
         const tf2::Vector3 end = common_from_chain_base * point_from_kdl(current_frame.p);
-        append_sampled_segment(start, end, points);
+        std::vector<tf2::Vector3> segment_points;
+        append_sampled_segment(start, end, segment_points);
+        points.insert(points.end(), segment_points.begin(), segment_points.end());
+        if (forbidden_box_points != nullptr &&
+          sampled_segment_index >= collision_forbidden_box_exempt_initial_segments_)
+        {
+          forbidden_box_points->insert(
+            forbidden_box_points->end(), segment_points.begin(), segment_points.end());
+        }
+        ++sampled_segment_index;
       }
 
       previous_frame = current_frame;
       have_previous = true;
     }
 
+    if (forbidden_box_points != nullptr && forbidden_box_points->empty()) {
+      *forbidden_box_points = points;
+    }
     return !points.empty();
   }
 
@@ -1298,10 +1334,12 @@ private:
     }
 
     std::vector<tf2::Vector3> own_points;
+    std::vector<tf2::Vector3> own_forbidden_box_points;
     std::vector<tf2::Vector3> other_points;
     if (!sample_collision_points(
         own_collision_chain_, *own_collision_fk_solver_, own_collision_q,
-        collision_common_from_own_base_, own_collision_capsules_, own_points) ||
+        collision_common_from_own_base_, own_collision_capsules_, own_points,
+        &own_forbidden_box_points) ||
       !sample_collision_points(
         other_collision_chain_, *other_collision_fk_solver_, other_collision_q,
         collision_common_from_other_base_, other_collision_capsules_, other_points))
@@ -1325,6 +1363,8 @@ private:
           nearest_other = other_point;
         }
       }
+    }
+    for (const auto & own_point : own_forbidden_box_points) {
       for (const auto & box : collision_forbidden_boxes_) {
         tf2::Vector3 nearest_box_point;
         const double box_clearance = signed_sphere_box_clearance(
@@ -2072,6 +2112,8 @@ private:
   std::vector<std::string> collision_capsule_segments_;
   std::vector<std::string> collision_other_capsule_segments_;
   std::vector<std::string> collision_forbidden_box_specs_;
+  std::vector<std::string> collision_forbidden_box_exempt_own_links_;
+  int collision_forbidden_box_exempt_initial_segments_{1};
   std::vector<double> collision_own_base_xyz_;
   std::vector<double> collision_own_base_rpy_;
   std::vector<double> collision_other_base_xyz_;

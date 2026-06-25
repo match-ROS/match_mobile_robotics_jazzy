@@ -89,6 +89,9 @@ class TopicConfig(object):
             self.qos_profile = qos_profile_system_default
 
 
+def _ros1_topic_name(topic):
+    return '/' + topic.strip('/')
+
 def _diagnostic_array_dict_filter(msg_dict, to_ros2):
     filtered_msg_dict = copy.deepcopy(msg_dict)
     filtered_msg_dict['header'] = _convert_ros_header(filtered_msg_dict['header'], to_ros2)
@@ -271,6 +274,17 @@ def _remove_tf_prefix_dict_filter(msg_dict):
                 _remove_tf_prefix_dict_filter(item)
     return msg_dict
 
+
+
+MIR_600_DISABLED_PUB_TOPICS = {
+    "LightCtrl/us_list",
+    "MC/currents",
+    "camera_floor/background",
+    "camera_floor/depth/points",
+    "camera_floor/filter/visualization_marker",
+    "camera_floor/floor",
+    "camera_floor/obstacles",
+}
 
 # topics we want to publish to ROS (and subscribe to from the MiR)
 PUB_TOPICS = [
@@ -501,7 +515,7 @@ class PublisherWrapper(object):
         if not self.connected:
             self.connected = True
             nh.get_logger().info("Starting to stream messages on topic '%s'" % self.topic_config.topic)
-            self.robot.subscribe(topic=('/' + self.topic_config.topic), callback=self.callback)
+            self.robot.subscribe(topic=_ros1_topic_name(self.topic_config.topic), callback=self.callback)
 
     def callback(self, msg_dict):
         if not isinstance(msg_dict, dict):  # can happen during recursion
@@ -537,7 +551,7 @@ class SubscriberWrapper(object):
 
         if self.topic_config.dict_filter is not None:
             msg_dict = self.topic_config.dict_filter(msg_dict, to_ros2=False)
-        self.robot.publish('/' + self.topic_config.topic, msg_dict)
+        self.robot.publish(_ros1_topic_name(self.topic_config.topic), msg_dict)
 
 
 class MiRBridgeNode(Node):
@@ -553,6 +567,7 @@ class MiRBridgeNode(Node):
             self.get_logger().fatal('Parameter "hostname" is not set!')
             sys.exit(-1)
         port = int(self.declare_parameter('port', 9090).value)
+        mir_type = self.declare_parameter('mir_type', 'mir_600').value
 
         global tf_prefix
         self.declare_parameter('tf_prefix', '')
@@ -576,28 +591,40 @@ class MiRBridgeNode(Node):
             time.sleep(1)
         self.get_logger().info('Connected to %s:%i...' % (hostname, port))
 
-        topics = self.get_topics()
+        active_pub_topics = [
+            topic for topic in PUB_TOPICS
+            if mir_type != 'mir_600' or topic.topic not in MIR_600_DISABLED_PUB_TOPICS
+        ]
+        configured_topics = sorted({
+            _ros1_topic_name(topic.topic)
+            for topic in active_pub_topics + SUB_TOPICS
+        })
+        topics = self.get_topics(configured_topics)
         published_topics = [topic_name for (topic_name, _, has_publishers, _) in topics if has_publishers]
         subscribed_topics = [topic_name for (topic_name, _, _, has_subscribers) in topics if has_subscribers]
 
-        for pub_topic in PUB_TOPICS:
+        for pub_topic in active_pub_topics:
             PublisherWrapper(pub_topic, self)
-            if ('/' + pub_topic.topic) not in published_topics:
+            if _ros1_topic_name(pub_topic.topic) not in published_topics:
                 self.get_logger().warn("Topic '%s' is not published by the MiR!" % pub_topic.topic)
 
         for sub_topic in SUB_TOPICS:
             SubscriberWrapper(sub_topic, self)
-            if ('/' + sub_topic.topic) not in subscribed_topics:
+            if _ros1_topic_name(sub_topic.topic) not in subscribed_topics:
                 self.get_logger().warn("Topic '%s' is not yet subscribed to by the MiR!" % sub_topic.topic)
 
         self.mir_bridge_ready = True
 
-    def get_topics(self):
+    def get_topics(self, topic_names):
         srv_response = self.robot.callService('/rosapi/topics', msg={})
-        topic_names = sorted(srv_response['topics'])
+        available_topics = set(srv_response['topics'])
         topics = []
 
         for topic_name in topic_names:
+            if topic_name not in available_topics:
+                topics.append([topic_name, None, False, False])
+                continue
+
             srv_response = self.robot.callService("/rosapi/topic_type", msg={'topic': topic_name})
             topic_type = srv_response['type']
 
