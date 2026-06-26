@@ -476,7 +476,8 @@ PUB_TOPICS = [
 
 # topics we want to subscribe to from ROS (and publish to the MiR)
 SUB_TOPICS = [
-    TopicConfig('cmd_vel', geometry_msgs.msg.TwistStamped, 'cmd_vel_stamped')
+    TopicConfig('cmd_vel', geometry_msgs.msg.TwistStamped, 'cmd_vel_stamped'),
+    TopicConfig('move_base_simple/goal', geometry_msgs.msg.PoseStamped, dict_filter=_header_dict_filter),
     # TopicConfig('initialpose', geometry_msgs.msg.PoseWithCovarianceStamped),
     # TopicConfig('light_cmd', std_msgs.msg.String),
     # TopicConfig('mir_cmd', std_msgs.msg.String),
