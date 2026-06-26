@@ -73,9 +73,9 @@ def collision_forbidden_boxes(side, forbidden_box_arg):
         return parse_semicolon_list(forbidden_box_arg)
     return [
         "mir_chassis:0.0,0.0,0.25:1.00,0.68,0.50",
-        "mir_top_surface_center:0.0,0.0,0.86:1.42,0.46,0.16",
-        "UR10_l_lift_column:0.549,0.318,0.742:0.30,0.30,0.80",
-        "UR10_r_lift_column:0.549,-0.318,0.742:0.30,0.30,0.80",
+        "mir_top_surface_center:0.0,0.0,0.795:1.42,0.98,0.08",
+        "UR10_l_lift_column:0.52,0.318,0.665:0.36,0.24,0.65",
+        "UR10_r_lift_column:0.52,-0.318,0.665:0.36,0.24,0.65",
     ]
 
 

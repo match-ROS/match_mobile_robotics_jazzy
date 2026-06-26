@@ -15,6 +15,7 @@
   <exec_depend>ewellix_interfaces</exec_depend>
   <exec_depend>launch</exec_depend>
   <exec_depend>launch_ros</exec_depend>
+  <exec_depend>mir_launch_hardware</exec_depend>
   <exec_depend>mur_control</exec_depend>
   <exec_depend>mur_description</exec_depend>
   <exec_depend>mur_moveit_config</exec_depend>

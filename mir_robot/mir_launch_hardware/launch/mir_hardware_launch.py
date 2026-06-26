@@ -18,6 +18,8 @@ def generate_launch_description():
     mir_hostname = LaunchConfiguration('mir_hostname')
     mir_port = LaunchConfiguration('mir_port')
     mir_restapi_auth = LaunchConfiguration('mir_restapi_auth')
+    enabled_pub_topics = LaunchConfiguration('enabled_pub_topics')
+    disabled_pub_topics = LaunchConfiguration('disabled_pub_topics')
 
     mir_driver_launch = PathJoinSubstitution([
         FindPackageShare('mir_driver'),
@@ -31,6 +33,8 @@ def generate_launch_description():
         DeclareLaunchArgument('mir_hostname', default_value='192.168.12.20'),
         DeclareLaunchArgument('mir_port', default_value='9090'),
         DeclareLaunchArgument('mir_type', default_value='mir_600', description='Documented hardware variant: mir_100, mir_200, or mir_600.'),
+        DeclareLaunchArgument('enabled_pub_topics', default_value='', description='Optional comma/space separated ROS1 MiR topics to bridge to ROS 2.'),
+        DeclareLaunchArgument('disabled_pub_topics', default_value='', description='Optional comma/space separated ROS1 MiR topics to skip.'),
         DeclareLaunchArgument('mir_restapi_auth', default_value=DEFAULT_REST_AUTH),
         DeclareLaunchArgument('robot_state_publisher_enabled', default_value='true'),
         DeclareLaunchArgument('bridge_light_commands', default_value='true'),
@@ -48,6 +52,8 @@ def generate_launch_description():
                 'mir_hostname': mir_hostname,
                 'mir_port': mir_port,
                 'mir_type': LaunchConfiguration('mir_type'),
+                'enabled_pub_topics': enabled_pub_topics,
+                'disabled_pub_topics': disabled_pub_topics,
                 'robot_state_publisher_enabled': LaunchConfiguration('robot_state_publisher_enabled'),
             }.items(),
         ),

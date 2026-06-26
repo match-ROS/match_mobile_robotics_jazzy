@@ -84,6 +84,8 @@ def generate_launch_description():
             DeclareLaunchArgument('mir_hostname', default_value='192.168.12.20', description=''),
             DeclareLaunchArgument('mir_port', default_value='9090', description='rosbridge websocket port on the MiR.'),
             DeclareLaunchArgument('mir_type', default_value='mir_600', description='MiR variant: mir_100, mir_200, or mir_600.'),
+            DeclareLaunchArgument('enabled_pub_topics', default_value='', description='Optional comma/space separated ROS1 MiR topics to bridge to ROS 2.'),
+            DeclareLaunchArgument('disabled_pub_topics', default_value='', description='Optional comma/space separated ROS1 MiR topics to skip.'),
             # DeclareLaunchArgument(
             #     'disable_map',
             #     default_value='false',
@@ -115,6 +117,8 @@ def generate_launch_description():
                         'hostname': LaunchConfiguration('mir_hostname'),
                         'port': LaunchConfiguration('mir_port'),
                         'mir_type': LaunchConfiguration('mir_type'),
+                        'enabled_pub_topics': LaunchConfiguration('enabled_pub_topics'),
+                        'disabled_pub_topics': LaunchConfiguration('disabled_pub_topics'),
                         'tf_prefix': LaunchConfiguration('namespace'),
                     }
                 ],

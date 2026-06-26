@@ -55,6 +55,15 @@ def declare_arguments():
         DeclareLaunchArgument('launch_lift_r', default_value=''),
         DeclareLaunchArgument('publish_fake_mir_wheel_joints', default_value='true'),
         DeclareLaunchArgument('fake_mir_wheel_joint_frequency', default_value='10.0'),
+        DeclareLaunchArgument('launch_mir', default_value='false'),
+        DeclareLaunchArgument('mir_hostname', default_value='192.168.12.20'),
+        DeclareLaunchArgument('mir_port', default_value='9090'),
+        DeclareLaunchArgument('mir_type', default_value='mir_600'),
+        DeclareLaunchArgument(
+            'mir_enabled_pub_topics',
+            default_value='b_raw_scan b_scan f_raw_scan f_scan scan robot_pose',
+            description='Space separated ROS1 MiR topics to bridge into ROS 2 when launch_mir is true.',
+        ),
         DeclareLaunchArgument('launch_bms', default_value='true'),
         DeclareLaunchArgument(
             'battery_node_id',
@@ -612,6 +621,28 @@ def make_lift_joint_state_bridge(robot_name, launch_condition):
     )
 
 
+
+def make_mir_hardware_launch(robot_name, use_sim_time):
+    return IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            PathJoinSubstitution([
+                FindPackageShare('mir_launch_hardware'),
+                'launch',
+                'mir_hardware_launch.py',
+            ])
+        ),
+        condition=IfCondition(LaunchConfiguration('launch_mir')),
+        launch_arguments={
+            'namespace': robot_name,
+            'use_sim_time': 'true' if use_sim_time else 'false',
+            'mir_hostname': LaunchConfiguration('mir_hostname'),
+            'mir_port': LaunchConfiguration('mir_port'),
+            'mir_type': LaunchConfiguration('mir_type'),
+            'enabled_pub_topics': LaunchConfiguration('mir_enabled_pub_topics'),
+            'robot_state_publisher_enabled': 'false',
+        }.items(),
+    )
+
 def make_fake_mir_wheel_joint_publisher(robot_name):
     return Node(
         package='mur_launch_hardware',
@@ -1079,6 +1110,7 @@ def launch_setup(context, *args, **kwargs):
     return [
         robot_state_publisher,
         make_bms_can_node(robot_name, battery_node_id),
+        make_mir_hardware_launch(robot_name, use_sim_time),
         make_fake_mir_wheel_joint_publisher(robot_name),
         make_arm_velocity_safety_node(robot_name),
         make_moveit_controller_proxies(robot_name),

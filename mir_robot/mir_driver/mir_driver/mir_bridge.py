@@ -89,6 +89,16 @@ class TopicConfig(object):
             self.qos_profile = qos_profile_system_default
 
 
+
+def _topic_filter_set(value):
+    if value is None:
+        return set()
+    if isinstance(value, str):
+        raw_items = value.replace(',', ' ').split()
+    else:
+        raw_items = value
+    return {str(item).strip().strip('/') for item in raw_items if str(item).strip()}
+
 def _ros1_topic_name(topic):
     return '/' + topic.strip('/')
 
@@ -569,6 +579,8 @@ class MiRBridgeNode(Node):
             sys.exit(-1)
         port = int(self.declare_parameter('port', 9090).value)
         mir_type = self.declare_parameter('mir_type', 'mir_600').value
+        enabled_pub_topics = _topic_filter_set(self.declare_parameter('enabled_pub_topics', '').value)
+        disabled_pub_topics = _topic_filter_set(self.declare_parameter('disabled_pub_topics', '').value)
 
         global tf_prefix
         self.declare_parameter('tf_prefix', '')
@@ -594,8 +606,22 @@ class MiRBridgeNode(Node):
 
         active_pub_topics = [
             topic for topic in PUB_TOPICS
-            if mir_type != 'mir_600' or topic.topic not in MIR_600_DISABLED_PUB_TOPICS
+            if mir_type != 'mir_600' or topic.topic.strip('/') not in MIR_600_DISABLED_PUB_TOPICS
         ]
+        if enabled_pub_topics:
+            active_pub_topics = [
+                topic for topic in active_pub_topics
+                if topic.topic.strip('/') in enabled_pub_topics
+            ]
+        if disabled_pub_topics:
+            active_pub_topics = [
+                topic for topic in active_pub_topics
+                if topic.topic.strip('/') not in disabled_pub_topics
+            ]
+        if enabled_pub_topics:
+            self.get_logger().info('MiR bridge enabled_pub_topics=%s' % sorted(enabled_pub_topics))
+        if disabled_pub_topics:
+            self.get_logger().info('MiR bridge disabled_pub_topics=%s' % sorted(disabled_pub_topics))
         configured_topics = sorted({
             _ros1_topic_name(topic.topic)
             for topic in active_pub_topics + SUB_TOPICS
