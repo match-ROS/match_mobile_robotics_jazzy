@@ -1,0 +1,21 @@
+[Unit]
+Description=Standalone PS4 MiR jog for mur620d
+After=bluetooth.service network-online.target
+Wants=bluetooth.service network-online.target
+
+[Service]
+Type=simple
+User=rosmatch
+Group=rosmatch
+WorkingDirectory=/opt/mur-standalone/ws
+Environment=ROS_LOG_DIR=/opt/mur-standalone/log/ros
+Environment=PYTHONUNBUFFERED=1
+Environment=RCUTILS_LOGGING_BUFFERED_STREAM=0
+ExecStart=/bin/bash -lc 'source /opt/ros/jazzy/setup.bash && source /opt/mur-standalone/ws/install/setup.bash && ros2 run mur_mir_teleop standalone_supervisor --config /etc/mur-standalone/mir_teleop.yaml'
+Restart=always
+RestartSec=2
+KillSignal=SIGINT
+TimeoutStopSec=8
+
+[Install]
+WantedBy=multi-user.target

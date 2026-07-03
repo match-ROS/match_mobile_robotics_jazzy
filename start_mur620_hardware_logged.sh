@@ -30,6 +30,9 @@ MUR_AUTO_REVERSE_IP="${MUR_AUTO_REVERSE_IP:-true}"
 MUR_EXPECTED_REVERSE_IP="${MUR_EXPECTED_REVERSE_IP:-}"
 HOST_SETUP_SCRIPT="${HOST_SETUP_SCRIPT:-${REPO}/setup_mur_hardware_host.sh}"
 HOST_DIAG_SCRIPT="${HOST_DIAG_SCRIPT:-${REPO}/diagnose_mur_hardware_host.sh}"
+MUR_STANDALONE_SERVICE="${MUR_STANDALONE_SERVICE:-mur-mir-standalone.service}"
+MUR_STANDALONE_WAS_ACTIVE=false
+MUR_STANDALONE_STOPPED=false
 
 TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
 LOG_FILE="${LOG_FILE:-${LOG_DIR}/${LAUNCH_PACKAGE}_${LAUNCH_FILE%.launch.py}_${TIMESTAMP}.log}"
@@ -134,6 +137,20 @@ report_serial_access() {
   echo
   return "$serial_blocking"
 }
+
+restore_standalone_mir_service() {
+  if [[ "${MUR_STANDALONE_STOPPED}" != "true" || "${MUR_STANDALONE_WAS_ACTIVE}" != "true" ]]; then
+    return 0
+  fi
+  echo "[start_mur620_hardware_logged] Restarting ${MUR_STANDALONE_SERVICE} after GUI MiR takeover."
+  if sudo -n systemctl start "${MUR_STANDALONE_SERVICE}"; then
+    echo "MUR_STANDALONE: status=restarted service=${MUR_STANDALONE_SERVICE}"
+  else
+    echo "MUR_STANDALONE: status=warn issue=restart_failed service=${MUR_STANDALONE_SERVICE}"
+  fi
+}
+
+trap restore_standalone_mir_service EXIT
 
 run_host_preflight() {
   local preflight_status=0
@@ -309,6 +326,59 @@ configure_bms_can_interface() {
   fi
 }
 
+clean_stale_mir_processes_for_takeover() {
+  local patterns=(
+    "mir_driver/lib/mir_driver/mir_bridge"
+    "twist_stamper_cmd_vel_mir"
+    "mir_launch_hardware/lib/mir_launch_hardware/mir_battery_state_publisher"
+    "mir_launch_hardware/lib/mir_launch_hardware/mir_pose_simple"
+    "mir_restapi/lib/mir_restapi/mir_restapi_server"
+    "mir_launch_hardware/lib/mir_launch_hardware/rgb_control"
+    "mur_mir_teleop/lib/mur_mir_teleop/standalone_supervisor"
+    "mur_mir_teleop/lib/mur_mir_teleop/ds4_mir_teleop"
+    "joy/joy_node"
+  )
+
+  echo "[start_mur620_hardware_logged] Cleaning stale MiR driver/teleop processes before GUI takeover..."
+  for pattern in "${patterns[@]}"; do
+    pkill -TERM -f "$pattern" 2>/dev/null || true
+  done
+  sleep 1
+  for pattern in "${patterns[@]}"; do
+    pkill -KILL -f "$pattern" 2>/dev/null || true
+  done
+}
+
+takeover_standalone_mir_if_needed() {
+  local launch_mir
+  launch_mir="$(launch_arg_value "launch_mir" "false")"
+  if [[ "${launch_mir}" != "true" ]]; then
+    echo "MUR_STANDALONE: status=skip reason=launch_mir_${launch_mir}"
+    return 0
+  fi
+
+  if ! systemctl list-unit-files "${MUR_STANDALONE_SERVICE}" --no-legend 2>/dev/null | grep -q "${MUR_STANDALONE_SERVICE}"; then
+    echo "MUR_STANDALONE: status=skip reason=service_not_installed service=${MUR_STANDALONE_SERVICE}"
+    clean_stale_mir_processes_for_takeover
+    return 0
+  fi
+
+  if sudo -n systemctl is-active --quiet "${MUR_STANDALONE_SERVICE}"; then
+    MUR_STANDALONE_WAS_ACTIVE=true
+    echo "[start_mur620_hardware_logged] Stopping ${MUR_STANDALONE_SERVICE} for GUI MiR takeover."
+    if sudo -n systemctl stop "${MUR_STANDALONE_SERVICE}"; then
+      MUR_STANDALONE_STOPPED=true
+      echo "MUR_STANDALONE: status=stopped service=${MUR_STANDALONE_SERVICE}"
+    else
+      echo "MUR_STANDALONE: status=warn issue=stop_failed service=${MUR_STANDALONE_SERVICE}"
+    fi
+  else
+    echo "MUR_STANDALONE: status=inactive service=${MUR_STANDALONE_SERVICE}"
+  fi
+
+  clean_stale_mir_processes_for_takeover
+}
+
 if ! has_launch_arg "robot_profile" "${LAUNCH_ARGS[@]}"; then
   LAUNCH_ARGS+=("robot_profile:=${ROBOT_PROFILE}")
 fi
@@ -324,6 +394,7 @@ if [[ "${MOVEIT_WITH_INTEGRATED_CARTESIAN}" == "true" ]]; then
   LAUNCH_ARGS+=("moveit_velocity_controller:=integrated_cartesian_admittance_controller")
 fi
 add_auto_reverse_ip
+takeover_standalone_mir_if_needed
 configure_bms_can_interface
 
 echo "[start_mur620_hardware_logged] Starting launch..."

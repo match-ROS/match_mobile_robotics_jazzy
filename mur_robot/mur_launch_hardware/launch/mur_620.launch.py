@@ -61,7 +61,7 @@ def declare_arguments():
         DeclareLaunchArgument('mir_type', default_value='mir_600'),
         DeclareLaunchArgument(
             'mir_enabled_pub_topics',
-            default_value='b_raw_scan b_scan f_raw_scan f_scan scan robot_pose',
+            default_value='b_raw_scan b_scan f_raw_scan f_scan scan robot_pose map map_metadata odom odom_enc tf tf_static',
             description='Space separated ROS1 MiR topics to bridge into ROS 2 when launch_mir is true.',
         ),
         DeclareLaunchArgument('launch_bms', default_value='true'),

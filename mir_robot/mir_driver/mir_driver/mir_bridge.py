@@ -162,7 +162,7 @@ def _marker_dict_filter(msg_dict, to_ros2):
 def _odom_dict_filter(msg_dict, to_ros2):
     filtered_msg_dict = copy.deepcopy(msg_dict)
     filtered_msg_dict['header'] = _convert_ros_header(filtered_msg_dict['header'], to_ros2)
-    filtered_msg_dict['child_frame_id'] = tf_prefix + filtered_msg_dict['child_frame_id'].strip('/')
+    filtered_msg_dict['child_frame_id'] = _prefix_frame_id(filtered_msg_dict['child_frame_id'])
     return filtered_msg_dict
 
 
@@ -184,7 +184,7 @@ def _tf_dict_filter(msg_dict, to_ros2):
     filtered_msg_dict = copy.deepcopy(msg_dict)
 
     for transform in filtered_msg_dict['transforms']:
-        transform['child_frame_id'] = tf_prefix + transform['child_frame_id'].strip('/')
+        transform['child_frame_id'] = _prefix_frame_id(transform['child_frame_id'])
         transform['header'] = _convert_ros_header(transform['header'], to_ros2)
     return filtered_msg_dict
 
@@ -203,13 +203,19 @@ def _convert_ros_time(time_msg_dict, to_ros2):
     return time_dict
 
 
+def _prefix_frame_id(frame_id):
+    frame_id = frame_id.strip('/')
+    if not frame_id or frame_id == 'map':
+        return frame_id
+    return tf_prefix + frame_id
+
+
 def _convert_ros_header(header_msg_dict, to_ros2):
     header_dict = copy.deepcopy(header_msg_dict)
     header_dict['stamp'] = _convert_ros_time(header_dict['stamp'], to_ros2)
     if to_ros2:
         del header_dict['seq']
-        frame_id = header_dict['frame_id'].strip('/')
-        header_dict['frame_id'] = tf_prefix + frame_id
+        header_dict['frame_id'] = _prefix_frame_id(header_dict['frame_id'])
     else:  # to ros1
         header_dict['seq'] = 0
         # remove tf_prefix to frame_id
@@ -505,6 +511,7 @@ class PublisherWrapper(object):
         self.topic_config = topic_config
         self.robot = nh.robot
         self.connected = False
+        self.static_tf_transforms = {}
         self.sub = nh.create_subscription(
             msg_type=topic_config.topic_type,
             topic=topic_config.topic,
@@ -535,6 +542,11 @@ class PublisherWrapper(object):
         if self.topic_config.dict_filter is not None:
             msg_dict = self.topic_config.dict_filter(msg_dict, to_ros2=True)
         msg = message_converter.convert_dictionary_to_ros_message(self.topic_config.topic_type, msg_dict)
+        if self.topic_config.topic_ros2_name == '/tf_static':
+            for transform in msg.transforms:
+                key = (transform.header.frame_id, transform.child_frame_id)
+                self.static_tf_transforms[key] = transform
+            msg.transforms = list(self.static_tf_transforms.values())
         self.pub.publish(msg)
 
 

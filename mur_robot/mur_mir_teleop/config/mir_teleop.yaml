@@ -1,0 +1,33 @@
+robot_name: mur620d
+ros_domain_id: 62
+mir_hostname: 192.168.12.20
+mir_port: 9090
+mir_type: mir_600
+
+controller:
+  name_patterns:
+    - Wireless Controller
+    - Sony Interactive Entertainment Wireless Controller
+    - DUALSHOCK 4
+  bluetooth_addresses: []
+  bluetooth_connect_interval_sec: 5.0
+  poll_interval_sec: 1.0
+
+joy:
+  deadzone: 0.05
+  autorepeat_rate: 20.0
+
+teleop:
+  linear_axis: 1
+  angular_axis: 0
+  l1_button: 4
+  r1_button: 5
+  max_linear_mps: 0.25
+  max_angular_radps: 0.45
+  deadzone: 0.10
+  publish_rate_hz: 20.0
+  joy_timeout_sec: 0.30
+  frame_id: mur620d/base_link
+  joy_topic: /mur620d/joy
+  cmd_vel_topic: /mur620d/cmd_vel_stamped
+  status_topic: /mur620d/standalone_mir_teleop/status
