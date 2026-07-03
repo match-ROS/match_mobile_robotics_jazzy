@@ -79,6 +79,33 @@ def connect_known_controllers(addresses):
             pass
 
 
+def ros_executable(package, executable):
+    search_paths = os.environ.get('AMENT_PREFIX_PATH', '').split(os.pathsep)
+    search_paths.extend(['/opt/ros/jazzy'])
+    for prefix in search_paths:
+        if not prefix:
+            continue
+        candidate = os.path.join(prefix, 'lib', package, executable)
+        if os.path.exists(candidate) and os.access(candidate, os.X_OK):
+            return candidate
+    return executable
+
+
+def ros_service_available(service_name, env):
+    try:
+        result = subprocess.run(
+            ['ros2', 'service', 'type', service_name],
+            check=False,
+            timeout=2.0,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            env=env,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return result.returncode == 0
+
+
 def find_matching_joystick(patterns, known_addresses):
     known = {normalize_address(address) for address in known_addresses if normalize_address(address)}
     devices = sorted(glob.glob('/dev/input/js*'))
@@ -101,7 +128,7 @@ class ProcessGroup:
 
     def start(self, label, command, env):
         print(f'[mur_mir_standalone] starting {label}: {" ".join(command)}', flush=True)
-        process = subprocess.Popen(command, env=env)
+        process = subprocess.Popen(command, env=env, start_new_session=True)
         self.processes.append((label, process))
         return process
 
@@ -116,17 +143,26 @@ class ProcessGroup:
         for label, process in reversed(self.processes):
             if process.poll() is None:
                 print(f'[mur_mir_standalone] stopping {label}', flush=True)
-                process.send_signal(signal.SIGINT)
+                try:
+                    os.killpg(process.pid, signal.SIGINT)
+                except ProcessLookupError:
+                    pass
         deadline = time.monotonic() + 5.0
         for _label, process in reversed(self.processes):
             remaining = max(0.1, deadline - time.monotonic())
             try:
                 process.wait(timeout=remaining)
             except subprocess.TimeoutExpired:
-                process.terminate()
+                try:
+                    os.killpg(process.pid, signal.SIGTERM)
+                except ProcessLookupError:
+                    pass
         for _label, process in reversed(self.processes):
             if process.poll() is None:
-                process.kill()
+                try:
+                    os.killpg(process.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
         self.processes = []
 
 
@@ -187,41 +223,44 @@ def run_supervisor(config):
         )
         group = ProcessGroup()
         try:
-            group.start(
-                'mir_bridge',
-                [
-                    'ros2',
-                    'run',
-                    'mir_driver',
+            bridge_ready_service = f'/{robot_name}/mir_bridge_ready'
+            if ros_service_available(bridge_ready_service, env):
+                print(
+                    f'[mur_mir_standalone] using existing MiR bridge at {bridge_ready_service}',
+                    flush=True,
+                )
+            else:
+                group.start(
                     'mir_bridge',
-                    '--ros-args',
-                    '-r',
-                    f'__ns:=/{robot_name}',
-                    '-p',
-                    f'hostname:={mir_hostname}',
-                    '-p',
-                    f'port:={mir_port}',
-                    '-p',
-                    f'mir_type:={mir_type}',
-                    '-p',
-                    'enabled_pub_topics:=robot_pose odom',
-                    '-p',
-                    f'tf_prefix:={robot_name}',
-                ],
-                env,
-            )
+                    [
+                        ros_executable('mir_driver', 'mir_bridge'),
+                        '--ros-args',
+                        '-r',
+                        f'__ns:=/{robot_name}',
+                        '-p',
+                        f'hostname:={mir_hostname}',
+                        '-p',
+                        f'port:={mir_port}',
+                        '-p',
+                        f'mir_type:={mir_type}',
+                        '-p',
+                        'enabled_pub_topics:=b_raw_scan b_scan f_raw_scan f_scan scan robot_pose map map_metadata odom odom_enc tf tf_static',
+                        '-p',
+                        f'tf_prefix:={robot_name}',
+                    ],
+                    env,
+                )
             group.start(
                 'joy_node',
                 [
-                    'ros2',
-                    'run',
-                    'joy',
-                    'joy_node',
+                    ros_executable('joy', 'joy_node'),
                     '--ros-args',
                     '-r',
                     f'__ns:=/{robot_name}',
                     '-p',
                     f'device_id:={device_id}',
+                    '-p',
+                    f'device_name:={name}',
                     '-p',
                     f'deadzone:={joy_deadzone}',
                     '-p',
@@ -232,10 +271,7 @@ def run_supervisor(config):
             group.start(
                 'ds4_mir_teleop',
                 [
-                    'ros2',
-                    'run',
-                    'mur_mir_teleop',
-                    'ds4_mir_teleop',
+                    ros_executable('mur_mir_teleop', 'ds4_mir_teleop'),
                     '--ros-args',
                     *teleop_params(config),
                 ],

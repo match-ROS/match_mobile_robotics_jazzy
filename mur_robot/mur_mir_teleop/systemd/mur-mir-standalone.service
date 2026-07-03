@@ -7,6 +7,7 @@ Wants=bluetooth.service network-online.target
 Type=simple
 User=rosmatch
 Group=rosmatch
+SupplementaryGroups=input plugdev
 WorkingDirectory=/opt/mur-standalone/ws
 Environment=ROS_LOG_DIR=/opt/mur-standalone/log/ros
 Environment=PYTHONUNBUFFERED=1

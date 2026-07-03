@@ -24,6 +24,16 @@ teleop:
   r1_button: 5
   max_linear_mps: 0.25
   max_angular_radps: 0.45
+  initial_linear_mps: 0.10
+  initial_angular_radps: 0.20
+  min_linear_mps: 0.02
+  min_angular_radps: 0.05
+  limit_step_fraction: 0.05
+  # DS4 / Linux joystick mapping: square=0, cross=1, circle=2, triangle=3.
+  linear_increase_button: 3
+  linear_decrease_button: 1
+  angular_decrease_button: 0
+  angular_increase_button: 2
   deadzone: 0.10
   publish_rate_hz: 20.0
   joy_timeout_sec: 0.30

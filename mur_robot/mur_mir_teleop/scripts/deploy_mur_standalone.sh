@@ -109,7 +109,7 @@ sudo bash -lc "
   set +u
   source /opt/ros/jazzy/setup.bash
   set -u
-  colcon build --symlink-install --packages-up-to mur_mir_teleop
+  colcon build --symlink-install --packages-up-to sdc21x0 mur_mir_teleop
 "
 
 git_sha="$(git -C "${REPO_DIR}" rev-parse HEAD 2>/dev/null || echo unknown)"
