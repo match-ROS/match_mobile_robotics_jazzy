@@ -6,7 +6,6 @@ from rclpy.node import Node
 from std_srvs.srv import Trigger
 
 import mir_driver.rosbridge
-from mir_msgs.msg import LightCmd
 from mir_srvs.srv import ColorRGB, LightCommand
 
 
@@ -29,7 +28,6 @@ class RGBControl(Node):
         self.set_default_on_start = _as_bool(self.declare_parameter('set_default_on_start', False).value)
         self.robot = None
 
-        self.light_cmd_pub = self.create_publisher(LightCmd, 'new_light_cmd', 1)
         self.create_service(Trigger, 'RGB_control/rainbow_start', self.rainbow_start_callback)
         self.create_service(Trigger, 'RGB_control/rainbow_stop', self.rainbow_stop_callback)
         self.create_service(Trigger, 'RGB_control/match_color', self.match_color_callback)
@@ -78,20 +76,21 @@ class RGBControl(Node):
         return response
 
     def _send_command(self, effect, color1, color2, leds, token, timeout, priority):
-        msg = LightCmd()
-        msg.effect = effect
-        msg.color1 = color1
-        msg.color2 = color2
-        msg.leds = leds
-        msg.token = token
-        msg.timeout = float(timeout)
-        msg.priority = int(priority)
-        self.light_cmd_pub.publish(msg)
+        command = {
+            'command': effect,
+            'color1': color1,
+            'color2': color2,
+            'leds': leds,
+            'token': token,
+            'timeout': float(timeout),
+            'priority': int(priority),
+        }
 
         if not self.bridge_light_commands:
-            return True, 'published locally'
+            self.get_logger().info('MiR light command prepared locally: {}'.format(command))
+            return True, 'prepared locally'
 
-        return self._call_light_srv(msg)
+        return self._call_light_srv(command)
 
     def _ensure_robot(self):
         if self.robot is not None and self.robot.is_connected():
@@ -112,21 +111,12 @@ class RGBControl(Node):
             time.sleep(0.05)
         return False
 
-    def _call_light_srv(self, msg):
+    def _call_light_srv(self, args):
         if not self._ensure_robot():
             message = 'MiR rosbridge is not connected'
             self.get_logger().warning(message)
             return False, message
 
-        args = {
-            'command': msg.effect,
-            'color1': msg.color1,
-            'color2': msg.color2,
-            'leds': msg.leds,
-            'token': msg.token,
-            'timeout': msg.timeout,
-            'priority': msg.priority,
-        }
         try:
             response = self.robot.callService('/light_srv', msg=args, timeout=self.service_timeout)
         except Exception as exc:
@@ -144,9 +134,12 @@ class RGBControl(Node):
 def main(args=None):
     rclpy.init(args=args)
     node = RGBControl()
-    rclpy.spin(node)
-    node.destroy_node()
-    rclpy.shutdown()
+    try:
+        rclpy.spin(node)
+    finally:
+        node.destroy_node()
+        if rclpy.ok():
+            rclpy.shutdown()
 
 
 if __name__ == '__main__':
