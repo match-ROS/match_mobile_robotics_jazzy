@@ -10,7 +10,6 @@ Panels:
         - /MotionPlanning1
         - /TF1
         - /MarkerArray1
-        - /MarkerArray1/Status1
         - /LaserScan1
         - /LaserScan1/Topic1
       Splitter Ratio: 0.5
@@ -435,8 +434,6 @@ Visualization Manager:
         All Enabled: false
         base_footprint:
           Value: false
-        mur620/UR10_r/tool0:
-          Value: true
         mur620d/UR10_l/admittance_equilibrium_pose:
           Value: true
         mur620d/UR10_l/admittance_target_pose:
@@ -571,24 +568,6 @@ Visualization Manager:
           Value: true
         mur620d/virtual_laser_link:
           Value: true
-        oak:
-          Value: true
-        oak_imu_frame:
-          Value: true
-        oak_left_camera_frame:
-          Value: true
-        oak_left_camera_optical_frame:
-          Value: true
-        oak_model_origin:
-          Value: true
-        oak_rgb_camera_frame:
-          Value: true
-        oak_rgb_camera_optical_frame:
-          Value: true
-        oak_right_camera_frame:
-          Value: true
-        oak_right_camera_optical_frame:
-          Value: true
       Marker Scale: 0.4000000059604645
       Name: TF
       Show Arrows: true
@@ -697,10 +676,7 @@ Visualization Manager:
       Enabled: true
       Name: MarkerArray
       Namespaces:
-        UR10_r_forbidden_zones: true
-        UR10_r_nearest_collision_pair: true
-        UR10_r_other_collision_spheres: true
-        UR10_r_own_collision_spheres: true
+        {}
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -718,16 +694,16 @@ Visualization Manager:
       Channel Name: intensity
       Class: rviz_default_plugins/LaserScan
       Color: 255; 255; 255
-      Color Transformer: ""
-      Decay Time: 0
+      Color Transformer: Intensity
+      Decay Time: 0.10000000149011612
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 4096
+      Max Intensity: 115
       Min Color: 0; 0; 0
-      Min Intensity: 0
+      Min Intensity: 15
       Name: LaserScan
-      Position Transformer: ""
+      Position Transformer: XYZ
       Selectable: true
       Size (Pixels): 3
       Size (m): 0.05000000074505806
@@ -771,7 +747,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 14.554388046264648
+      Distance: 16.300914764404297
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -786,10 +762,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.7249999046325684
+      Pitch: 0.4650001525878906
       Target Frame: <Fixed Frame>
       Value: Orbit
-      Yaw: 6.113177299499512
+      Yaw: 5.988173007965088
     Saved: ~
 Window Geometry:
   Displays:
@@ -801,7 +777,7 @@ Window Geometry:
     collapsed: false
   MotionPlanning - Trajectory Slider:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd0000000100000000000002b40000051dfc0200000004fb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000004400fffffffb000000100044006900730070006c006100790073010000003f00000376000000cc00fffffffb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e006701000003bb000001a10000019600fffffffb0000000a0056006900650077007300000002bc000000a9000000a900ffffff000007460000051d00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000100000000000002b40000051dfc0200000004fb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000004400fffffffb000000100044006900730070006c006100790073010000003f00000376000000cc00fffffffb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e006701000003bb000001a1000001a100fffffffb0000000a0056006900650077007300000002bc000000a9000000a900ffffff000007460000051d00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Views:
     collapsed: false
   Width: 2560

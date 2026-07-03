@@ -272,6 +272,43 @@ add_auto_reverse_ip() {
   echo "MUR_REVERSE_IP: status=ok value=${reverse_ip}"
 }
 
+launch_arg_value() {
+  local key="$1"
+  local default_value="$2"
+  local arg
+  for arg in "${LAUNCH_ARGS[@]}"; do
+    if [[ "$arg" == "${key}:="* ]]; then
+      printf '%s\n' "${arg#*:=}"
+      return 0
+    fi
+  done
+  printf '%s\n' "$default_value"
+}
+
+configure_bms_can_interface() {
+  local launch_bms can_interface can_bitrate
+  launch_bms="$(launch_arg_value "launch_bms" "true")"
+  if [[ "$launch_bms" != "true" ]]; then
+    echo "MUR_BMS_CAN: status=skip reason=launch_bms_${launch_bms}"
+    return 0
+  fi
+
+  can_interface="$(launch_arg_value "bms_can_interface" "can0")"
+  can_bitrate="$(launch_arg_value "bms_can_bitrate" "250000")"
+  if [[ ! -e "/sys/class/net/${can_interface}" ]]; then
+    echo "MUR_BMS_CAN: status=warn issue=interface_missing interface=${can_interface}"
+    return 0
+  fi
+
+  echo "MUR_BMS_CAN: configuring interface=${can_interface} bitrate=${can_bitrate}"
+  if sudo -n ip link set "$can_interface" up type can bitrate "$can_bitrate"; then
+    ip -details link show "$can_interface" | sed 's/^/MUR_BMS_CAN: /'
+    echo "MUR_BMS_CAN: status=ok interface=${can_interface}"
+  else
+    echo "MUR_BMS_CAN: status=warn issue=configure_failed interface=${can_interface} detail=sudo_or_ip_link_failed"
+  fi
+}
+
 if ! has_launch_arg "robot_profile" "${LAUNCH_ARGS[@]}"; then
   LAUNCH_ARGS+=("robot_profile:=${ROBOT_PROFILE}")
 fi
@@ -287,6 +324,7 @@ if [[ "${MOVEIT_WITH_INTEGRATED_CARTESIAN}" == "true" ]]; then
   LAUNCH_ARGS+=("moveit_velocity_controller:=integrated_cartesian_admittance_controller")
 fi
 add_auto_reverse_ip
+configure_bms_can_interface
 
 echo "[start_mur620_hardware_logged] Starting launch..."
 printf '[start_mur620_hardware_logged] full command: ros2 launch %s %s' "$LAUNCH_PACKAGE" "$LAUNCH_FILE"
