@@ -106,6 +106,40 @@ def ros_service_available(service_name, env):
     return result.returncode == 0
 
 
+def ros_node_exists(node_name, env):
+    try:
+        result = subprocess.run(
+            ['ros2', 'node', 'list'],
+            check=False,
+            timeout=2.0,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    if result.returncode != 0:
+        return False
+    return node_name in {line.strip() for line in result.stdout.splitlines()}
+
+
+def mir_bridge_process_exists(robot_name):
+    try:
+        result = subprocess.run(
+            ['pgrep', '-af', 'mir_driver/lib/mir_driver/mir_bridge'],
+            check=False,
+            timeout=2.0,
+            capture_output=True,
+            text=True,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    if result.returncode != 0:
+        return False
+    namespace_arg = f'__ns:=/{robot_name}'
+    return any(namespace_arg in line for line in result.stdout.splitlines())
+
+
 def find_matching_joystick(patterns, known_addresses):
     known = {normalize_address(address) for address in known_addresses if normalize_address(address)}
     devices = sorted(glob.glob('/dev/input/js*'))
@@ -224,9 +258,14 @@ def run_supervisor(config):
         group = ProcessGroup()
         try:
             bridge_ready_service = f'/{robot_name}/mir_bridge_ready'
-            if ros_service_available(bridge_ready_service, env):
+            bridge_node = f'/{robot_name}/mir_bridge'
+            if (
+                ros_service_available(bridge_ready_service, env)
+                or ros_node_exists(bridge_node, env)
+                or mir_bridge_process_exists(robot_name)
+            ):
                 print(
-                    f'[mur_mir_standalone] using existing MiR bridge at {bridge_ready_service}',
+                    f'[mur_mir_standalone] using existing MiR bridge ({bridge_node})',
                     flush=True,
                 )
             else:
