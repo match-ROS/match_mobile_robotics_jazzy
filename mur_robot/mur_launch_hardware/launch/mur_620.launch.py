@@ -137,6 +137,7 @@ def declare_arguments():
         DeclareLaunchArgument('cartesian_admittance_max_angular_velocity', default_value='0.35'),
         DeclareLaunchArgument('use_integrated_cartesian_admittance_controller', default_value='false'),
         DeclareLaunchArgument('integrated_controller_initial_active', default_value='false'),
+        DeclareLaunchArgument('launch_integrated_cartesian_move_action', default_value='true'),
         DeclareLaunchArgument('integrated_controller_use_ft_sensor', default_value='false'),
         DeclareLaunchArgument('integrated_controller_require_wrench', default_value='false'),
         DeclareLaunchArgument('integrated_controller_command_timeout', default_value='0.12'),
@@ -854,6 +855,39 @@ def make_jparse_nodes(robot_name):
     )
 
 
+def make_integrated_cartesian_move_action_nodes(robot_name):
+    actions = []
+    for side in ('l', 'r'):
+        arm_name = f'UR10_{side}'
+        actions.append(
+            Node(
+                package='mur_control',
+                executable='integrated_cartesian_move_action_server.py',
+                name=f'{robot_name}_integrated_cartesian_move_{side}',
+                arguments=[
+                    '--robot-name', robot_name,
+                    '--arm', side,
+                    '--action-name', f'/{robot_name}/jparse_move_{side}',
+                    '--twist-topic',
+                    f'/{robot_name}/{arm_name}/integrated_cartesian_admittance_controller/equilibrium_twist_cmd',
+                    '--max-linear-velocity', LaunchConfiguration('integrated_controller_max_linear_velocity'),
+                    '--max-angular-velocity', LaunchConfiguration('integrated_controller_max_angular_velocity'),
+                ],
+                condition=IfCondition(AndSubstitution(
+                    LaunchConfiguration('use_integrated_cartesian_admittance_controller'),
+                    LaunchConfiguration('launch_integrated_cartesian_move_action'),
+                    LaunchConfiguration(f'launch_ur_{side}'),
+                )),
+                output='screen',
+            )
+        )
+
+    return TimerAction(
+        period=LaunchConfiguration('jparse_startup_delay'),
+        actions=actions,
+    )
+
+
 def make_cartesian_admittance_nodes(robot_name):
     actions = []
     for side in ('l', 'r'):
@@ -1115,6 +1149,7 @@ def launch_setup(context, *args, **kwargs):
         make_arm_velocity_safety_node(robot_name),
         make_moveit_controller_proxies(robot_name),
         make_jparse_nodes(robot_name),
+        make_integrated_cartesian_move_action_nodes(robot_name),
         make_cartesian_admittance_nodes(robot_name),
         make_moveit_launch(
             robot_name,

@@ -389,6 +389,12 @@ if [[ "${INTEGRATED_CARTESIAN_ACTIVE}" == "true" ]]; then
     "integrated_controller_use_ft_sensor:=${INTEGRATED_CARTESIAN_USE_FT}"
     "integrated_controller_require_wrench:=${INTEGRATED_CARTESIAN_REQUIRE_WRENCH}"
   )
+  if ! has_launch_arg "launch_jparse_idk" "${LAUNCH_ARGS[@]}"; then
+    LAUNCH_ARGS+=("launch_jparse_idk:=false")
+  fi
+  if ! has_launch_arg "launch_integrated_cartesian_move_action" "${LAUNCH_ARGS[@]}"; then
+    LAUNCH_ARGS+=("launch_integrated_cartesian_move_action:=true")
+  fi
 fi
 if [[ "${MOVEIT_WITH_INTEGRATED_CARTESIAN}" == "true" ]]; then
   LAUNCH_ARGS+=("moveit_velocity_controller:=integrated_cartesian_admittance_controller")

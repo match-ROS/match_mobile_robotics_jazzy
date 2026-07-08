@@ -102,6 +102,7 @@ install(FILES
 install(PROGRAMS
   scripts/diagnose_cartesian_admittance.py
   scripts/diagnose_integrated_cartesian_admittance_controller.py
+  scripts/integrated_cartesian_move_action_server.py
   scripts/integrated_cartesian_jog_gui.py
   scripts/jparse_move_action_server.py
   scripts/jparse_simple_goal.py
