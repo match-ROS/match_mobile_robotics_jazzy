@@ -113,6 +113,11 @@ def declare_arguments():
         DeclareLaunchArgument('ur_startup_stop_program', default_value='true'),
         DeclareLaunchArgument('ur_startup_play_program', default_value='true'),
         DeclareLaunchArgument('ur_startup_verify_program_running', default_value='true'),
+        DeclareLaunchArgument('ur_startup_program_running_wait_timeout', default_value='8.0'),
+        DeclareLaunchArgument('ur_startup_dashboard_play_retries', default_value='1'),
+        DeclareLaunchArgument('ur_startup_dashboard_play_retry_delay', default_value='2.0'),
+        DeclareLaunchArgument('ur_startup_set_mode_retries', default_value='1'),
+        DeclareLaunchArgument('ur_startup_recover_dashboard_blockers', default_value='true'),
         DeclareLaunchArgument('initial_joint_controller', default_value='forward_velocity_controller'),
         DeclareLaunchArgument('activate_joint_controller', default_value='true'),
         DeclareLaunchArgument('launch_trajectory_until_node', default_value='false'),
@@ -505,6 +510,15 @@ def make_ur_driver(side, robot_name, controllers_file, update_rate_config_file, 
                     'stop_program': LaunchConfiguration('ur_startup_stop_program'),
                     'play_program': LaunchConfiguration('ur_startup_play_program'),
                     'verify_program_running': LaunchConfiguration('ur_startup_verify_program_running'),
+                    'program_running_wait_timeout':
+                        LaunchConfiguration('ur_startup_program_running_wait_timeout'),
+                    'dashboard_play_retries':
+                        LaunchConfiguration('ur_startup_dashboard_play_retries'),
+                    'dashboard_play_retry_delay':
+                        LaunchConfiguration('ur_startup_dashboard_play_retry_delay'),
+                    'set_mode_retries': LaunchConfiguration('ur_startup_set_mode_retries'),
+                    'recover_dashboard_blockers':
+                        LaunchConfiguration('ur_startup_recover_dashboard_blockers'),
                 }],
             ),
         ],
@@ -874,8 +888,10 @@ def make_integrated_cartesian_move_action_nodes(robot_name):
                     '--max-angular-velocity', LaunchConfiguration('integrated_controller_max_angular_velocity'),
                 ],
                 condition=IfCondition(AndSubstitution(
-                    LaunchConfiguration('use_integrated_cartesian_admittance_controller'),
-                    LaunchConfiguration('launch_integrated_cartesian_move_action'),
+                    AndSubstitution(
+                        LaunchConfiguration('use_integrated_cartesian_admittance_controller'),
+                        LaunchConfiguration('launch_integrated_cartesian_move_action'),
+                    ),
                     LaunchConfiguration(f'launch_ur_{side}'),
                 )),
                 output='screen',
