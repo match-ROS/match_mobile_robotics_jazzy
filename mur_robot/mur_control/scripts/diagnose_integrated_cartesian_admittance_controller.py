@@ -110,8 +110,16 @@ def fmt(values):
     return '[' + ' '.join(f'{value:.4f}' for value in values) + ']'
 
 
+def vector_norm(values):
+    return math.sqrt(sum(value * value for value in values if math.isfinite(value)))
+
+
+def diff_norm(a, b):
+    return vector_norm([left - right for left, right in zip(a, b)])
+
+
 def limit_norm(values, limit):
-    magnitude = math.sqrt(sum(value * value for value in values))
+    magnitude = vector_norm(values)
     if limit <= 0.0 or magnitude <= limit or magnitude < 1.0e-12:
         return values
     return [value * limit / magnitude for value in values]
@@ -332,6 +340,21 @@ class IntegratedCartesianDiagnoser(Node):
         service = f'{self.controller_ns}/get_parameters'
         client = self.create_client(GetParameters, service)
         names = [
+            'use_ft_sensor',
+            'require_wrench',
+            'wrench_in_tcp_frame',
+            'reset_equilibrium_on_zero_command',
+            'admittance',
+            'wrench_twist_gain',
+            'pose_error_gain',
+            'inverse_mode',
+            'gamma',
+            'damping',
+            'singular_gain_position',
+            'singular_gain_angular',
+            'max_linear_velocity',
+            'max_angular_velocity',
+            'command_timeout',
             'enable_collision_avoidance',
             'collision_common_link',
             'collision_other_prefix',
@@ -356,7 +379,7 @@ class IntegratedCartesianDiagnoser(Node):
         if not future.done() or future.result() is None:
             self._print(f'\nParameter service did not answer: {service}')
             return
-        self._print('\n--- Collision Parameters ---')
+        self._print('\n--- Controller Parameters ---')
         for name, value in zip(names, future.result().values):
             parsed = self.parameter_value_to_python(value)
             self.controller_parameters[name] = parsed
@@ -484,6 +507,25 @@ class IntegratedCartesianDiagnoser(Node):
         if len(debug) < 21:
             return
         self._print('\n--- Latest debug_twist decoded ---')
+        target_twist = debug[1:7]
+        achieved_twist = debug[7:13]
+        target_linear_norm = vector_norm(target_twist[:3])
+        target_angular_norm = vector_norm(target_twist[3:])
+        achieved_linear_norm = vector_norm(achieved_twist[:3])
+        achieved_angular_norm = vector_norm(achieved_twist[3:])
+        self._print(
+            f'  target_twist:   {fmt(target_twist)} '
+            f'(lin={target_linear_norm:.4f}, ang={target_angular_norm:.4f})'
+        )
+        self._print(
+            f'  achieved_twist: {fmt(achieved_twist)} '
+            f'(lin={achieved_linear_norm:.4f}, ang={achieved_angular_norm:.4f})'
+        )
+        if len(debug) >= 15:
+            self._print(
+                f'  collision: min_clearance={debug[13]:.4f}, scale={debug[14]:.4f}, '
+                f'status={self.topics["collision_status"].last_text or "unknown"}'
+            )
         if len(debug) >= 38:
             safety = {
                 'velocity_scale': debug[13 + 2],
@@ -509,9 +551,46 @@ class IntegratedCartesianDiagnoser(Node):
             self._print(f'  qdot raw:       {fmt(qdot_raw)}')
             self._print(f'  qdot collision: {fmt(qdot_collision)}')
             self._print(f'  qdot safety:    {fmt(qdot_safety)}')
+            collision_delta = diff_norm(qdot_raw, qdot_collision)
+            safety_delta = diff_norm(qdot_collision, qdot_safety)
+            self._print(
+                f'  qdot deltas: collision={collision_delta:.6f}, safety={safety_delta:.6f}'
+            )
         else:
             qdot_offset = 15 if len(debug) >= 21 else 13
             self._print(f'  legacy qdot: {fmt(debug[qdot_offset:qdot_offset + 6])}')
+
+        threshold = self.args.angular_warning_threshold
+        latest_input = self.topics['input'].samples[-1] if self.topics['input'].samples else None
+        input_angular_norm = vector_norm(latest_input[3:]) if latest_input else 0.0
+        input_linear_norm = vector_norm(latest_input[:3]) if latest_input else 0.0
+        self._print('\n--- Motion coupling checks ---')
+        if latest_input is not None:
+            self._print(
+                f'  latest_input:   {fmt(latest_input)} '
+                f'(lin={input_linear_norm:.4f}, ang={input_angular_norm:.4f})'
+            )
+        if latest_input is None and (target_linear_norm > threshold or target_angular_norm > threshold):
+            self._print(
+                '* Controller is producing a nonzero target_twist without a fresh input command. '
+                'For jog tests this usually means the equilibrium pose is stale or admittance/force '
+                'feedback is still pulling the TCP.'
+            )
+        if input_angular_norm <= threshold and target_angular_norm > threshold:
+            self._print(
+                '* Angular target_twist is present although the latest input has no angular command. '
+                'This comes from pose-error/admittance feedback inside the controller, not from the GUI button.'
+            )
+        if target_angular_norm <= threshold and achieved_angular_norm > threshold:
+            self._print(
+                '* Target angular twist is near zero but achieved angular twist is not. '
+                'That points to inverse kinematics, collision projection, or safety limiting coupling.'
+            )
+        if self.topics['collision_status'].last_text == 'limited':
+            self._print(
+                '* Collision avoidance is actively limiting this arm. It can alter qdot in joint space '
+                'and therefore change the achieved TCP orientation during nominal X/Y motion.'
+            )
 
     def write_json_summary(self):
         self.json_path.parent.mkdir(parents=True, exist_ok=True)
@@ -563,6 +642,7 @@ def parse_args():
     parser.add_argument('--collision-min-clearance-topic')
     parser.add_argument('--joint-states-topic')
     parser.add_argument('--controller-timeout', type=float, default=2.0)
+    parser.add_argument('--angular-warning-threshold', type=float, default=0.02)
     parser.add_argument('--log-dir', default='~/integrated_cartesian_admittance_diagnostics')
     parser.add_argument(
         '--log-file',
