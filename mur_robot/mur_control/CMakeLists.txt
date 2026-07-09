@@ -57,6 +57,9 @@ ament_target_dependencies(cartesian_admittance_controller
 add_library(integrated_cartesian_admittance_controller SHARED
   src/integrated_cartesian_admittance_controller.cpp
 )
+target_include_directories(integrated_cartesian_admittance_controller
+  PRIVATE include
+)
 ament_target_dependencies(integrated_cartesian_admittance_controller
   controller_interface
   geometry_msgs
@@ -120,8 +123,22 @@ install(DIRECTORY
   DESTINATION share/${PROJECT_NAME}
 )
 
+install(DIRECTORY
+  include/
+  DESTINATION include
+)
+
 if(BUILD_TESTING)
+  find_package(ament_cmake_gtest REQUIRED)
   find_package(ament_lint_auto REQUIRED)
+
+  ament_add_gtest(test_collision_response
+    test/test_collision_response.cpp
+  )
+  target_include_directories(test_collision_response
+    PRIVATE include
+  )
+
   set(ament_cmake_copyright_FOUND TRUE)
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()

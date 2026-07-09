@@ -118,6 +118,14 @@ def diff_norm(a, b):
     return vector_norm([left - right for left, right in zip(a, b)])
 
 
+def direction_cosine(a, b):
+    norm_a = vector_norm(a)
+    norm_b = vector_norm(b)
+    if norm_a <= 1.0e-12 or norm_b <= 1.0e-12:
+        return None
+    return sum(left * right for left, right in zip(a, b)) / (norm_a * norm_b)
+
+
 def limit_norm(values, limit):
     magnitude = vector_norm(values)
     if limit <= 0.0 or magnitude <= limit or magnitude < 1.0e-12:
@@ -170,6 +178,10 @@ class IntegratedCartesianDiagnoser(Node):
             'collision_min_clearance': TopicState(
                 args.collision_min_clearance_topic or f'{self.controller_ns}/collision_min_clearance'
             ),
+            'collision_nearest_source': TopicState(
+                args.collision_nearest_source_topic
+                or f'{self.controller_ns}/collision_nearest_source'
+            ),
             'collision_status': TopicState(
                 args.collision_status_topic or f'{self.controller_ns}/collision_status'
             ),
@@ -207,7 +219,18 @@ class IntegratedCartesianDiagnoser(Node):
             self._cb('collision_min_clearance', float_value),
             10,
         )
-        self.create_subscription(String, self.topics['collision_status'].name, self._string_cb('collision_status'), 10)
+        self.create_subscription(
+            String,
+            self.topics['collision_nearest_source'].name,
+            self._string_cb('collision_nearest_source'),
+            10,
+        )
+        self.create_subscription(
+            String,
+            self.topics['collision_status'].name,
+            self._string_cb('collision_status'),
+            10,
+        )
         self.create_subscription(JointState, self.topics['joint_states'].name, self._joint_cb, rclpy.qos.qos_profile_sensor_data)
         self.test_pub = self.create_publisher(TwistStamped, self.topics['input'].name, 10)
         self.next_test_publish_time = 0.0
@@ -368,6 +391,7 @@ class IntegratedCartesianDiagnoser(Node):
             'collision_sphere_radius',
             'collision_activation_clearance',
             'collision_stop_clearance',
+            'collision_response_mode',
             'collision_joint_state_timeout',
             'collision_fail_safe_stop',
         ]
@@ -445,6 +469,7 @@ class IntegratedCartesianDiagnoser(Node):
                     'singular_values',
                     'filtered_wrench',
                     'collision_status',
+                    'collision_nearest_source',
                     'collision_min_clearance',
                     'joint_states',
                 )
@@ -493,6 +518,10 @@ class IntegratedCartesianDiagnoser(Node):
             self._print('* No collision_status received. Check whether collision avoidance is enabled and the controller is configured.')
         elif self.topics['collision_status'].last_text == 'stale_other_arm':
             self._print('* Collision status is stale_other_arm: start both arms or disable collision avoidance for one-arm tests.')
+        if self.topics['collision_nearest_source'].last_text:
+            self._print(
+                f'* Nearest collision source: {self.topics["collision_nearest_source"].last_text}'
+            )
         if self.topics['collision_min_clearance'].samples:
             clearance = self.topics['collision_min_clearance'].samples[-1][0]
             if clearance < 0.0:
@@ -522,9 +551,11 @@ class IntegratedCartesianDiagnoser(Node):
             f'(lin={achieved_linear_norm:.4f}, ang={achieved_angular_norm:.4f})'
         )
         if len(debug) >= 15:
+            source = self.topics['collision_nearest_source'].last_text or 'unknown'
             self._print(
                 f'  collision: min_clearance={debug[13]:.4f}, scale={debug[14]:.4f}, '
-                f'status={self.topics["collision_status"].last_text or "unknown"}'
+                f'status={self.topics["collision_status"].last_text or "unknown"}, '
+                f'source={source}'
             )
         if len(debug) >= 38:
             safety = {
@@ -553,9 +584,14 @@ class IntegratedCartesianDiagnoser(Node):
             self._print(f'  qdot safety:    {fmt(qdot_safety)}')
             collision_delta = diff_norm(qdot_raw, qdot_collision)
             safety_delta = diff_norm(qdot_collision, qdot_safety)
+            collision_direction = direction_cosine(qdot_raw, qdot_collision)
             self._print(
                 f'  qdot deltas: collision={collision_delta:.6f}, safety={safety_delta:.6f}'
             )
+            if collision_direction is not None:
+                self._print(
+                    f'  qdot collision direction cosine={collision_direction:.4f}'
+                )
         else:
             qdot_offset = 15 if len(debug) >= 21 else 13
             self._print(f'  legacy qdot: {fmt(debug[qdot_offset:qdot_offset + 6])}')
@@ -588,8 +624,11 @@ class IntegratedCartesianDiagnoser(Node):
             )
         if self.topics['collision_status'].last_text == 'limited':
             self._print(
-                '* Collision avoidance is actively limiting this arm. It can alter qdot in joint space '
-                'and therefore change the achieved TCP orientation during nominal X/Y motion.'
+                '* Collision avoidance is actively limiting this arm. With '
+                'collision_response_mode=scale qdot_collision should stay parallel to '
+                'qdot_raw; '
+                'if the direction cosine is far below '
+                '1.0, inspect response mode, collision geometry, and RViz markers.'
             )
 
     def write_json_summary(self):
@@ -639,6 +678,7 @@ def parse_args():
     parser.add_argument('--equilibrium-pose-topic')
     parser.add_argument('--target-pose-topic')
     parser.add_argument('--collision-status-topic')
+    parser.add_argument('--collision-nearest-source-topic')
     parser.add_argument('--collision-min-clearance-topic')
     parser.add_argument('--joint-states-topic')
     parser.add_argument('--controller-timeout', type=float, default=2.0)

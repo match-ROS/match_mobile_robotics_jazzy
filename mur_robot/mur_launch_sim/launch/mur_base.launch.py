@@ -137,6 +137,7 @@ def declare_args():
         DeclareLaunchArgument('integrated_controller_collision_sphere_radius', default_value='0.04'),
         DeclareLaunchArgument('integrated_controller_collision_activation_clearance', default_value='0.08'),
         DeclareLaunchArgument('integrated_controller_collision_stop_clearance', default_value='0.035'),
+        DeclareLaunchArgument('integrated_controller_collision_response_mode', default_value='scale'),
         DeclareLaunchArgument('integrated_controller_collision_fail_safe_stop', default_value='true'),
         DeclareLaunchArgument('integrated_controller_collision_forbidden_boxes', default_value='default'),
         DeclareLaunchArgument('integrated_controller_publish_collision_markers', default_value='false'),

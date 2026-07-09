@@ -71,11 +71,15 @@ def collision_forbidden_boxes(side, forbidden_box_arg):
         return []
     if forbidden_box_arg.lower() != "default":
         return parse_semicolon_list(forbidden_box_arg)
+    opposite_side = "r" if side == "l" else "l"
+    lift_columns = {
+        "l": "UR10_l_lift_column:0.52,0.318,0.665:0.36,0.24,0.65",
+        "r": "UR10_r_lift_column:0.52,-0.318,0.665:0.36,0.24,0.65",
+    }
     return [
         "mir_chassis:0.0,0.0,0.25:1.00,0.68,0.50",
         "mir_top_surface_center:0.0,0.0,0.795:1.42,0.98,0.08",
-        "UR10_l_lift_column:0.52,0.318,0.665:0.36,0.24,0.65",
-        "UR10_r_lift_column:0.52,-0.318,0.665:0.36,0.24,0.65",
+        lift_columns[opposite_side],
     ]
 
 
@@ -231,6 +235,9 @@ def make_integrated_controller_params(
             ),
             "collision_stop_clearance": float(
                 launch_value(context, "integrated_controller_collision_stop_clearance")
+            ),
+            "collision_response_mode": launch_value(
+                context, "integrated_controller_collision_response_mode"
             ),
             "collision_fail_safe_stop": launch_bool(
                 context, "integrated_controller_collision_fail_safe_stop"

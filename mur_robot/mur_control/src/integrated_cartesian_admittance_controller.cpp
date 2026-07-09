@@ -37,6 +37,8 @@
 #include <tf2_ros/transform_broadcaster.h>
 #include <visualization_msgs/msg/marker_array.hpp>
 
+#include "mur_control/collision_response.hpp"
+
 namespace mur_control
 {
 namespace
@@ -426,6 +428,8 @@ public:
         0.0, auto_declare<double>("collision_activation_clearance", 0.12));
       collision_stop_clearance_ = std::max(
         0.0, auto_declare<double>("collision_stop_clearance", 0.04));
+      collision_response_mode_ = parse_collision_response_mode(
+        auto_declare<std::string>("collision_response_mode", "scale"));
       collision_fail_safe_stop_ = auto_declare<bool>("collision_fail_safe_stop", true);
       publish_collision_markers_ = auto_declare<bool>("publish_collision_markers", false);
       collision_marker_publish_rate_hz_ = std::max(
@@ -568,6 +572,8 @@ public:
       get_node()->create_publisher<std_msgs::msg::Float64>("~/collision_min_clearance", 10);
     collision_status_pub_ =
       get_node()->create_publisher<std_msgs::msg::String>("~/collision_status", 10);
+    collision_nearest_source_pub_ =
+      get_node()->create_publisher<std_msgs::msg::String>("~/collision_nearest_source", 10);
     if (publish_collision_markers_) {
       collision_markers_pub_ =
         get_node()->create_publisher<visualization_msgs::msg::MarkerArray>(
@@ -577,10 +583,11 @@ public:
 
     RCLCPP_INFO(
       get_node()->get_logger(),
-      "Configured integrated Cartesian controller for %s: %s -> %s, joints=%zu, ft=%s, collision=%s",
+      "Configured integrated Cartesian controller for %s: %s -> %s, joints=%zu, ft=%s, collision=%s, collision_response=%s",
       prefix_.c_str(), base_link_.c_str(), tip_link_.c_str(), joint_names_.size(),
       use_ft_sensor_ ? "enabled" : "disabled",
-      enable_collision_avoidance_ ? "enabled" : "disabled");
+      enable_collision_avoidance_ ? "enabled" : "disabled",
+      collision_response_mode_name(collision_response_mode_).c_str());
     return CallbackReturn::SUCCESS;
   }
 
@@ -1274,6 +1281,7 @@ private:
     latest_other_collision_points_.clear();
     latest_nearest_own_collision_point_ = tf2::Vector3(0.0, 0.0, 0.0);
     latest_nearest_other_collision_point_ = tf2::Vector3(0.0, 0.0, 0.0);
+    latest_collision_nearest_source_ = "none";
     latest_collision_points_valid_ = false;
   }
 
@@ -1353,6 +1361,7 @@ private:
     double min_clearance = std::numeric_limits<double>::infinity();
     tf2::Vector3 nearest_own;
     tf2::Vector3 nearest_other;
+    std::string nearest_source = "none";
     for (const auto & own_point : own_points) {
       for (const auto & other_point : other_points) {
         const double point_clearance =
@@ -1361,6 +1370,7 @@ private:
           min_clearance = point_clearance;
           nearest_own = own_point;
           nearest_other = other_point;
+          nearest_source = "other_arm";
         }
       }
     }
@@ -1373,6 +1383,7 @@ private:
           min_clearance = box_clearance;
           nearest_own = own_point;
           nearest_other = nearest_box_point;
+          nearest_source = box.name;
         }
       }
     }
@@ -1388,6 +1399,7 @@ private:
       latest_other_collision_points_ = other_points;
       latest_nearest_own_collision_point_ = nearest_own;
       latest_nearest_other_collision_point_ = nearest_other;
+      latest_collision_nearest_source_ = nearest_source;
       latest_collision_points_valid_ = true;
     }
     return true;
@@ -1462,47 +1474,12 @@ private:
       }
     }
 
-    double gradient_norm_sq = 0.0;
-    double closing_speed = 0.0;
-    for (std::size_t i = 0; i < std::min(gradient.size(), qdot.size()); ++i) {
-      gradient_norm_sq += gradient[i] * gradient[i];
-      closing_speed += gradient[i] * qdot[i];
-    }
-
-    if (gradient_norm_sq <= 1.0e-12) {
-      latest_collision_status_ = clearance < 0.0 ? "blocked" : "clear";
-      latest_collision_scale_ = clearance < 0.0 ? 0.0 : 1.0;
-      return clearance < 0.0 ? std::vector<double>(qdot.size(), 0.0) : qdot;
-    }
-
-    if (closing_speed >= 0.0) {
-      latest_collision_status_ = clearance < 0.0 ? "penetrating" : "clear";
-      return qdot;
-    }
-
-    if (clearance <= collision_stop_clearance_) {
-      latest_collision_status_ = "blocked";
-      latest_collision_scale_ = 0.0;
-      return std::vector<double>(qdot.size(), 0.0);
-    }
-
-    const double projection = closing_speed / gradient_norm_sq;
-    for (std::size_t i = 0; i < std::min(gradient.size(), qdot.size()); ++i) {
-      qdot[i] -= projection * gradient[i];
-    }
-
-    latest_collision_status_ = "limited";
-    latest_collision_scale_ = 0.0;
-    const double original_norm = std::abs(closing_speed);
-    double residual_closing = 0.0;
-    for (std::size_t i = 0; i < std::min(gradient.size(), qdot.size()); ++i) {
-      residual_closing += gradient[i] * qdot[i];
-    }
-    if (original_norm > 1.0e-12) {
-      latest_collision_scale_ = std::clamp(
-        1.0 - std::abs(residual_closing) / original_norm, 0.0, 1.0);
-    }
-    return qdot;
+    const CollisionResponse response = limit_collision_qdot(
+      qdot, gradient, clearance, collision_stop_clearance_,
+      collision_activation_clearance_, collision_response_mode_);
+    latest_collision_status_ = response.status;
+    latest_collision_scale_ = response.scale;
+    return response.qdot;
   }
 
   double sanitized_dt(const rclcpp::Time & time, const rclcpp::Duration & period)
@@ -1901,6 +1878,10 @@ private:
     std_msgs::msg::String status_msg;
     status_msg.data = latest_collision_status_;
     collision_status_pub_->publish(status_msg);
+
+    std_msgs::msg::String source_msg;
+    source_msg.data = latest_collision_nearest_source_;
+    collision_nearest_source_pub_->publish(source_msg);
   }
 
   std::string collision_marker_frame() const
@@ -2144,6 +2125,7 @@ private:
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr target_pose_pub_;
   rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr collision_min_clearance_pub_;
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr collision_status_pub_;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr collision_nearest_source_pub_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr collision_markers_pub_;
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 
@@ -2172,6 +2154,7 @@ private:
   double collision_activation_clearance_{0.12};
   double collision_stop_clearance_{0.04};
   double collision_marker_publish_rate_hz_{10.0};
+  CollisionResponseMode collision_response_mode_{CollisionResponseMode::Scale};
   bool require_wrench_{false};
   bool use_ft_sensor_{false};
   bool wrench_in_tcp_frame_{true};
@@ -2234,6 +2217,7 @@ private:
   double latest_safety_limiting_joint_index_{-1.0};
   double latest_safety_limiting_stage_{0.0};
   std::string latest_collision_status_{"disabled"};
+  std::string latest_collision_nearest_source_{"none"};
 };
 
 }  // namespace mur_control
