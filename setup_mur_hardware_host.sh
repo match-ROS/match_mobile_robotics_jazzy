@@ -91,6 +91,131 @@ route_src_ip() {
   }'
 }
 
+check_ur_dashboard_state() {
+  local host="$1"
+  local ip="$2"
+  local port="$3"
+  local output rc
+  set +e
+  output="$(python3 - "$host" "$ip" "$port" <<'PYDASH'
+import socket
+import sys
+
+host, ip, port_s = sys.argv[1:4]
+port = int(port_s)
+timeout = 2.0
+commands = [
+    "robotmode",
+    "safetystatus",
+    "safetymode",
+    "programState",
+    "is in remote control",
+    "get loaded program",
+]
+blocking_safety_tokens = (
+    "PROTECTIVE_STOP",
+    "ROBOT_EMERGENCY_STOP",
+    "SYSTEM_EMERGENCY_STOP",
+    "SAFEGUARD_STOP",
+    "FAULT",
+    "VIOLATION",
+    "RECOVERY",
+)
+
+
+def emit(line):
+    print(line, flush=True)
+
+
+def quote_value(value):
+    return str(value).replace("\\", "\\\\").replace("'", "_")
+
+try:
+    sock = socket.create_connection((ip, port), timeout=timeout)
+    sock.settimeout(timeout)
+    file = sock.makefile("rwb", buffering=0)
+    banner = file.readline().decode("utf-8", errors="replace").strip()
+except OSError as exc:
+    emit(
+        "MUR_HOST_CHECK: status=fail issue=ur_network "
+        f"host={host} ip={ip} port={port} detail=dashboard_unreachable error='{quote_value(exc)}'"
+    )
+    emit(
+        "MUR_HOST_CHECK_DIAGNOSIS: severity=error "
+        f"host={host} problem='UR dashboard unreachable' "
+        "action='Check robot power, network cable/IP/name resolution, and that PolyScope is booted.'"
+    )
+    sys.exit(3)
+
+answers = {}
+try:
+    emit(f"MUR_HOST_CHECK: status=ok issue=ur_network host={host} ip={ip} port={port}")
+    if banner:
+        emit(f"MUR_HOST_CHECK: dashboard host={host} banner='{quote_value(banner)}'")
+    for command in commands:
+        file.write((command + "\n").encode("utf-8"))
+        answer = file.readline().decode("utf-8", errors="replace").strip()
+        answers[command] = answer
+        key = command.replace(" ", "_")
+        emit(f"MUR_HOST_CHECK: dashboard host={host} {key}='{quote_value(answer)}'")
+finally:
+    try:
+        file.close()
+    except Exception:
+        pass
+    try:
+        sock.close()
+    except Exception:
+        pass
+
+text = "\n".join(answers.values()).upper()
+blocking = False
+if any(token in text for token in blocking_safety_tokens):
+    blocking = True
+    emit(f"MUR_HOST_CHECK: status=fail issue=ur_safety host={host} detail=protective_or_safety_stop")
+    emit(
+        "MUR_HOST_CHECK_DIAGNOSIS: severity=error "
+        f"host={host} problem='Robot in Protective Stop or Safety Stop' "
+        "action='Inspect the robot cell, release the stop on the pendant, then unlock/close safety popup before starting the driver.'"
+    )
+
+remote = answers.get("is in remote control", "").strip().lower()
+if remote in ("false", "remote control: false", "is in remote control: false"):
+    blocking = True
+    emit(f"MUR_HOST_CHECK: status=fail issue=ur_remote_control host={host} detail=robot_not_in_remote_control_mode")
+    emit(
+        "MUR_HOST_CHECK_DIAGNOSIS: severity=error "
+        f"host={host} problem='Robot not in remote control mode' "
+        "action='On the UR pendant switch PolyScope/Operational Mode to Remote Control, then rerun Check Host.'"
+    )
+elif "unknown command" in remote or "not supported" in remote:
+    emit(f"MUR_HOST_CHECK: status=warn issue=ur_remote_control host={host} detail=dashboard_command_unsupported")
+elif remote in ("true", "remote control: true", "is in remote control: true"):
+    emit(f"MUR_HOST_CHECK: status=ok issue=ur_remote_control host={host}")
+
+robotmode = answers.get("robotmode", "")
+if robotmode and not any(state in robotmode.upper() for state in ("RUNNING", "IDLE")):
+    blocking = True
+    emit(f"MUR_HOST_CHECK: status=fail issue=ur_robotmode host={host} detail='{quote_value(robotmode)}'")
+    emit(
+        "MUR_HOST_CHECK_DIAGNOSIS: severity=error "
+        f"host={host} problem='Robot mode is not RUNNING/IDLE' "
+        "action='Power on and brake-release the UR on the pendant before starting the driver.'"
+    )
+
+if not blocking:
+    emit(f"MUR_HOST_CHECK: status=ok issue=ur_dashboard_state host={host}")
+sys.exit(4 if blocking else 0)
+PYDASH
+)"
+  rc=$?
+  set -e
+  if [[ -n "$output" ]]; then
+    printf '%s\n' "$output"
+  fi
+  return "$rc"
+}
+
 apply_setup() {
   if ! getent group dialout >/dev/null; then
     echo "MUR_HOST_SETUP: creating group dialout"
@@ -206,10 +331,7 @@ if [[ "$CHECK_UR_NETWORK" == "true" ]]; then
     else
       echo "MUR_HOST_CHECK: status=ok issue=ur_reverse_route host=${host} ip=${resolved} src=${route_src}"
     fi
-    if timeout 1 bash -c "</dev/tcp/${resolved}/${UR_DASHBOARD_PORT}" >/dev/null 2>&1; then
-      echo "MUR_HOST_CHECK: status=ok issue=ur_network host=${host} ip=${resolved} port=${UR_DASHBOARD_PORT}"
-    else
-      echo "MUR_HOST_CHECK: status=fail issue=ur_network host=${host} ip=${resolved} port=${UR_DASHBOARD_PORT} detail=dashboard_unreachable"
+    if ! check_ur_dashboard_state "$host" "$resolved" "$UR_DASHBOARD_PORT"; then
       blocking=1
     fi
   done

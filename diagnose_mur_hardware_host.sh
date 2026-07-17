@@ -9,10 +9,18 @@ SETUP_SCRIPT="${REPO}/setup_mur_hardware_host.sh"
 echo "MUR_DIAG: host=$(hostname) user=$(id -un) date=$(date --iso-8601=seconds)"
 echo "MUR_DIAG: ws=${WS}"
 echo "MUR_DIAG: log=${LOG_FILE}"
+if [[ -z "${MUR_CHECK_UR_NETWORK:-}" ]]; then
+  export MUR_CHECK_UR_NETWORK=true
+fi
+if [[ -z "${MUR_EXPECTED_REVERSE_IP:-}" && "$(hostname)" == "mur620d" ]]; then
+  export MUR_EXPECTED_REVERSE_IP=192.168.12.69
+fi
+echo "MUR_DIAG: ur_network_check=${MUR_CHECK_UR_NETWORK} hosts=${MUR_UR_HOSTS:-UR10_l UR10_r} expected_reverse_ip=${MUR_EXPECTED_REVERSE_IP:-unset}"
 echo
 
+setup_rc=0
 if [[ -x "$SETUP_SCRIPT" ]]; then
-  "$SETUP_SCRIPT" --check || true
+  "$SETUP_SCRIPT" --check || setup_rc=$?
 else
   echo "MUR_DIAG: status=warn issue=setup_script_missing path=${SETUP_SCRIPT}"
 fi
@@ -59,12 +67,14 @@ fi
 if grep -Eqi 'ROBOT_EMERGENCY_STOP|EM-Stop|SetMode goal was rejected|UR SetMode failed|Transition to target mode failed' "$LOG_FILE"; then
   ur_estop_count="$(grep -Ein 'ROBOT_EMERGENCY_STOP|EM-Stop|SetMode goal was rejected|UR SetMode failed|Transition to target mode failed' "$LOG_FILE" | wc -l)"
   echo "MUR_DIAG_ISSUE: severity=error type=ur_emergency_stop_or_setmode count=${ur_estop_count}"
+  echo "MUR_DIAG_DIAGNOSIS: severity=error problem='Robot in Emergency Stop or UR SetMode rejected' action='Release EM-stop/safety condition on pendant, then rerun Check Host.'"
   grep -Ein 'ROBOT_EMERGENCY_STOP|EM-Stop|SetMode goal was rejected|UR SetMode failed|Transition to target mode failed' "$LOG_FILE" | tail -n 10 | sed 's/^/MUR_DIAG_DETAIL: /'
 fi
 
 if grep -Eqi 'PROTECTIVE_STOP|C161A0|Dashboard play failed|Failed to execute: play|UR program is not running yet' "$LOG_FILE"; then
   ur_protective_count="$(grep -Ein 'PROTECTIVE_STOP|C161A0|Dashboard play failed|Failed to execute: play|UR program is not running yet' "$LOG_FILE" | wc -l)"
   echo "MUR_DIAG_ISSUE: severity=error type=ur_protective_stop_or_play_failed count=${ur_protective_count}"
+  echo "MUR_DIAG_DIAGNOSIS: severity=error problem='Robot in Protective Stop or Dashboard play failed' action='Check the UR pendant for Protective Stop/Safety popup; unlock/close it and ensure Remote Control is enabled.'"
   grep -Ein 'PROTECTIVE_STOP|C161A0|Dashboard play failed|Failed to execute: play|UR program is not running yet' "$LOG_FILE" | tail -n 12 | sed 's/^/MUR_DIAG_DETAIL: /'
 fi
 
@@ -102,3 +112,10 @@ if [[ "$serial_count" -eq 0 && "$ur_estop_count" -eq 0 && "$ur_protective_count"
 else
   echo "MUR_DIAG: summary=known_issues_found serial=${serial_count} ur=${ur_estop_count} ur_protective=${ur_protective_count} ur_reverse=${ur_reverse_count} realtime=${realtime_count} bms_ignored=${bms_count} octomap_info=${octomap_count} lift_state=${ewellix_state_count}"
 fi
+
+if [[ "$setup_rc" -ne 0 ]]; then
+  echo "MUR_DIAG: result=fail reason=host_check_blocking setup_exit=${setup_rc}"
+  exit "$setup_rc"
+fi
+
+echo "MUR_DIAG: result=ok reason=no_blocking_host_check"
