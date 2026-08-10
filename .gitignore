@@ -24,3 +24,9 @@ htmlcov/
 # Local test suites created during development; tracked project tests remain tracked.
 **/test/
 **/tests/
+**/test_*.py
+**/*_test.py
+**/test_*.cpp
+**/*_test.cpp
+**/test_*.cc
+**/*_test.cc
