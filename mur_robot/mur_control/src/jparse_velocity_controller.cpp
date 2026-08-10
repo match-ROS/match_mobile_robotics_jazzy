@@ -12,6 +12,7 @@
 #include <Eigen/Dense>
 #include <geometry_msgs/msg/twist_stamped.hpp>
 #include <kdl/chain.hpp>
+#include <kdl/chainfksolverpos_recursive.hpp>
 #include <kdl/chainjnttojacsolver.hpp>
 #include <kdl/jacobian.hpp>
 #include <kdl/jntarray.hpp>
@@ -218,11 +219,26 @@ public:
     preferred_joint_positions_ = declare_parameter<std::vector<double>>(
       "preferred_joint_positions", std::vector<double>{});
     posture_gain_ = declare_parameter<double>("posture_gain", 0.0);
+    fixed_tool_offset_xyz_ = declare_parameter<std::vector<double>>(
+      "fixed_tool_offset_xyz", std::vector<double>{0.0, 0.0, 0.0});
+    fixed_tool_offset_quaternion_xyzw_ = declare_parameter<std::vector<double>>(
+      "fixed_tool_offset_quaternion_xyzw", std::vector<double>{0.0, 0.0, 0.0, 1.0});
     gamma_ = std::clamp(gamma_, 1.0e-4, 0.999);
     damping_ = std::max(0.0, damping_);
     max_joint_velocity_ = std::max(0.0, max_joint_velocity_);
     posture_gain_ = std::max(0.0, posture_gain_);
     rate_hz_ = std::max(1.0, rate_hz_);
+    if (fixed_tool_offset_xyz_.size() != 3) {
+      RCLCPP_ERROR(
+        get_logger(), "fixed_tool_offset_xyz must contain three values; ignoring the offset");
+      fixed_tool_offset_xyz_ = {0.0, 0.0, 0.0};
+    }
+    if (fixed_tool_offset_quaternion_xyzw_.size() != 4) {
+      RCLCPP_WARN(
+        get_logger(),
+        "fixed_tool_offset_quaternion_xyzw must contain four values; its value does not affect the Jacobian");
+      fixed_tool_offset_quaternion_xyzw_ = {0.0, 0.0, 0.0, 1.0};
+    }
 
     command_pub_ =
       create_publisher<std_msgs::msg::Float64MultiArray>(command_topic_, rclcpp::SystemDefaultsQoS());
@@ -259,9 +275,10 @@ public:
 
     RCLCPP_INFO(
       get_logger(),
-      "J-PARSE velocity controller ready for arm %s: %s -> %s, mode=%s, damping=%.4f, command=%s, twist=%s, debug=%s",
+      "J-PARSE velocity controller ready for arm %s: %s -> %s, mode=%s, damping=%.4f, TCP-to-nozzle XYZ=[%.4f, %.4f, %.4f], command=%s, twist=%s, debug=%s",
       arm_.c_str(), base_link_.c_str(), tip_link_.c_str(),
-      inverse_mode_.c_str(), damping_,
+      inverse_mode_.c_str(), damping_, fixed_tool_offset_xyz_[0], fixed_tool_offset_xyz_[1],
+      fixed_tool_offset_xyz_[2],
       command_topic_.c_str(), twist_topic_.c_str(), debug_twist_topic_.c_str());
   }
 
@@ -300,6 +317,7 @@ private:
     command_joint_names_ = declare_parameter<std::vector<std::string>>(
       "command_joint_names", chain_joint_names_);
     jac_solver_ = std::make_unique<KDL::ChainJntToJacSolver>(chain_);
+    fk_solver_ = std::make_unique<KDL::ChainFkSolverPos_recursive>(chain_);
     chain_ready_ = true;
 
     RCLCPP_INFO(
@@ -400,6 +418,28 @@ private:
         jacobian(static_cast<Eigen::Index>(row), static_cast<Eigen::Index>(col)) =
           kdl_jacobian(row, col);
       }
+    }
+    if (fixed_tool_offset_xyz_[0] != 0.0 || fixed_tool_offset_xyz_[1] != 0.0 ||
+      fixed_tool_offset_xyz_[2] != 0.0)
+    {
+      KDL::Frame tcp_frame;
+      if (fk_solver_->JntToCart(q, tcp_frame) < 0) {
+        RCLCPP_WARN_THROTTLE(
+          get_logger(), *get_clock(), 2000,
+          "KDL forward kinematics failed while applying the fixed tool offset");
+        publishZero();
+        return;
+      }
+      const KDL::Vector offset_in_base = tcp_frame.M * KDL::Vector(
+        fixed_tool_offset_xyz_[0], fixed_tool_offset_xyz_[1], fixed_tool_offset_xyz_[2]);
+      const Eigen::Vector3d offset(
+        offset_in_base.x(), offset_in_base.y(), offset_in_base.z());
+      Eigen::Matrix3d skew;
+      skew << 0.0, -offset.z(), offset.y(),
+        offset.z(), 0.0, -offset.x(),
+        -offset.y(), offset.x(), 0.0;
+      // v_nozzle = v_tcp + omega x r = v_tcp - [r]x omega.
+      jacobian.topRows(3) -= skew * jacobian.bottomRows(3);
     }
 
     Eigen::VectorXd singular_values;
@@ -511,9 +551,12 @@ private:
   double pinv_tolerance_;
   std::vector<double> preferred_joint_positions_;
   double posture_gain_;
+  std::vector<double> fixed_tool_offset_xyz_;
+  std::vector<double> fixed_tool_offset_quaternion_xyzw_;
 
   KDL::Chain chain_;
   std::unique_ptr<KDL::ChainJntToJacSolver> jac_solver_;
+  std::unique_ptr<KDL::ChainFkSolverPos_recursive> fk_solver_;
   std::vector<std::string> chain_joint_names_;
   std::vector<std::string> command_joint_names_;
   bool chain_ready_{false};

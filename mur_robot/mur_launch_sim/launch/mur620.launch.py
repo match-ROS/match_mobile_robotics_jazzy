@@ -311,6 +311,9 @@ def generate_launch_description():
         DeclareLaunchArgument('launch_servo', default_value='false'),
         DeclareLaunchArgument('auto_switch_arm_controllers', default_value='true'),
         DeclareLaunchArgument('launch_jparse_idk', default_value='true'),
+        DeclareLaunchArgument('fixed_tool_offset_xyz', default_value='[0.0, 0.0, 0.0]'),
+        DeclareLaunchArgument(
+            'fixed_tool_offset_quaternion_xyzw', default_value='[0.0, 0.0, 0.0, 1.0]'),
         DeclareLaunchArgument('publish_global_moveit_descriptions', default_value='true'),
         DeclareLaunchArgument('publish_tf_alias', default_value='true'),
         DeclareLaunchArgument('tf_topic', default_value='/tf'),
@@ -403,6 +406,9 @@ def generate_launch_description():
                         -1.57079632679, 1.57079632679, 0.0,
                     ],
                     'posture_gain': 0.25,
+                    'fixed_tool_offset_xyz': LaunchConfiguration('fixed_tool_offset_xyz'),
+                    'fixed_tool_offset_quaternion_xyzw':
+                        LaunchConfiguration('fixed_tool_offset_quaternion_xyzw'),
                 }],
                 remappings=[
                     (
@@ -420,6 +426,9 @@ def generate_launch_description():
                     'robot_name': LaunchConfiguration('robot_name'),
                     'arm': 'r',
                     'use_sim_time': LaunchConfiguration('use_sim_time'),
+                    'fixed_tool_offset_xyz': LaunchConfiguration('fixed_tool_offset_xyz'),
+                    'fixed_tool_offset_quaternion_xyzw':
+                        LaunchConfiguration('fixed_tool_offset_quaternion_xyzw'),
                 }],
                 remappings=[
                     (
