@@ -98,6 +98,12 @@ if [[ -f "${REPO_DIR}/ros2.repos" ]]; then
   vcs import "${SRC_DIR}" < "${REPO_DIR}/ros2.repos"
 fi
 
+# Ewellix, the serial library, and the UR sources are Git submodules rather
+# than entries in ros2.repos.
+if [[ -f "${REPO_DIR}/.gitmodules" ]]; then
+  git -C "${REPO_DIR}" submodule update --init --recursive
+fi
+
 if [[ ! -f /etc/ros/rosdep/sources.list.d/20-default.list ]]; then
   sudo rosdep init
 fi
@@ -115,4 +121,4 @@ echo
 echo "Bootstrap complete. Build with:"
 echo "  cd ${WORKSPACE_ROOT}"
 echo "  source /opt/ros/${ROS_DISTRO_NAME}/setup.bash"
-echo "  colcon build --symlink-install --event-handlers console_direct+ --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo"
+echo "  colcon build --symlink-install --event-handlers console_direct+ \\\n+    --metas ${REPO_DIR}/colcon.meta \\\n+    --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo"

@@ -11,8 +11,15 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, OpaqueFunction, TimerAction
+from launch.actions import (
+    DeclareLaunchArgument,
+    IncludeLaunchDescription,
+    OpaqueFunction,
+    RegisterEventHandler,
+    TimerAction,
+)
 from launch.conditions import IfCondition
+from launch.event_handlers import OnProcessExit
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
@@ -40,6 +47,39 @@ def controller_spawner(controller_name, *, inactive=False, controller_ros_args=N
         arguments=arguments,
         output='screen',
     )
+
+
+def serial_controller_spawners(spawners):
+    """Start controller spawners one at a time to avoid their shared lock."""
+    if not spawners:
+        return []
+
+    def start_after(index):
+        if index >= len(spawners):
+            return []
+        next_spawner = spawners[index]
+        if index == len(spawners) - 1:
+            return [next_spawner]
+        return [
+            next_spawner,
+            RegisterEventHandler(
+                OnProcessExit(
+                    target_action=next_spawner,
+                    on_exit=start_after(index + 1),
+                )
+            ),
+        ]
+
+    first_spawner = spawners[0]
+    return [
+        first_spawner,
+        RegisterEventHandler(
+            OnProcessExit(
+                target_action=first_spawner,
+                on_exit=start_after(1),
+            )
+        ),
+    ]
 
 
 INTEGRATED_CONTROLLER_ARGUMENT_DEFAULTS = {
@@ -156,7 +196,7 @@ def make_arm_controller_spawners(context, *args, **kwargs):
             ),
         ])
 
-    return [TimerAction(period=3.0, actions=actions)]
+    return [TimerAction(period=3.0, actions=serial_controller_spawners(actions))]
 
 
 def moveit_proxy_arguments(robot_name, arm, *, include_lift, integrated_active):
@@ -239,9 +279,13 @@ def generate_launch_description():
         DeclareLaunchArgument('use_sim_time', default_value='true'),
         DeclareLaunchArgument('include_gz', default_value='false'),
         DeclareLaunchArgument('gazebo_gui', default_value='false'),
+        DeclareLaunchArgument('physics_engine', default_value=''),
+        DeclareLaunchArgument('use_camera', default_value='true'),
+        DeclareLaunchArgument('enable_sensors', default_value='true'),
         DeclareLaunchArgument('lidar_bridge', default_value='true'),
         DeclareLaunchArgument('start_controller_manager', default_value='false'),
         DeclareLaunchArgument('load_controllers', default_value='true'),
+        DeclareLaunchArgument('load_lift_controllers', default_value='true'),
         DeclareLaunchArgument('laser_merger', default_value='true'),
         DeclareLaunchArgument('localization', default_value='false'),
         DeclareLaunchArgument('fake_localization', default_value='false'),
@@ -285,16 +329,19 @@ def generate_launch_description():
         'use_sim_time': LaunchConfiguration('use_sim_time'),
         'include_gz': LaunchConfiguration('include_gz'),
         'gazebo_gui': LaunchConfiguration('gazebo_gui'),
+        'physics_engine': LaunchConfiguration('physics_engine'),
         'lidar_bridge': LaunchConfiguration('lidar_bridge'),
         'start_controller_manager': LaunchConfiguration('start_controller_manager'),
         'load_controllers': LaunchConfiguration('load_controllers'),
+        'load_lift_controllers': LaunchConfiguration('load_lift_controllers'),
         'laser_merger': LaunchConfiguration('laser_merger'),
         'localization': LaunchConfiguration('localization'),
         'fake_localization': LaunchConfiguration('fake_localization'),
         'navigation': LaunchConfiguration('navigation'),
         'ground_truth': LaunchConfiguration('ground_truth'),
         'use_arms': 'true',
-        'use_camera': 'true',
+        'use_camera': LaunchConfiguration('use_camera'),
+        'enable_sensors': LaunchConfiguration('enable_sensors'),
         'use_simple_collisions': LaunchConfiguration('use_simple_collisions'),
         'use_simple_visuals': LaunchConfiguration('use_simple_visuals'),
         'use_high_quality_visuals': LaunchConfiguration('use_high_quality_visuals'),
@@ -348,6 +395,14 @@ def generate_launch_description():
                     'robot_name': LaunchConfiguration('robot_name'),
                     'arm': 'l',
                     'use_sim_time': LaunchConfiguration('use_sim_time'),
+                    # Keep the left arm on its folded (elbow-negative) IK
+                    # branch when a Cartesian start target approaches a
+                    # singular configuration.
+                    'preferred_joint_positions': [
+                        0.0, -1.57079632679, -1.57079632679,
+                        -1.57079632679, 1.57079632679, 0.0,
+                    ],
+                    'posture_gain': 0.25,
                 }],
                 remappings=[
                     (

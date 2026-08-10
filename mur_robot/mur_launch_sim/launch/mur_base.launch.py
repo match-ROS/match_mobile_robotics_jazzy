@@ -29,6 +29,7 @@ Arguments:
   ground_truth (bool)      Publish Gazebo model pose as ground truth topics (default true)
   use_arms (bool)          Include UR arm links/controllers in robot_description (default true)
   use_camera (bool)        Include D435 camera links/Gazebo sensor (default true)
+  enable_sensors (bool)    Load Gazebo's renderer-backed sensor system (default true)
   use_simple_collisions (bool) Replace most MiR collision meshes with primitives (default false)
   use_simple_visuals (bool) Replace most MiR visual meshes with primitives for RViz/GPU diagnosis (default false)
   use_high_quality_visuals (bool) Use full-resolution MiR base/top meshes instead of simplified meshes (default false)
@@ -69,6 +70,14 @@ def declare_args():
         DeclareLaunchArgument('use_sim_time', default_value='true'),
         DeclareLaunchArgument('include_gz', default_value='true'),
         DeclareLaunchArgument('gazebo_gui', default_value='false'),
+        DeclareLaunchArgument(
+            'physics_engine',
+            default_value='',
+            description=(
+                'Optional Gazebo physics engine plugin passed to `gz sim`, '
+                'for example gz-physics-bullet-plugin.'
+            ),
+        ),
         DeclareLaunchArgument('lidar_bridge', default_value='true'),
         DeclareLaunchArgument('start_controller_manager', default_value='false'),
         DeclareLaunchArgument('load_controllers', default_value='true'),
@@ -80,6 +89,7 @@ def declare_args():
         DeclareLaunchArgument('ground_truth', default_value='true'),
         DeclareLaunchArgument('use_arms', default_value='true'),
         DeclareLaunchArgument('use_camera', default_value='true'),
+        DeclareLaunchArgument('enable_sensors', default_value='true'),
         DeclareLaunchArgument('use_simple_collisions', default_value='false'),
         DeclareLaunchArgument('use_simple_visuals', default_value='false'),
         DeclareLaunchArgument('use_high_quality_visuals', default_value='false'),
@@ -597,6 +607,39 @@ def controller_spawner(robot_name, controller_name, controllers_yaml, *, inactiv
     )
 
 
+def serial_controller_spawners(spawners):
+    """Start controller spawners one at a time to avoid their shared lock."""
+    if not spawners:
+        return []
+
+    def start_after(index):
+        if index >= len(spawners):
+            return []
+        next_spawner = spawners[index]
+        if index == len(spawners) - 1:
+            return [next_spawner]
+        return [
+            next_spawner,
+            RegisterEventHandler(
+                OnProcessExit(
+                    target_action=next_spawner,
+                    on_exit=start_after(index + 1),
+                )
+            ),
+        ]
+
+    first_spawner = spawners[0]
+    return [
+        first_spawner,
+        RegisterEventHandler(
+            OnProcessExit(
+                target_action=first_spawner,
+                on_exit=start_after(1),
+            )
+        ),
+    ]
+
+
 def launch_setup(context, *args, **kwargs):  # executed at runtime
     robot_name = LaunchConfiguration('robot_name').perform(context)
     world = LaunchConfiguration('world').perform(context)
@@ -607,6 +650,7 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
     use_sim_time = LaunchConfiguration('use_sim_time').perform(context) == 'true'
     include_gz = LaunchConfiguration('include_gz').perform(context) == 'true'
     gazebo_gui = LaunchConfiguration('gazebo_gui').perform(context) == 'true'
+    physics_engine = LaunchConfiguration('physics_engine').perform(context)
     lidar_bridge = LaunchConfiguration('lidar_bridge').perform(context) == 'true'
     start_controller_manager = (
         LaunchConfiguration('start_controller_manager').perform(context) == 'true'
@@ -631,6 +675,7 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
     )
     use_arms = LaunchConfiguration('use_arms').perform(context) == 'true'
     use_camera = LaunchConfiguration('use_camera').perform(context) == 'true'
+    enable_sensors = LaunchConfiguration('enable_sensors').perform(context) == 'true'
     use_simple_collisions = (
         LaunchConfiguration('use_simple_collisions').perform(context) == 'true'
     )
@@ -690,6 +735,7 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
         'simulation_controllers': controllers_yaml,
         'use_arms': 'true' if use_arms else 'false',
         'use_camera': 'true' if use_camera else 'false',
+        'enable_sensors': 'true' if enable_sensors else 'false',
         'use_simple_collisions': 'true' if use_simple_collisions else 'false',
         'use_simple_visuals': 'true' if use_simple_visuals else 'false',
         'use_high_quality_visuals': (
@@ -712,6 +758,8 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
     if include_gz:
         mir_gazebo_path = get_package_share_directory('mir_gazebo')
         gz_args = f'{world}.world -v 4 -r' if gazebo_gui else f'-s {world}.world -v 4 -r'
+        if physics_engine:
+            gz_args = f'{gz_args} --physics-engine {physics_engine}'
         nodes.append(
             SetEnvironmentVariable(
                 name='GZ_SIM_RESOURCE_PATH',
@@ -854,7 +902,7 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
             RegisterEventHandler(
                 OnProcessExit(
                     target_action=spawn_entity,
-                    on_exit=controller_actions,
+                    on_exit=serial_controller_spawners(controller_actions),
                 )
             )
         )

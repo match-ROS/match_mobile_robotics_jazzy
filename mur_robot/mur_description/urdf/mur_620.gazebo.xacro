@@ -22,6 +22,7 @@
 	<xacro:arg name="use_lift_visual_mesh" default='false'/>
 	<xacro:arg name="use_laser_visual_mesh" default='false'/>
 	<xacro:arg name="use_lidar" default='true'/>
+	<xacro:arg name="enable_sensors" default='true'/>
 	<xacro:arg name="use_lift" default='true'/>
 	<xacro:property name="use_lift" value="$(arg use_lift)"/>
 	<xacro:arg name="ur_l_xyz" default='0 0 0'/>
@@ -82,7 +83,7 @@
 		robot_namespace="$(arg robot_namespace)"
 		controllers_file="$(arg simulation_controllers)"
 	/>
-	<xacro:gazebo_sim_sensors robot_namespace="$(arg robot_namespace)" use_lidar="$(arg use_lidar)"/>
+	<xacro:gazebo_sim_sensors robot_namespace="$(arg robot_namespace)" use_lidar="$(arg use_lidar)" enable_sensors="$(arg enable_sensors)"/>
 	<xacro:mir_robot_ros2_control/>
 
 

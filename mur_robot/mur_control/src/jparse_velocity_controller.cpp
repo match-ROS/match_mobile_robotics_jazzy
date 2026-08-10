@@ -215,9 +215,13 @@ public:
     singular_gain_position_ = declare_parameter<double>("singular_gain_position", 1.0);
     singular_gain_angular_ = declare_parameter<double>("singular_gain_angular", 1.0);
     pinv_tolerance_ = declare_parameter<double>("pinv_tolerance", 1.0e-6);
+    preferred_joint_positions_ = declare_parameter<std::vector<double>>(
+      "preferred_joint_positions", std::vector<double>{});
+    posture_gain_ = declare_parameter<double>("posture_gain", 0.0);
     gamma_ = std::clamp(gamma_, 1.0e-4, 0.999);
     damping_ = std::max(0.0, damping_);
     max_joint_velocity_ = std::max(0.0, max_joint_velocity_);
+    posture_gain_ = std::max(0.0, posture_gain_);
     rate_hz_ = std::max(1.0, rate_hz_);
 
     command_pub_ =
@@ -423,6 +427,24 @@ private:
 
     Eigen::VectorXd qdot = inverse * target_twist_;
 
+    // A Cartesian target close to a kinematic singularity has multiple joint
+    // solutions. Keep the commanded motion on the configured posture branch
+    // in the inverse null space, rather than letting a redundant direction
+    // collapse (for example, a UR elbow straightening to zero). The feature
+    // is opt-in: an empty or wrongly-sized preferred posture keeps the legacy
+    // J-PARSE result unchanged.
+    if (posture_gain_ > 0.0 &&
+      preferred_joint_positions_.size() == chain_joint_names_.size())
+    {
+      Eigen::VectorXd preferred(qdot.size());
+      for (std::size_t i = 0; i < preferred_joint_positions_.size(); ++i) {
+        preferred(static_cast<Eigen::Index>(i)) = preferred_joint_positions_[i];
+      }
+      const Eigen::MatrixXd null_space =
+        Eigen::MatrixXd::Identity(qdot.size(), qdot.size()) - inverse * jacobian;
+      qdot += null_space * posture_gain_ * (preferred - q.data);
+    }
+
     if (max_joint_velocity_ > 0.0 && qdot.size() > 0) {
       const double max_abs_qdot = qdot.cwiseAbs().maxCoeff();
       if (max_abs_qdot > max_joint_velocity_) {
@@ -487,6 +509,8 @@ private:
   double singular_gain_position_;
   double singular_gain_angular_;
   double pinv_tolerance_;
+  std::vector<double> preferred_joint_positions_;
+  double posture_gain_;
 
   KDL::Chain chain_;
   std::unique_ptr<KDL::ChainJntToJacSolver> jac_solver_;

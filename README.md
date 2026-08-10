@@ -58,6 +58,7 @@ If you have not yet cloned this repository:
 mkdir -p ~/ws/src
 cd ~/ws/src
 git clone https://github.com/match-ROS/match_mobile_robotics_jazzy.git
+git -C match_mobile_robotics_jazzy submodule update --init --recursive
 cd ..
 ```
 
@@ -79,8 +80,13 @@ From the workspace root (one level above `src/`):
 
 ```bash
 source /opt/ros/jazzy/setup.bash
-colcon build --symlink-install --event-handlers console_direct+ --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo
+colcon build --symlink-install --event-handlers console_direct+ \
+  --metas src/match_mobile_robotics_jazzy/colcon.meta \
+  --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo
 ```
+
+The metadata file builds the Ewellix `serial` submodule with position-independent
+code, which is required because `ewellix_driver` links it into a shared library.
 
 Then source the local overlay:
 
