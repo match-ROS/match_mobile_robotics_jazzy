@@ -10,6 +10,7 @@
 #include <geometry_msgs/msg/pose.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/quaternion.hpp>
+#include <geometry_msgs/msg/vector3.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <rclcpp/rclcpp.hpp>
 
@@ -31,6 +32,23 @@ double normalize_angle(double angle)
     angle += 2.0 * M_PI;
   }
   return angle;
+}
+
+geometry_msgs::msg::Vector3 world_velocity_to_child_frame(
+  const geometry_msgs::msg::Vector3 & world_velocity,
+  const geometry_msgs::msg::Quaternion & child_orientation)
+{
+  // nav_msgs/Odometry specifies twist in child_frame_id.  Gazebo poses are
+  // expressed in output_frame_id_, so differentiate there and rotate the
+  // result with R_child_world before publishing it in Odometry.twist.
+  const double yaw = yaw_from_quaternion(child_orientation);
+  const double cos_yaw = std::cos(yaw);
+  const double sin_yaw = std::sin(yaw);
+  geometry_msgs::msg::Vector3 child_velocity;
+  child_velocity.x = cos_yaw * world_velocity.x + sin_yaw * world_velocity.y;
+  child_velocity.y = -sin_yaw * world_velocity.x + cos_yaw * world_velocity.y;
+  child_velocity.z = world_velocity.z;
+  return child_velocity;
 }
 
 rclcpp::Time stamp_from_gz_header(const gz::msgs::Header & header)
@@ -99,7 +117,8 @@ private:
 
     if (!logged_match_) {
       logged_match_ = true;
-      RCLCPP_INFO(get_logger(), "Using Gazebo pose '%s' as ground truth", robot_pose->name().c_str());
+      RCLCPP_INFO(get_logger(), "Using Gazebo pose '%s' as ground truth",
+        robot_pose->name().c_str());
     }
 
     const auto stamp = stamp_from_gz_header(msg.header());
@@ -120,9 +139,9 @@ private:
       return true;
     }
     return name.size() > robot_name_.size() &&
-      name.rfind(robot_name_) == name.size() - robot_name_.size() &&
-      (name[name.size() - robot_name_.size() - 1] == '/' ||
-       name[name.size() - robot_name_.size() - 1] == ':');
+           name.rfind(robot_name_) == name.size() - robot_name_.size() &&
+           (name[name.size() - robot_name_.size() - 1] == '/' ||
+           name[name.size() - robot_name_.size() - 1] == ':');
   }
 
   void log_available_names_once(const gz::msgs::Pose_V & msg)
@@ -179,12 +198,15 @@ private:
     if (previous_stamp_ && previous_pose_) {
       const double dt = (stamp - *previous_stamp_).seconds();
       if (dt > 0.0) {
-        odom_msg.twist.twist.linear.x =
+        geometry_msgs::msg::Vector3 world_velocity;
+        world_velocity.x =
           (pose_msg.pose.position.x - previous_pose_->position.x) / dt;
-        odom_msg.twist.twist.linear.y =
+        world_velocity.y =
           (pose_msg.pose.position.y - previous_pose_->position.y) / dt;
-        odom_msg.twist.twist.linear.z =
+        world_velocity.z =
           (pose_msg.pose.position.z - previous_pose_->position.z) / dt;
+        odom_msg.twist.twist.linear = world_velocity_to_child_frame(
+          world_velocity, pose_msg.pose.orientation);
 
         const double yaw = yaw_from_quaternion(pose_msg.pose.orientation);
         const double previous_yaw = yaw_from_quaternion(previous_pose_->orientation);

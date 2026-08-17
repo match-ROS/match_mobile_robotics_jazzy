@@ -24,6 +24,16 @@ def normalize_angle(angle: float) -> float:
     return angle
 
 
+def world_velocity_to_child_frame(
+    world_linear: tuple[float, float, float], orientation
+) -> tuple[float, float, float]:
+    """Express a differentiated output-frame velocity in Odometry.child_frame_id."""
+    yaw = yaw_from_quaternion(orientation)
+    cosine, sine = math.cos(yaw), math.sin(yaw)
+    x, y, z = world_linear
+    return cosine * x + sine * y, -sine * x + cosine * y, z
+
+
 class GroundTruthFromPoseTf(Node):
     def __init__(self):
         super().__init__('ground_truth_from_pose_tf')
@@ -171,9 +181,14 @@ class GroundTruthFromPoseTf(Node):
 
         translation = transform.transform.translation
         previous_translation = self.previous_transform.transform.translation
-        twist.linear.x = (translation.x - previous_translation.x) / dt
-        twist.linear.y = (translation.y - previous_translation.y) / dt
-        twist.linear.z = (translation.z - previous_translation.z) / dt
+        twist.linear.x, twist.linear.y, twist.linear.z = world_velocity_to_child_frame(
+            (
+                (translation.x - previous_translation.x) / dt,
+                (translation.y - previous_translation.y) / dt,
+                (translation.z - previous_translation.z) / dt,
+            ),
+            transform.transform.rotation,
+        )
 
         yaw = yaw_from_quaternion(transform.transform.rotation)
         previous_yaw = yaw_from_quaternion(self.previous_transform.transform.rotation)
