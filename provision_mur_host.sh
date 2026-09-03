@@ -305,8 +305,14 @@ check_system() {
   else
     ok secure_boot disabled_or_unavailable
   fi
-  getent ahostsv4 "$HOSTNAME_EXPECTED" | awk '{print $1}' | grep -qx "$expected_ip" \
-    && ok hostname_resolution || warn hostname_resolution "expected=${expected_ip}"
+  # The short hostname normally resolves to 127.0.1.1 through /etc/hosts on
+  # Ubuntu. Query the configured DNS search domain explicitly when available.
+  local resolution_name="$HOSTNAME_EXPECTED"
+  if [[ -n "${MANAGEMENT_DNS_SEARCH:-}" ]]; then
+    resolution_name="${HOSTNAME_EXPECTED}.${MANAGEMENT_DNS_SEARCH%.}"
+  fi
+  getent ahostsv4 "$resolution_name" | awk '{print $1}' | grep -qx "$expected_ip" \
+    && ok hostname_resolution || warn hostname_resolution "name=${resolution_name} expected=${expected_ip}"
 }
 
 apply_software() {
