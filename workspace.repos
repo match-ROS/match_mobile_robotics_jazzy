@@ -1,0 +1,32 @@
+# Companion repositories for the mur620 ROS 2 Jazzy workspace.
+# The match_mobile_robotics_jazzy repository itself is cloned separately at its
+# release commit. Versions below are immutable commits for reproducible hosts.
+repositories:
+  agentic_vision:
+    type: git
+    url: https://github.com/TobiasRecker/agentic_vision.git
+    version: e1b947b3e78a15888d097cd0ea4d0ee91ccb8717
+  diss_Evaluation:
+    type: git
+    url: https://github.com/TobiasRecker/diss_Evaluation.git
+    version: 87953b602d5d1448f5b6d77288dd871a04e69825
+  ira_laser_tools:
+    type: git
+    url: https://github.com/EliasTDam/ira_laser_tools.git
+    version: 8c07d0a0cabcf75556905d089606607cf445e95d
+  match_cooperative_handling:
+    type: git
+    url: https://github.com/match-ROS/match_cooperative_handling.git
+    version: a0166cdc5441aff3554867e8d996cfb575be87b8
+  match_mobile_robotics:
+    type: git
+    url: https://github.com/match-ROS/match_mobile_robotics.git
+    version: d67416738c6552ece036cdc18554471abfdaed84
+  match_mur_gui:
+    type: git
+    url: https://github.com/match-ROS/match_mur_gui.git
+    version: af564e502d46e6a1440d82bbb0d03ab55be55c65
+  oak_camera_calibration:
+    type: git
+    url: https://github.com/match-ROS/oak_camera_calibration.git
+    version: 94a435b68b01ac1a72375ed7f93cc2476d942a7e

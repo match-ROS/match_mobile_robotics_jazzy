@@ -23,6 +23,30 @@ Key components:
 
 Tested on Ubuntu 24.04 (Noble) with ROS 2 Jazzy.
 
+### Reproducible hardware-host provisioning
+
+Robot control PCs use checked-in profiles under `config/host_profiles`. The
+provisioner is deliberately split at the reboot boundary:
+
+```bash
+# Safe diagnosis; makes no changes.
+./provision_mur_host.sh --profile mur620b --check --stage system --user rosmatch
+
+# Run this one command interactively so the sudo password is never stored.
+sudo ./provision_mur_host.sh --profile mur620b --apply --stage system --user rosmatch
+sudo reboot
+
+# Only after uname reports a PREEMPT_RT realtime kernel:
+sudo ./provision_mur_host.sh --profile mur620b --apply --stage software --user rosmatch
+```
+
+The system stage backs up the existing GRUB, limits, package, hosts and
+NetworkManager state under `/var/backups/mur-host-provision`. It retains the
+generic kernel as a GRUB fallback and does not disable a temporary USB network
+connection. The software stage imports the immutable companion revisions from
+`workspace.repos`, initializes submodules and installs dependencies with
+`rosdep`. It does not launch or move any robot.
+
 1. Install ROS 2 Jazzy base + desktop + dev tools and dependencies (gz sim, control, MoveIt, etc.). An example script is provided in `ROS2_setup.sh` (review before executing):
 
 ```bash

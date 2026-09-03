@@ -12,16 +12,18 @@ UR_HOSTS="${MUR_UR_HOSTS:-UR10_l UR10_r}"
 UR_DASHBOARD_PORT="${MUR_UR_DASHBOARD_PORT:-29999}"
 EXPECTED_REVERSE_IP="${MUR_EXPECTED_REVERSE_IP:-}"
 MODE="check"
+PROFILE=""
 
 usage() {
   cat <<EOF
-Usage: $0 [--check|--apply] [--user USER]
+Usage: $0 [--check|--apply] [--user USER] [--profile NAME]
 
 Checks or configures host settings needed by the MuR hardware stack.
 
   --check       Diagnose only. Exits non-zero only for blocking issues.
   --apply       Apply group/limits setup with sudo where needed.
   --user USER   User to configure. Default: current user (${USER_NAME})
+  --profile NAME Load robot-specific network and lift defaults.
 
 Environment:
   MUR_EWELLIX_PORTS       Space-separated serial ports to check.
@@ -44,6 +46,10 @@ while [[ $# -gt 0 ]]; do
       shift
       USER_NAME="${1:?missing value for --user}"
       ;;
+    --profile)
+      shift
+      PROFILE="${1:?missing value for --profile}"
+      ;;
     -h|--help)
       usage
       exit 0
@@ -56,6 +62,25 @@ while [[ $# -gt 0 ]]; do
   esac
   shift
 done
+
+if [[ -n "$PROFILE" ]]; then
+  if [[ ! "$PROFILE" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+    echo "MUR_HOST_CHECK: status=fail issue=bad_profile value=${PROFILE}"
+    exit 2
+  fi
+  PROFILE_FILE="${REPO}/config/host_profiles/${PROFILE}.conf"
+  if [[ ! -r "$PROFILE_FILE" ]]; then
+    echo "MUR_HOST_CHECK: status=fail issue=profile_missing path=${PROFILE_FILE}"
+    exit 2
+  fi
+  # shellcheck source=/dev/null
+  source "$PROFILE_FILE"
+  EXPECTED_REVERSE_IP="${MUR_EXPECTED_REVERSE_IP:-${ROBOT_REVERSE_IP}}"
+  UR_HOSTS="${MUR_UR_HOSTS:-UR10_l UR10_r}"
+  if [[ "${USE_LIFT}" == "false" && -z "${MUR_EWELLIX_PORTS+x}" ]]; then
+    TTY_PORTS=""
+  fi
+fi
 
 require_command() {
   local command_name="$1"

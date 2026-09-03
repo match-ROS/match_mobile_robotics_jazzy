@@ -1,76 +1,81 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -Eeuo pipefail
 
-# Bootstrap Ubuntu 24.04 for this ROS 2 Jazzy workspace.
-# Run from anywhere:
-#   bash /path/to/match_mobile_robotics_jazzy/ROS2_setup.sh
-#
-# Optional environment switches:
-#   RUN_APT_UPGRADE=1   also run apt upgrade before installing ROS packages
-#   UPDATE_BASHRC=0     do not add ROS/workspace source lines to ~/.bashrc
+# Idempotent Ubuntu 24.04 / ROS 2 Jazzy bootstrap for the MATCH workspace.
+# Optional environment:
+#   TARGET_USER=rosmatch    owner of the workspace and shell configuration
+#   WORKSPACE_ROOT=/path    defaults to two directories above this repository
+#   RUN_APT_UPGRADE=1       upgrade existing packages before installing ROS
+#   UPDATE_BASHRC=0         do not add source lines to the target user's bashrc
 
 ROS_DISTRO_NAME="${ROS_DISTRO_NAME:-jazzy}"
 RUN_APT_UPGRADE="${RUN_APT_UPGRADE:-0}"
 UPDATE_BASHRC="${UPDATE_BASHRC:-1}"
-
+TARGET_USER="${TARGET_USER:-${SUDO_USER:-$(id -un)}}"
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WORKSPACE_ROOT="$(cd "${REPO_DIR}/../.." && pwd)"
+WORKSPACE_ROOT="${WORKSPACE_ROOT:-$(cd "${REPO_DIR}/../.." && pwd)}"
 SRC_DIR="${WORKSPACE_ROOT}/src"
+
+if ! id "$TARGET_USER" >/dev/null 2>&1; then
+  echo "Target user '${TARGET_USER}' does not exist." >&2
+  exit 1
+fi
+TARGET_GROUP="$(id -gn "$TARGET_USER")"
+TARGET_HOME="$(getent passwd "$TARGET_USER" | cut -d: -f6)"
+
+sudo_cmd() {
+  if [[ "$(id -u)" -eq 0 ]]; then "$@"; else sudo "$@"; fi
+}
+
+as_target_user() {
+  if [[ "$(id -un)" == "$TARGET_USER" ]]; then "$@"; else runuser -u "$TARGET_USER" -- "$@"; fi
+}
 
 if [[ ! -f /etc/os-release ]]; then
   echo "Cannot detect OS release." >&2
   exit 1
 fi
-
 . /etc/os-release
 UBUNTU_CODENAME="${UBUNTU_CODENAME:-${VERSION_CODENAME:-}}"
-
-if [[ "${UBUNTU_CODENAME}" != "noble" ]]; then
-  echo "ROS 2 Jazzy deb packages target Ubuntu 24.04 noble; detected '${UBUNTU_CODENAME}'." >&2
+if [[ "$UBUNTU_CODENAME" != "noble" ]]; then
+  echo "ROS 2 Jazzy deb packages require Ubuntu 24.04 noble; detected '${UBUNTU_CODENAME}'." >&2
   exit 1
 fi
 
-sudo apt update
-sudo apt install -y \
-  ca-certificates \
-  curl \
-  git \
-  locales \
-  software-properties-common
-
-sudo locale-gen en_US en_US.UTF-8
-sudo update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
+sudo_cmd apt-get update
+sudo_cmd apt-get install -y ca-certificates curl git locales software-properties-common
+sudo_cmd locale-gen en_US en_US.UTF-8
+sudo_cmd update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
 export LANG=en_US.UTF-8
-
-sudo add-apt-repository -y universe
+sudo_cmd add-apt-repository -y universe
 
 ROS_APT_SOURCE_BASE_URL="https://repo.ros2.org/ubuntu/main/pool/main/r/ros-apt-source"
 ROS_APT_SOURCE_DEB="$(
   curl -fsSL "${ROS_APT_SOURCE_BASE_URL}/" \
     | grep -oE "ros2-apt-source_[^\"<> ]+~${UBUNTU_CODENAME}_all\\.deb" \
-    | sort -V \
-    | tail -n 1
+    | sort -V | tail -n 1
 )"
-
-if [[ -z "${ROS_APT_SOURCE_DEB}" ]]; then
-  echo "Could not determine latest ros2-apt-source package for ${UBUNTU_CODENAME}." >&2
+if [[ -z "$ROS_APT_SOURCE_DEB" ]]; then
+  echo "Could not determine the latest ros2-apt-source package for ${UBUNTU_CODENAME}." >&2
   exit 1
 fi
+curl -fL -o /tmp/ros2-apt-source.deb "${ROS_APT_SOURCE_BASE_URL}/${ROS_APT_SOURCE_DEB}"
+sudo_cmd dpkg -i /tmp/ros2-apt-source.deb
 
-curl -fL -o /tmp/ros2-apt-source.deb \
-  "${ROS_APT_SOURCE_BASE_URL}/${ROS_APT_SOURCE_DEB}"
-sudo dpkg -i /tmp/ros2-apt-source.deb
-
-sudo apt update
-if [[ "${RUN_APT_UPGRADE}" == "1" ]]; then
-  sudo apt upgrade -y
-fi
-
-sudo apt install -y \
+sudo_cmd apt-get update
+if [[ "$RUN_APT_UPGRADE" == "1" ]]; then sudo_cmd apt-get upgrade -y; fi
+sudo_cmd apt-get install -y \
+  build-essential \
+  can-utils \
+  cmake \
+  joystick \
+  python3-can \
   python3-colcon-common-extensions \
+  python3-pip \
   python3-rosdep \
   python3-vcstool \
   ros-dev-tools \
+  ros-${ROS_DISTRO_NAME}-depthai-v3 \
   ros-${ROS_DISTRO_NAME}-desktop \
   ros-${ROS_DISTRO_NAME}-gz-ros2-control \
   ros-${ROS_DISTRO_NAME}-joy \
@@ -80,6 +85,7 @@ sudo apt install -y \
   ros-${ROS_DISTRO_NAME}-pcl-conversions \
   ros-${ROS_DISTRO_NAME}-pcl-msgs \
   ros-${ROS_DISTRO_NAME}-pcl-ros \
+  ros-${ROS_DISTRO_NAME}-plotjuggler-ros \
   ros-${ROS_DISTRO_NAME}-robot-localization \
   ros-${ROS_DISTRO_NAME}-ros-gz-bridge \
   ros-${ROS_DISTRO_NAME}-ros-gz-sim \
@@ -90,31 +96,29 @@ sudo apt install -y \
   ros-${ROS_DISTRO_NAME}-slam-toolbox \
   ros-${ROS_DISTRO_NAME}-srdfdom \
   ros-${ROS_DISTRO_NAME}-teleop-twist-keyboard \
-  joystick \
   xterm
 
-if [[ -f "${REPO_DIR}/ros2.repos" ]]; then
-  mkdir -p "${SRC_DIR}"
-  vcs import "${SRC_DIR}" < "${REPO_DIR}/ros2.repos"
+sudo_cmd install -d -o "$TARGET_USER" -g "$TARGET_GROUP" "$WORKSPACE_ROOT" "$SRC_DIR"
+if [[ -f "${REPO_DIR}/workspace.repos" ]]; then
+  as_target_user vcs import --skip-existing "$SRC_DIR" < "${REPO_DIR}/workspace.repos"
+elif [[ -f "${REPO_DIR}/ros2.repos" ]]; then
+  as_target_user vcs import --skip-existing "$SRC_DIR" < "${REPO_DIR}/ros2.repos"
 fi
-
-# Ewellix, the serial library, and the UR sources are Git submodules rather
-# than entries in ros2.repos.
 if [[ -f "${REPO_DIR}/.gitmodules" ]]; then
-  git -C "${REPO_DIR}" submodule update --init --recursive
+  as_target_user git -C "$REPO_DIR" submodule update --init --recursive
 fi
 
-if [[ ! -f /etc/ros/rosdep/sources.list.d/20-default.list ]]; then
-  sudo rosdep init
-fi
-rosdep update
-rosdep install --rosdistro "${ROS_DISTRO_NAME}" --from-paths "${SRC_DIR}" --ignore-src -r -y
+if [[ ! -f /etc/ros/rosdep/sources.list.d/20-default.list ]]; then sudo_cmd rosdep init; fi
+as_target_user rosdep update
+sudo_cmd rosdep install --rosdistro "$ROS_DISTRO_NAME" --from-paths "$SRC_DIR" --ignore-src -r -y
 
-if [[ "${UPDATE_BASHRC}" == "1" ]]; then
-  grep -qxF "source /opt/ros/${ROS_DISTRO_NAME}/setup.bash" "${HOME}/.bashrc" \
-    || echo "source /opt/ros/${ROS_DISTRO_NAME}/setup.bash" >> "${HOME}/.bashrc"
-  grep -qxF "source ${WORKSPACE_ROOT}/install/setup.bash" "${HOME}/.bashrc" \
-    || echo "source ${WORKSPACE_ROOT}/install/setup.bash" >> "${HOME}/.bashrc"
+if [[ "$UPDATE_BASHRC" == "1" ]]; then
+  touch "$TARGET_HOME/.bashrc"
+  grep -qxF "source /opt/ros/${ROS_DISTRO_NAME}/setup.bash" "$TARGET_HOME/.bashrc" \
+    || echo "source /opt/ros/${ROS_DISTRO_NAME}/setup.bash" >> "$TARGET_HOME/.bashrc"
+  grep -qxF "source ${WORKSPACE_ROOT}/install/setup.bash" "$TARGET_HOME/.bashrc" \
+    || echo "source ${WORKSPACE_ROOT}/install/setup.bash" >> "$TARGET_HOME/.bashrc"
+  sudo_cmd chown "$TARGET_USER:$TARGET_GROUP" "$TARGET_HOME/.bashrc"
 fi
 
 echo

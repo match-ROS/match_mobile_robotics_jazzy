@@ -12,8 +12,15 @@ echo "MUR_DIAG: log=${LOG_FILE}"
 if [[ -z "${MUR_CHECK_UR_NETWORK:-}" ]]; then
   export MUR_CHECK_UR_NETWORK=true
 fi
-if [[ -z "${MUR_EXPECTED_REVERSE_IP:-}" && "$(hostname)" == "mur620d" ]]; then
-  export MUR_EXPECTED_REVERSE_IP=192.168.12.69
+if [[ -z "${MUR_EXPECTED_REVERSE_IP:-}" ]]; then
+  profile_file="${REPO}/config/host_profiles/$(hostname).conf"
+  if [[ -r "$profile_file" ]]; then
+    # shellcheck source=/dev/null
+    source "$profile_file"
+    export MUR_EXPECTED_REVERSE_IP="${ROBOT_REVERSE_IP}"
+  elif [[ "$(hostname)" == "mur620d" ]]; then
+    export MUR_EXPECTED_REVERSE_IP=192.168.12.69
+  fi
 fi
 echo "MUR_DIAG: ur_network_check=${MUR_CHECK_UR_NETWORK} hosts=${MUR_UR_HOSTS:-UR10_l UR10_r} expected_reverse_ip=${MUR_EXPECTED_REVERSE_IP:-unset}"
 echo
