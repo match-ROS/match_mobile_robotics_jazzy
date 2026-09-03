@@ -110,7 +110,20 @@ fi
 
 if [[ ! -f /etc/ros/rosdep/sources.list.d/20-default.list ]]; then sudo_cmd rosdep init; fi
 as_target_user rosdep update
-sudo_cmd rosdep install --rosdistro "$ROS_DISTRO_NAME" --from-paths "$SRC_DIR" --ignore-src -r -y
+
+# Keep the ROS 1 reference repositories in src, but never feed their catkin
+# manifests to a Jazzy rosdep run. COLCON_IGNORE is honored by colcon, whereas
+# rosdep recursively scans every path explicitly passed to it.
+ROSDEP_PATHS=(
+  "$SRC_DIR/agentic_vision"
+  "$SRC_DIR/ira_laser_tools"
+  "$SRC_DIR/match_cooperative_handling"
+  "$SRC_DIR/match_mobile_robotics_jazzy"
+  "$SRC_DIR/match_mur_gui"
+  "$SRC_DIR/oak_camera_calibration"
+)
+sudo_cmd rosdep install --rosdistro "$ROS_DISTRO_NAME" --from-paths "${ROSDEP_PATHS[@]}" \
+  --ignore-src -r -y --skip-keys ament_python
 
 if [[ "$UPDATE_BASHRC" == "1" ]]; then
   touch "$TARGET_HOME/.bashrc"
