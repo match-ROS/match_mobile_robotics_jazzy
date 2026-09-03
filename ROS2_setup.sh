@@ -110,6 +110,9 @@ fi
 
 if [[ ! -f /etc/ros/rosdep/sources.list.d/20-default.list ]]; then sudo_cmd rosdep init; fi
 as_target_user rosdep update
+# rosdep keeps its cache per home directory. The dependency install below runs
+# through sudo_cmd, so initialize/update root's cache as well.
+sudo_cmd rosdep update
 
 # Keep the ROS 1 reference repositories in src, but never feed their catkin
 # manifests to a Jazzy rosdep run. COLCON_IGNORE is honored by colcon, whereas
