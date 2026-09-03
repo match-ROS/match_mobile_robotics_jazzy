@@ -158,10 +158,18 @@ ensure_robot_connection() {
 ensure_hosts_block() {
   local tmp_file
   tmp_file="$(mktemp)"
-  awk '
+  awk -v expected_hostname="$HOSTNAME_EXPECTED" '
     $0 == "# BEGIN MUR ROBOT NETWORK" {skip=1; next}
     $0 == "# END MUR ROBOT NETWORK" {skip=0; next}
+    !skip && $1 == "127.0.1.1" {
+      print "127.0.1.1 " expected_hostname
+      local_hostname_written=1
+      next
+    }
     !skip {print}
+    END {
+      if (!local_hostname_written) print "127.0.1.1 " expected_hostname
+    }
   ' /etc/hosts > "$tmp_file"
   cat >> "$tmp_file" <<EOF
 # BEGIN MUR ROBOT NETWORK
