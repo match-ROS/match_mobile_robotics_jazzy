@@ -219,13 +219,24 @@ elif remote in ("true", "remote control: true", "is in remote control: true"):
     emit(f"MUR_HOST_CHECK: status=ok issue=ur_remote_control host={host}")
 
 robotmode = answers.get("robotmode", "")
-if robotmode and not any(state in robotmode.upper() for state in ("RUNNING", "IDLE")):
+mode = robotmode.removeprefix("Robotmode:").strip().upper()
+# This is a bringup preflight, not a check that the arm is already enabled.
+# mur_620.launch.py starts ur_startup_enable.py (auto_start_urs=true), which
+# requests RUNNING through SetMode and handles power-on and brake release.
+if mode == "POWER_OFF":
+    emit(f"MUR_HOST_CHECK: status=ok issue=ur_robotmode host={host} detail=POWER_OFF startup_required=true")
+    emit(
+        "MUR_HOST_CHECK_DIAGNOSIS: severity=info "
+        f"host={host} problem='UR arm power is off; dashboard is reachable' "
+        "action='Start Hardware with auto_start_urs:=true to power on and release brakes through UR SetMode.'"
+    )
+elif mode not in ("RUNNING", "IDLE"):
     blocking = True
     emit(f"MUR_HOST_CHECK: status=fail issue=ur_robotmode host={host} detail='{quote_value(robotmode)}'")
     emit(
         "MUR_HOST_CHECK_DIAGNOSIS: severity=error "
-        f"host={host} problem='Robot mode is not RUNNING/IDLE' "
-        "action='Power on and brake-release the UR on the pendant before starting the driver.'"
+        f"host={host} problem='Robot mode is not POWER_OFF/IDLE/RUNNING' "
+        "action='Check the UR pendant and wait for a supported startup state before starting the driver.'"
     )
 
 if not blocking:

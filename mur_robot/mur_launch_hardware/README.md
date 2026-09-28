@@ -36,6 +36,22 @@ ros2 launch mur_launch_hardware mur_620.launch.py \
 ```
 
 
+## Automatic UR startup
+
+`mur_620.launch.py` defaults to `auto_start_urs:=true`. For each enabled real
+arm, `ur_startup_enable.py` requests robot mode `RUNNING` through the driver's
+`ur_robot_state_helper/set_mode` action after controller spawning. This handles
+power-on and brake release, then starts the UR program.
+
+The GUI's host preflight therefore accepts `POWER_OFF` when the dashboard is
+reachable. Remote Control must be enabled on robots supporting that mode;
+safety stops and faults still block startup. The host check itself only queries
+the dashboard and does not switch on the arm. With `auto_start_urs:=false`,
+power-on and brake release must be handled separately.
+
+After updating `setup_mur_hardware_host.sh` locally, use the GUI's Connect with
+code synchronization enabled before Start Hardware to update the remote check.
+
 ## BMS battery state
 
 The hardware launch starts `bms_can_node.py` by default. It queries the
