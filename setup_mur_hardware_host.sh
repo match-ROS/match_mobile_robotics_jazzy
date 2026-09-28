@@ -63,6 +63,10 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
+if [[ -z "$PROFILE" && -r "${REPO}/config/host_profiles/$(hostname).conf" ]]; then
+  PROFILE="$(hostname)"
+fi
+
 if [[ -n "$PROFILE" ]]; then
   if [[ ! "$PROFILE" =~ ^[a-zA-Z0-9_-]+$ ]]; then
     echo "MUR_HOST_CHECK: status=fail issue=bad_profile value=${PROFILE}"
@@ -77,6 +81,7 @@ if [[ -n "$PROFILE" ]]; then
   source "$PROFILE_FILE"
   EXPECTED_REVERSE_IP="${MUR_EXPECTED_REVERSE_IP:-${ROBOT_REVERSE_IP}}"
   UR_HOSTS="${MUR_UR_HOSTS:-UR10_l UR10_r}"
+  TTY_PORTS="${MUR_EWELLIX_PORTS:-${TTY_PORTS_DEFAULT}}"
   if [[ "${USE_LIFT}" == "false" && -z "${MUR_EWELLIX_PORTS+x}" ]]; then
     TTY_PORTS=""
   fi
@@ -308,6 +313,19 @@ if has_group "$USER_NAME" dialout; then
 else
   echo "MUR_HOST_CHECK: status=fail issue=dialout user=${USER_NAME} detail=not_in_group"
   blocking=1
+fi
+
+if [[ -n "${BMS_CAN_INTERFACE:-}" ]]; then
+  if [[ ! -e "/sys/class/net/${BMS_CAN_INTERFACE}" ]]; then
+    echo "MUR_HOST_CHECK: status=warn issue=bms_can_missing interface=${BMS_CAN_INTERFACE}"
+    warnings=1
+  elif ip -o link show dev "$BMS_CAN_INTERFACE" | sed -n 's/^[^<]*<\([^>]*\)>.*/\1/p' | tr ',' '\n' | grep -qx UP; then
+    echo "MUR_HOST_CHECK: status=ok issue=bms_can_up interface=${BMS_CAN_INTERFACE}"
+  else
+    echo "MUR_HOST_CHECK: status=warn issue=bms_can_down interface=${BMS_CAN_INTERFACE}"
+    echo "MUR_HOST_CHECK_DIAGNOSIS: severity=warn problem='BMS CAN interface is down' action='Run sudo ip link set ${BMS_CAN_INTERFACE} up type can bitrate 250000 on this robot.'"
+    warnings=1
+  fi
 fi
 
 for port in ${TTY_PORTS}; do

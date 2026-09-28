@@ -34,7 +34,11 @@ fi
 
 echo
 echo "MUR_DIAG: groups=$(id -nG)"
-for port in /dev/ttyUSB0 /dev/ttyUSB1; do
+if [[ -r "${REPO}/config/host_profiles/$(hostname).conf" ]]; then
+  # shellcheck source=/dev/null
+  source "${REPO}/config/host_profiles/$(hostname).conf"
+fi
+for port in ${MUR_EWELLIX_PORTS:-/dev/ttyUSB0 /dev/ttyUSB1}; do
   if [[ -e "$port" ]]; then
     ls -l "$port" | sed 's/^/MUR_DIAG: device /'
   else
@@ -97,10 +101,11 @@ if grep -Eqi 'Could not enable FIFO RT scheduling|overruns:|missed its desired r
   grep -Ein 'Could not enable FIFO RT scheduling|overruns:|missed its desired rate' "$LOG_FILE" | tail -n 10 | sed 's/^/MUR_DIAG_DETAIL: /'
 fi
 
-if grep -Eqi 'python-can is not installed|No module named .can.|bms_can_node|Failed to send BMS request|Network is down' "$LOG_FILE"; then
-  bms_count="$(grep -Ein 'python-can is not installed|No module named .can.|bms_can_node|Failed to send BMS request|Network is down' "$LOG_FILE" | wc -l)"
-  echo "MUR_DIAG_ISSUE: severity=info type=bms_can_ignored count=${bms_count}"
-  grep -Ein 'python-can is not installed|No module named .can.|bms_can_node|Failed to send BMS request|Network is down' "$LOG_FILE" | tail -n 8 | sed 's/^/MUR_DIAG_DETAIL: /'
+if grep -Eqi 'python-can is not installed|No module named .can.|Failed to send BMS request|Network is down|MUR_BMS_CAN: status=warn' "$LOG_FILE"; then
+  bms_count="$(grep -Ein 'python-can is not installed|No module named .can.|Failed to send BMS request|Network is down|MUR_BMS_CAN: status=warn' "$LOG_FILE" | wc -l)"
+  echo "MUR_DIAG_ISSUE: severity=warn type=bms_can_unavailable count=${bms_count}"
+  echo "MUR_DIAG_DIAGNOSIS: severity=warn problem='BMS CAN unavailable' action='Check can0; if down, run sudo ip link set can0 up type can bitrate 250000 on this robot.'"
+  grep -Ein 'python-can is not installed|No module named .can.|Failed to send BMS request|Network is down|MUR_BMS_CAN: status=warn' "$LOG_FILE" | tail -n 8 | sed 's/^/MUR_DIAG_DETAIL: /'
 fi
 
 if grep -Eqi 'No 3D sensor plugin.*octomap' "$LOG_FILE"; then

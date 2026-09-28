@@ -34,6 +34,15 @@ MUR_STANDALONE_SERVICE="${MUR_STANDALONE_SERVICE:-mur-mir-standalone.service}"
 MUR_STANDALONE_WAS_ACTIVE=false
 MUR_STANDALONE_STOPPED=false
 
+PROFILE_FILE="${REPO}/config/host_profiles/${ROBOT_PROFILE}.conf"
+if [[ -r "$PROFILE_FILE" ]]; then
+  # shellcheck source=/dev/null
+  source "$PROFILE_FILE"
+fi
+if [[ -n "${MUR_EWELLIX_PORTS:-}" ]]; then
+  export MUR_EWELLIX_PORTS
+fi
+
 TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
 LOG_FILE="${LOG_FILE:-${LOG_DIR}/${LAUNCH_PACKAGE}_${LAUNCH_FILE%.launch.py}_${TIMESTAMP}.log}"
 LATEST_LOG="${LOG_DIR}/latest.log"
@@ -106,7 +115,8 @@ stop_old_hardware() {
 }
 
 report_serial_access() {
-  local ports=("/dev/ttyUSB0" "/dev/ttyUSB1")
+  local ports=()
+  read -r -a ports <<< "${MUR_EWELLIX_PORTS:-/dev/ttyUSB0 /dev/ttyUSB1}"
   local serial_blocking=0
 
   if ! id -nG | tr ' ' '\n' | grep -qx "dialout"; then
@@ -206,6 +216,7 @@ if [[ "${BUILD_BEFORE_LAUNCH}" == "true" ]]; then
   echo "[start_mur620_hardware_logged] Building hardware packages..."
   # shellcheck disable=SC2086
   colcon build \
+    --base-paths "${WS}/src" \
     --symlink-install \
     --packages-up-to ${BUILD_PACKAGES} \
     --cmake-args -DCMAKE_POSITION_INDEPENDENT_CODE=ON
@@ -320,12 +331,18 @@ configure_bms_can_interface() {
     return 0
   fi
 
+  if ip -o link show dev "$can_interface" | sed -n 's/^[^<]*<\([^>]*\)>.*/\1/p' | tr ',' '\n' | grep -qx UP; then
+    echo "MUR_BMS_CAN: status=ok interface=${can_interface} detail=already_up"
+    return 0
+  fi
+
   echo "MUR_BMS_CAN: configuring interface=${can_interface} bitrate=${can_bitrate}"
   if sudo -n ip link set "$can_interface" up type can bitrate "$can_bitrate"; then
     ip -details link show "$can_interface" | sed 's/^/MUR_BMS_CAN: /'
     echo "MUR_BMS_CAN: status=ok interface=${can_interface}"
   else
     echo "MUR_BMS_CAN: status=warn issue=configure_failed interface=${can_interface} detail=sudo_or_ip_link_failed"
+    echo "MUR_BMS_CAN_DIAGNOSIS: Run sudo ip link set ${can_interface} up type can bitrate ${can_bitrate} on this robot."
   fi
 }
 
@@ -385,6 +402,14 @@ takeover_standalone_mir_if_needed() {
 if ! has_launch_arg "robot_profile" "${LAUNCH_ARGS[@]}"; then
   LAUNCH_ARGS+=("robot_profile:=${ROBOT_PROFILE}")
 fi
+for side in l r; do
+  port_var="LIFT_PORT_${side^^}"
+  port="${!port_var:-}"
+  if [[ -n "$port" ]] && ! has_launch_arg "lift_port_${side}" "${LAUNCH_ARGS[@]}"; then
+    LAUNCH_ARGS+=("lift_port_${side}:=${port}")
+    echo "MUR_LIFT_PORT: side=${side} port=${port}"
+  fi
+done
 if [[ "${INTEGRATED_CARTESIAN_ACTIVE}" == "true" ]]; then
   LAUNCH_ARGS+=(
     "use_integrated_cartesian_admittance_controller:=true"
