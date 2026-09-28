@@ -63,7 +63,7 @@ class URStartupEnable(Node):
             float(self.get_parameter('dashboard_play_retry_delay').value),
         )
         self._set_mode_retries = max(0, int(self.get_parameter('set_mode_retries').value))
-        self._recover_dashboard_blockers = parse_bool(
+        self._recover_dashboard_blockers_enabled = parse_bool(
             self.get_parameter('recover_dashboard_blockers').value
         )
         self._client = ActionClient(self, SetMode, action_name)
@@ -149,7 +149,7 @@ class URStartupEnable(Node):
         return response
 
     def _recover_dashboard_blockers(self):
-        if not self._recover_dashboard_blockers:
+        if not self._recover_dashboard_blockers_enabled:
             return
         self.get_logger().warn(
             'Trying to clear transient UR dashboard blockers before retrying startup.'
