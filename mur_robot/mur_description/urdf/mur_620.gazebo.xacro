@@ -8,6 +8,8 @@
 	<xacro:arg name="name" default=''/>
 	<xacro:arg name="use_arms" default='true'/>
 	<xacro:property name="use_arms" value="$(arg use_arms)"/>
+	<xacro:arg name="use_sim" default='true'/>
+	<xacro:property name="use_sim" value="$(arg use_sim)"/>
 	<xacro:arg name="use_camera" default='true'/>
 	<xacro:property name="use_camera" value="$(arg use_camera)"/>
 	<xacro:arg name="use_simple_collisions" default='false'/>
@@ -55,7 +57,9 @@
 	<xacro:include filename="$(find mir_description)/urdf/mir_600/mir_600.gazebo.xacro" />
 	<xacro:include filename="$(find mir_description)/urdf/general/sick_s300.gazebo.xacro" />
 	<!-- <xacro:include filename="$(find ur_simulation_gz)/urdf/ur_gz.urdf.xacro"/> -->
-	<xacro:include filename="$(find ur_simulation_gz)/urdf/ur_gz.ros2_control.xacro" />
+	<xacro:if value="${use_sim}">
+		<xacro:include filename="$(find ur_simulation_gz)/urdf/ur_gz.ros2_control.xacro" />
+	</xacro:if>
 	<xacro:include filename="$(find ur_description)/urdf/ur_macro.xacro"/>
 	<xacro:include filename="$(find mir_description)/ros2_control/mir_robot.ros2_control.xacro" />
 	<xacro:include filename="$(find mir_description)/urdf/mir_600/mir_600_top_lift.urdf.xacro" />
@@ -121,20 +125,22 @@
 			<origin xyz="$(arg ur_r_xyz)" rpy="$(arg ur_r_rpy)" />          <!-- position robot in the world -->
 		</xacro:ur_robot>
 
-		<xacro:ur_ros2_control
-			name="UR10_l"
-			tf_prefix="UR10_l/"
-			transmission_hw_interface="$(arg transmission_hw_interface)"
-			initial_positions="${dict(shoulder_pan_joint=0.0,shoulder_lift_joint=-1.57079632679,elbow_joint=-1.57079632679,wrist_1_joint=-1.57079632679,wrist_2_joint=1.57079632679,wrist_3_joint=0.0)}"
-		/>
+		<xacro:if value="${use_sim}">
+			<xacro:ur_ros2_control
+				name="UR10_l"
+				tf_prefix="UR10_l/"
+				transmission_hw_interface="$(arg transmission_hw_interface)"
+				initial_positions="${dict(shoulder_pan_joint=0.0,shoulder_lift_joint=-1.57079632679,elbow_joint=-1.57079632679,wrist_1_joint=-1.57079632679,wrist_2_joint=1.57079632679,wrist_3_joint=0.0)}"
+			/>
 
-		<xacro:ur_ros2_control
-			name="UR10_r"
-			tf_prefix="UR10_r/"
-			transmission_hw_interface="$(arg transmission_hw_interface)"
-			initial_positions="${dict(shoulder_pan_joint=3.14159265359,shoulder_lift_joint=-1.57079632679,elbow_joint=-1.57079632679,wrist_1_joint=-1.57079632679,wrist_2_joint=-1.57079632679,wrist_3_joint=0.0)}"
-		/>
+			<xacro:ur_ros2_control
+				name="UR10_r"
+				tf_prefix="UR10_r/"
+				transmission_hw_interface="$(arg transmission_hw_interface)"
+				initial_positions="${dict(shoulder_pan_joint=3.14159265359,shoulder_lift_joint=-1.57079632679,elbow_joint=-1.57079632679,wrist_1_joint=-1.57079632679,wrist_2_joint=-1.57079632679,wrist_3_joint=0.0)}"
+			/>
 
+		</xacro:if>
 		<!-- virtual link rotated to show in same direction like mir  -->
 		<link name="UR10_l/base_ideal" />
 		<link name="UR10_r/base_ideal" />

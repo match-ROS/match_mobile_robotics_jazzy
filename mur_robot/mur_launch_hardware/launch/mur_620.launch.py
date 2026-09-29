@@ -1131,6 +1131,7 @@ def launch_setup(context, *args, **kwargs):
         'tf_prefix': robot_name,
         'tf_prefix_mir': robot_name,
         'use_arms': LaunchConfiguration('use_arms').perform(context),
+        'use_sim': 'false',
         'use_camera': LaunchConfiguration('use_camera').perform(context),
         'use_lidar': LaunchConfiguration('use_lidar').perform(context),
         'use_lift': use_lift,
