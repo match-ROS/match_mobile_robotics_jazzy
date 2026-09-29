@@ -30,3 +30,7 @@ htmlcov/
 **/*_test.cpp
 **/test_*.cc
 **/*_test.cc
+
+# Regression coverage for the MiR camera message conversion.
+!mir_robot/mir_launch_hardware/test/
+!mir_robot/mir_launch_hardware/test/test_mir_camera_bridge.py

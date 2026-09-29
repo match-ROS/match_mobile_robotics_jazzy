@@ -24,6 +24,7 @@ setup(
         'console_scripts': [
             'external_localization_broadcaster = mir_launch_hardware.external_localization_broadcaster:main',
             'mir_battery_state_publisher = mir_launch_hardware.mir_battery_state_publisher:main',
+            'mir_camera_bridge = mir_launch_hardware.mir_camera_bridge:main',
             'mir_pose_simple = mir_launch_hardware.mir_pose_simple:main',
             'mir_rosapi_audit = mir_launch_hardware.mir_rosapi_audit:main',
             'rgb_control = mir_launch_hardware.rgb_control:main',

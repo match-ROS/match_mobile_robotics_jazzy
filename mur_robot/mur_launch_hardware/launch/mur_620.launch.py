@@ -56,6 +56,8 @@ def declare_arguments():
         DeclareLaunchArgument('publish_fake_mir_wheel_joints', default_value='true'),
         DeclareLaunchArgument('fake_mir_wheel_joint_frequency', default_value='10.0'),
         DeclareLaunchArgument('launch_mir', default_value='false'),
+        DeclareLaunchArgument('launch_mir_cameras', default_value='false'),
+        DeclareLaunchArgument('mir_camera_max_rate_hz', default_value='2.0'),
         DeclareLaunchArgument('mir_hostname', default_value='192.168.12.20'),
         DeclareLaunchArgument('mir_port', default_value='9090'),
         DeclareLaunchArgument('mir_type', default_value='mir_600'),
@@ -655,6 +657,8 @@ def make_mir_hardware_launch(robot_name, use_sim_time):
             'mir_port': LaunchConfiguration('mir_port'),
             'mir_type': LaunchConfiguration('mir_type'),
             'enabled_pub_topics': LaunchConfiguration('mir_enabled_pub_topics'),
+            'launch_cameras': LaunchConfiguration('launch_mir_cameras'),
+            'camera_max_rate_hz': LaunchConfiguration('mir_camera_max_rate_hz'),
             'robot_state_publisher_enabled': 'false',
         }.items(),
     )

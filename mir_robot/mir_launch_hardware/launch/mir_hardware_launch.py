@@ -42,6 +42,9 @@ def generate_launch_description():
         DeclareLaunchArgument('localization_type', default_value='robot_pose'),
         DeclareLaunchArgument('external_localization', default_value='false'),
         DeclareLaunchArgument('run_rosapi_audit', default_value='false'),
+        DeclareLaunchArgument('launch_cameras', default_value='false'),
+        DeclareLaunchArgument('camera_max_rate_hz', default_value='2.0'),
+        DeclareLaunchArgument('camera_sides', default_value='left right'),
         DeclareLaunchArgument('localization_topic', default_value='/qualisys_map/mur620a/pose'),
 
         IncludeLaunchDescription(
@@ -104,6 +107,20 @@ def generate_launch_description():
                 'robot_pose_topic': 'robot_pose',
                 'odom_topic': 'odom',
             }],
+            output='screen',
+        ),
+        Node(
+            package='mir_launch_hardware',
+            executable='mir_camera_bridge',
+            namespace=namespace,
+            parameters=[{
+                'use_sim_time': use_sim_time,
+                'mir_hostname': mir_hostname,
+                'mir_port': mir_port,
+                'max_rate_hz': LaunchConfiguration('camera_max_rate_hz'),
+                'camera_sides': LaunchConfiguration('camera_sides'),
+            }],
+            condition=IfCondition(LaunchConfiguration('launch_cameras')),
             output='screen',
         ),
         Node(
