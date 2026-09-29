@@ -28,3 +28,16 @@ For each `side` (`left` or `right`), the ROS 2 topics are:
 The bridge retains the MiR image timestamps and prefixes optical frame IDs with
 the robot namespace. It keeps only the latest pending frame per stream and decodes
 it only when the ROS 2 topic has a subscriber.
+
+If the topics are visible on MuR620c itself but not on the GUI computer, use an
+explicit ROS 2 discovery peer in that computer's shell:
+
+```bash
+export ROS_DOMAIN_ID=62
+export ROS_STATIC_PEERS=mur620c
+export ROS2CLI_NO_DAEMON=1
+ros2 topic list | grep /mur620c/camera_floor_
+```
+
+The general MuR GUI sets `ROS_STATIC_PEERS=mur620c` by default when the variable
+is otherwise unset. Restart the GUI to apply this to its ROS helper.

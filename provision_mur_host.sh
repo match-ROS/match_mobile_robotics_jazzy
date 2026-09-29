@@ -10,17 +10,20 @@ BACKUP_ROOT="${MUR_PROVISION_BACKUP_ROOT:-/var/backups/mur-host-provision}"
 
 usage() {
   cat <<'EOF'
-Usage: provision_mur_host.sh --profile NAME [--check|--apply] [--stage system|software] [--user USER]
+Usage: provision_mur_host.sh --profile NAME [--check|--apply] [--stage system|display|software] [--user USER]
 
 Stages:
   system    Configure Ubuntu, networking, PREEMPT_RT, GRUB and user limits.
             --apply must be run as root and requires a reboot afterwards.
+  display   Keep the operator display awake and enable GDM automatic login.
+            --apply must be run as root; log out or reboot afterwards.
   software  Install ROS 2 Jazzy and workspace dependencies using ROS2_setup.sh.
             Run only after rebooting into the realtime kernel.
 
 Examples:
   ./provision_mur_host.sh --profile mur620b --check --stage system
   sudo ./provision_mur_host.sh --profile mur620b --apply --stage system --user rosmatch
+  sudo ./provision_mur_host.sh --profile mur620b --apply --stage display --user rosmatch
   sudo ./provision_mur_host.sh --profile mur620b --apply --stage software --user rosmatch
 EOF
 }
@@ -43,7 +46,7 @@ if [[ -z "$PROFILE" || ! "$PROFILE" =~ ^[a-zA-Z0-9_-]+$ ]]; then
   usage
   exit 2
 fi
-if [[ "$STAGE" != "system" && "$STAGE" != "software" ]]; then
+if [[ "$STAGE" != "system" && "$STAGE" != "display" && "$STAGE" != "software" ]]; then
   echo "MUR_PROVISION: status=fail issue=bad_stage value=${STAGE}"
   exit 2
 fi
@@ -93,6 +96,11 @@ backup_system_state() {
   cp -a /etc/default/grub "$backup_dir/grub" 2>/dev/null || true
   cp -a /etc/security/limits.d "$backup_dir/limits.d" 2>/dev/null || true
   cp -a /etc/hosts "$backup_dir/hosts" 2>/dev/null || true
+  cp -a /etc/gdm3/custom.conf "$backup_dir/gdm3-custom.conf" 2>/dev/null || true
+  cp -a /etc/dconf/profile "$backup_dir/dconf-profile" 2>/dev/null || true
+  cp -a /etc/dconf/db/local.d "$backup_dir/dconf-local.d" 2>/dev/null || true
+  systemctl is-enabled sleep.target suspend.target hibernate.target hybrid-sleep.target \
+    > "$backup_dir/sleep-target-state.txt" 2>&1 || true
   if command -v nmcli >/dev/null 2>&1; then
     nmcli --show-secrets connection show > "$backup_dir/nmcli-connections.txt" 2>&1 || true
   fi
@@ -196,6 +204,118 @@ ensure_realtime_limits() {
 EOF
 }
 
+ensure_gdm_autologin() {
+  local config="/etc/gdm3/custom.conf" tmp_file
+  if [[ ! -f "$config" ]]; then
+    echo "MUR_PROVISION: status=fail issue=gdm_config_missing path=${config}"
+    exit 2
+  fi
+
+  tmp_file="$(mktemp)"
+  awk -v user="$TARGET_USER" '
+    function add_missing() {
+      if (!enable_written) print "AutomaticLoginEnable=true"
+      if (!user_written) print "AutomaticLogin=" user
+    }
+    /^\[[^]]+\][[:space:]]*$/ {
+      if (in_daemon) add_missing()
+      in_daemon = ($0 ~ /^\[daemon\][[:space:]]*$/)
+      if (in_daemon) {
+        daemon_seen = 1
+        enable_written = 0
+        user_written = 0
+      }
+      print
+      next
+    }
+    in_daemon && /^[[:space:]#;]*AutomaticLoginEnable[[:space:]]*=/ {
+      if (!enable_written) print "AutomaticLoginEnable=true"
+      enable_written = 1
+      next
+    }
+    in_daemon && /^[[:space:]#;]*AutomaticLogin[[:space:]]*=/ {
+      if (!user_written) print "AutomaticLogin=" user
+      user_written = 1
+      next
+    }
+    { print }
+    END {
+      if (in_daemon) add_missing()
+      if (!daemon_seen) {
+        print ""
+        print "[daemon]"
+        print "AutomaticLoginEnable=true"
+        print "AutomaticLogin=" user
+      }
+    }
+  ' "$config" > "$tmp_file"
+  install -m 0644 "$tmp_file" "$config"
+  rm -f "$tmp_file"
+}
+
+ensure_operator_display() {
+  ensure_gdm_autologin
+
+  install -d -m 0755 /etc/dconf/profile /etc/dconf/db/local.d/locks
+  install -m 0644 /dev/stdin /etc/dconf/profile/user <<'EOF'
+user-db:user
+system-db:local
+EOF
+  install -m 0644 /dev/stdin /etc/dconf/db/local.d/00-mur-operator-display <<'EOF'
+[org/gnome/desktop/session]
+idle-delay=uint32 0
+
+[org/gnome/desktop/screensaver]
+lock-enabled=false
+idle-activation-enabled=false
+
+[org/gnome/settings-daemon/plugins/power]
+idle-dim=false
+sleep-inactive-ac-type='nothing'
+sleep-inactive-ac-timeout=0
+sleep-inactive-battery-type='nothing'
+sleep-inactive-battery-timeout=0
+EOF
+  install -m 0644 /dev/stdin /etc/dconf/db/local.d/locks/00-mur-operator-display <<'EOF'
+/org/gnome/desktop/session/idle-delay
+/org/gnome/desktop/screensaver/lock-enabled
+/org/gnome/desktop/screensaver/idle-activation-enabled
+/org/gnome/settings-daemon/plugins/power/idle-dim
+/org/gnome/settings-daemon/plugins/power/sleep-inactive-ac-type
+/org/gnome/settings-daemon/plugins/power/sleep-inactive-ac-timeout
+/org/gnome/settings-daemon/plugins/power/sleep-inactive-battery-type
+/org/gnome/settings-daemon/plugins/power/sleep-inactive-battery-timeout
+EOF
+  dconf update
+  systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target >/dev/null
+}
+
+check_operator_display() {
+  local unit sleep_targets_ok=1
+  awk -F= -v user="$TARGET_USER" '
+    /^\[daemon\][[:space:]]*$/ {in_daemon=1; next}
+    /^\[[^]]+\][[:space:]]*$/ {in_daemon=0}
+    in_daemon && $1 ~ /^[[:space:]]*AutomaticLoginEnable[[:space:]]*$/ && $2 ~ /^[[:space:]]*true[[:space:]]*$/ {enabled=1}
+    in_daemon && $1 ~ /^[[:space:]]*AutomaticLogin[[:space:]]*$/ {
+      value=$2; gsub(/^[[:space:]]+|[[:space:]]+$/, "", value); if (value == user) login_user=1
+    }
+    END {exit !(enabled && login_user)}
+  ' /etc/gdm3/custom.conf 2>/dev/null \
+    && ok gdm_autologin "user=${TARGET_USER}" || fail gdm_autologin "user=${TARGET_USER}"
+
+  grep -qx 'idle-delay=uint32 0' /etc/dconf/db/local.d/00-mur-operator-display 2>/dev/null \
+    && grep -qx 'lock-enabled=false' /etc/dconf/db/local.d/00-mur-operator-display 2>/dev/null \
+    && grep -qx 'idle-dim=false' /etc/dconf/db/local.d/00-mur-operator-display 2>/dev/null \
+    && grep -qx "sleep-inactive-ac-type='nothing'" /etc/dconf/db/local.d/00-mur-operator-display 2>/dev/null \
+    && ok operator_display_awake || fail operator_display_awake missing
+
+  for unit in sleep.target suspend.target hibernate.target hybrid-sleep.target; do
+    [[ "$(systemctl is-enabled "$unit" 2>/dev/null || true)" == "masked" ]] || sleep_targets_ok=0
+  done
+  [[ "$sleep_targets_ok" -eq 1 ]] \
+    && ok system_sleep disabled || fail system_sleep "sleep_targets_not_all_masked"
+}
+
 configure_realtime_boot() {
   local latest_rt menu_entry
   latest_rt="$(find /boot -maxdepth 1 -type f -name 'vmlinuz-*-realtime' -printf '%f\n' \
@@ -234,11 +354,12 @@ apply_system() {
   add-apt-repository -y universe
   apt-get update
   apt-get install -y \
-    ca-certificates curl git linux-headers-realtime linux-realtime network-manager \
+    ca-certificates curl dconf-cli git linux-headers-realtime linux-realtime network-manager \
     openssh-server rt-tests
   timedatectl set-timezone "$TIMEZONE_EXPECTED"
   hostnamectl set-hostname "$HOSTNAME_EXPECTED"
   ensure_realtime_limits
+  ensure_operator_display
   ensure_hosts_block
   ensure_nm_connection "$MANAGEMENT_CONNECTION" "$MANAGEMENT_INTERFACE" "$MANAGEMENT_ADDRESS" \
     "$MANAGEMENT_GATEWAY" "$MANAGEMENT_DNS" "$MANAGEMENT_DNS_SEARCH"
@@ -313,6 +434,22 @@ check_system() {
   fi
   getent ahostsv4 "$resolution_name" | awk '{print $1}' | grep -qx "$expected_ip" \
     && ok hostname_resolution || warn hostname_resolution "name=${resolution_name} expected=${expected_ip}"
+  check_operator_display
+}
+
+apply_display() {
+  require_root
+  profile_sanity_check
+  if ! id "$TARGET_USER" >/dev/null 2>&1; then
+    echo "MUR_PROVISION: status=fail issue=user_missing user=${TARGET_USER}"
+    exit 2
+  fi
+  backup_system_state
+  export DEBIAN_FRONTEND=noninteractive
+  apt-get update
+  apt-get install -y dconf-cli
+  ensure_operator_display
+  echo "MUR_PROVISION: applied=true stage=display relogin_or_reboot_required=true"
 }
 
 apply_software() {
@@ -337,8 +474,15 @@ check_software() {
 echo "MUR_PROVISION: mode=${MODE} stage=${STAGE} profile=${PROFILE} user=${TARGET_USER} host=$(hostname)"
 profile_sanity_check
 if [[ "$MODE" == "apply" && "$STAGE" == "system" ]]; then apply_system; fi
+if [[ "$MODE" == "apply" && "$STAGE" == "display" ]]; then apply_display; fi
 if [[ "$MODE" == "apply" && "$STAGE" == "software" ]]; then apply_software; fi
-if [[ "$STAGE" == "system" ]]; then check_system; else check_software; fi
+if [[ "$STAGE" == "system" ]]; then
+  check_system
+elif [[ "$STAGE" == "display" ]]; then
+  check_operator_display
+else
+  check_software
+fi
 
 if [[ "$failures" -gt 0 ]]; then
   echo "MUR_PROVISION: summary=fail failures=${failures} warnings=${warnings} reboot_required=${reboot_required}"

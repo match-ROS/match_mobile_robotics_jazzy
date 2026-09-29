@@ -36,14 +36,21 @@ provisioner is deliberately split at the reboot boundary:
 sudo ./provision_mur_host.sh --profile mur620b --apply --stage system --user rosmatch
 sudo reboot
 
+# Can also be applied separately to an already provisioned control PC. This
+# enables GDM automatic login, disables GNOME blanking/dimming/locking and
+# prevents system suspend/hibernate for an always-on operator display.
+sudo ./provision_mur_host.sh --profile mur620b --apply --stage display --user rosmatch
+
 # Only after uname reports a PREEMPT_RT realtime kernel:
 sudo ./provision_mur_host.sh --profile mur620b --apply --stage software --user rosmatch
 ```
 
-The system stage backs up the existing GRUB, limits, package, hosts and
-NetworkManager state under `/var/backups/mur-host-provision`. It retains the
-generic kernel as a GRUB fallback and does not disable a temporary USB network
-connection. The software stage imports the immutable companion revisions from
+The system stage backs up the existing GRUB, limits, package, hosts, GDM,
+dconf and NetworkManager state under `/var/backups/mur-host-provision`. It
+retains the generic kernel as a GRUB fallback and does not disable a temporary
+USB network connection. Its operator-display configuration is enforced through
+system dconf locks so later desktop settings cannot accidentally re-enable
+blanking. The software stage imports the immutable companion revisions from
 `workspace.repos`, initializes submodules and installs dependencies with
 `rosdep`. It does not launch or move any robot.
 
