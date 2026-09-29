@@ -34,3 +34,11 @@ htmlcov/
 # Regression coverage for the MiR camera message conversion.
 !mir_robot/mir_launch_hardware/test/
 !mir_robot/mir_launch_hardware/test/test_mir_camera_bridge.py
+
+# Regression coverage for the Qualisys ROS 2 bridge.
+!mocap/match_mocap_ros2/test/
+!mocap/match_mocap_ros2/test/test_qtm_pose.py
+
+# Reproducibility coverage for the pinned Ewellix diagnostics patch.
+!/tests/
+!/tests/test_ewellix_diagnostics_patch.py

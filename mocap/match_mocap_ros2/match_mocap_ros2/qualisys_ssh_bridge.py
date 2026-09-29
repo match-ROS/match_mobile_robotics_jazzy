@@ -36,7 +36,7 @@ class QualisysSshBridge(Node):
         self.ssh_host = str(self.declare_parameter('ssh_host', 'roscore').value)
         self.qtm_host = str(self.declare_parameter('qtm_host', 'QTM').value)
         self.qtm_port = int(self.declare_parameter('qtm_port', 22223).value)
-        self.frequency = int(self.declare_parameter('frequency', 20).value)
+        self.frequency = int(self.declare_parameter('frequency', 100).value)
         self.frame_id = str(self.declare_parameter('frame_id', 'mocap').value)
         if not re.fullmatch(r'[A-Za-z0-9_.-]+', self.ssh_host):
             raise ValueError('ssh_host must be a plain SSH host name')
@@ -50,7 +50,7 @@ class QualisysSshBridge(Node):
         self._body_publishers = {}
         self.last_frame_at = 0.0
         self.next_connect_at = 0.0
-        self.create_timer(0.05, self.pump)
+        self.create_timer(0.005, self.pump)
         self.start_remote()
 
     def start_remote(self):

@@ -7,13 +7,17 @@ No files or ROS packages need to be installed on roscore.
 import asyncio
 import json
 import math
+import signal
 import sys
+import time
 import xml.etree.ElementTree as ET
 
 import qtm
 
 
 async def main():
+    # Exit with the SSH channel when the local ROS 2 node closes it.
+    signal.signal(signal.SIGPIPE, signal.SIG_DFL)
     host, port, frequency = sys.argv[1], int(sys.argv[2]), int(sys.argv[3])
     connection = await qtm.connect(host, port=port, version='1.23', timeout=5)
     if connection is None:
@@ -24,7 +28,11 @@ async def main():
         body_names = [node.text for node in parameters.findall('.//Body/Name')]
         print(json.dumps({'kind': 'config', 'body_names': body_names}), flush=True)
 
+        last_packet_at = time.monotonic()
+
         def on_packet(packet):
+            nonlocal last_packet_at
+            last_packet_at = time.monotonic()
             _, bodies = packet.get_6d()
             tracked = []
             for name, (position, rotation) in zip(body_names, bodies):
@@ -48,6 +56,8 @@ async def main():
         )
         while True:
             await asyncio.sleep(1)
+            if time.monotonic() - last_packet_at > 10:
+                raise RuntimeError('No QTM frames received for 10 seconds')
     finally:
         connection.disconnect()
 

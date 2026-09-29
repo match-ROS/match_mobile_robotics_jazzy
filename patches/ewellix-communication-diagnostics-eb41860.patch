@@ -1,0 +1,551 @@
+diff --git a/ewellix_driver/CMakeLists.txt b/ewellix_driver/CMakeLists.txt
+index c5defcb..cc4b6a0 100644
+--- a/ewellix_driver/CMakeLists.txt
++++ b/ewellix_driver/CMakeLists.txt
+@@ -11,6 +11,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+ endif()
+ 
+ find_package(ament_cmake REQUIRED)
++find_package(diagnostic_msgs REQUIRED)
+ find_package(ewellix_interfaces REQUIRED)
+ find_package(hardware_interface REQUIRED)
+ find_package(pluginlib REQUIRED)
+@@ -22,6 +23,7 @@ find_package(serial REQUIRED)
+ include_directories(include)
+ 
+ set(THIS_PACKAGE_INCLUDE_DEPENDS
++  diagnostic_msgs
+   ewellix_interfaces
+   hardware_interface
+   pluginlib
+@@ -116,4 +118,16 @@ ament_export_dependencies(
+   serial
+ )
+ 
++if(BUILD_TESTING)
++  find_package(ament_cmake_gtest REQUIRED)
++  ament_add_gtest(test_communication_state test/test_communication_state.cpp)
++  # Compile the decoder into the test so an older sourced workspace cannot
++  # substitute its installed libewellix_serial at runtime.
++  ament_add_gtest(test_cycle2_data
++    test/test_cycle2_data.cpp
++    src/ewellix_serial/ewellix_serial.cpp
++  )
++  ament_target_dependencies(test_cycle2_data serial)
++endif()
++
+ ament_package()
+diff --git a/ewellix_driver/include/ewellix_driver/ewellix_node/communication_state.hpp b/ewellix_driver/include/ewellix_driver/ewellix_node/communication_state.hpp
+new file mode 100644
+index 0000000..aa6e628
+--- /dev/null
++++ b/ewellix_driver/include/ewellix_driver/ewellix_node/communication_state.hpp
+@@ -0,0 +1,81 @@
++// SPDX-License-Identifier: BSD-3-Clause
++#ifndef EWELLIX_DRIVER__COMMUNICATION_STATE_HPP_
++#define EWELLIX_DRIVER__COMMUNICATION_STATE_HPP_
++
++#include <chrono>
++#include <cstdint>
++#include <mutex>
++#include <string>
++
++namespace ewellix_driver
++{
++
++// Keeps published state and acquisition metadata coherent across the serial
++// worker and ROS timer. Neither serial I/O nor ROS publication holds this lock.
++template<typename State>
++class CommunicationState
++{
++public:
++  using Clock = std::chrono::steady_clock;
++  enum class Health { OK, ERROR, STALE };
++
++  struct Snapshot
++  {
++    State state{};
++    bool has_sample{false};
++    bool last_cycle_ok{false};
++    double last_success_age_sec{-1.0};
++    uint64_t successful_cycles{0};
++    uint64_t consecutive_failures{0};
++    std::string failure_reason;
++
++    Health health(double stale_after_sec) const
++    {
++      if (!has_sample || last_success_age_sec > stale_after_sec) {
++        return Health::STALE;
++      }
++      return last_cycle_ok ? Health::OK : Health::ERROR;
++    }
++  };
++
++  void recordSuccess(const State & state, Clock::time_point now = Clock::now())
++  {
++    std::lock_guard<std::mutex> lock(mutex_);
++    latest_.state = state;
++    latest_.has_sample = true;
++    latest_.last_cycle_ok = true;
++    ++latest_.successful_cycles;
++    latest_.consecutive_failures = 0;
++    latest_.failure_reason.clear();
++    last_success_ = now;
++  }
++
++  void recordFailure(const std::string & reason)
++  {
++    std::lock_guard<std::mutex> lock(mutex_);
++    latest_.last_cycle_ok = false;
++    ++latest_.consecutive_failures;
++    latest_.failure_reason = reason;
++  }
++
++  Snapshot snapshot(Clock::time_point now = Clock::now()) const
++  {
++    std::lock_guard<std::mutex> lock(mutex_);
++    auto result = latest_;
++    if (result.has_sample) {
++      // A writer may have sampled its clock just after the reader sampled now.
++      result.last_success_age_sec = now >= last_success_ ?
++        std::chrono::duration<double>(now - last_success_).count() : 0.0;
++    }
++    return result;
++  }
++
++private:
++  mutable std::mutex mutex_;
++  Snapshot latest_;
++  Clock::time_point last_success_{};
++};
++
++}  // namespace ewellix_driver
++
++#endif  // EWELLIX_DRIVER__COMMUNICATION_STATE_HPP_
+diff --git a/ewellix_driver/include/ewellix_driver/ewellix_node/ewellix_node.hpp b/ewellix_driver/include/ewellix_driver/ewellix_node/ewellix_node.hpp
+index 17dc730..b00d47c 100644
+--- a/ewellix_driver/include/ewellix_driver/ewellix_node/ewellix_node.hpp
++++ b/ewellix_driver/include/ewellix_driver/ewellix_node/ewellix_node.hpp
+@@ -36,6 +36,8 @@
+ 
+ #include <chrono>
+ #include <thread>
++#include "diagnostic_msgs/msg/diagnostic_array.hpp"
++#include "ewellix_driver/ewellix_node/communication_state.hpp"
+ #include "rclcpp/rclcpp.hpp"
+ #include "std_msgs/msg/int32.hpp"
+ #include "ewellix_interfaces/msg/command.hpp"
+@@ -93,6 +95,7 @@ private:
+   float rated_effort_;
+   float tolerance_;
+   float frequency_;
++  double communication_stale_after_sec_;
+   EwellixSerial::EncoderLimit encoder_limits_;
+   rclcpp::TimerBase::SharedPtr run_timer_;
+ 
+@@ -110,6 +113,8 @@ private:
+ 
+   std::vector<uint8_t> data_;
+   EwellixSerial::Cycle2Data state_;
++  CommunicationState<EwellixSerial::Cycle2Data> communication_state_;
++  rclcpp::Publisher<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr pubDiagnostics_;
+ 
+   rclcpp::Subscription<ewellix_interfaces::msg::Command>::SharedPtr subCommand_;
+   rclcpp::Publisher<ewellix_interfaces::msg::Error>::SharedPtr pubError_;
+diff --git a/ewellix_driver/package.xml b/ewellix_driver/package.xml
+index 6c9a434..c513ce8 100644
+--- a/ewellix_driver/package.xml
++++ b/ewellix_driver/package.xml
+@@ -14,6 +14,7 @@
+   <depend>controller_interface</depend>
+   <depend>controller_manager</depend>
+   <depend>controller_manager_msgs</depend>
++  <depend>diagnostic_msgs</depend>
+   <depend>ewellix_interfaces</depend>
+   <depend>hardware_interface</depend>
+   <depend>pluginlib</depend>
+@@ -21,6 +22,8 @@
+   <depend>std_msgs</depend>
+   <depend>serial</depend>
+ 
++  <test_depend>ament_cmake_gtest</test_depend>
++
+   <export>
+     <build_type>ament_cmake</build_type>
+   </export>
+diff --git a/ewellix_driver/src/ewellix_node/ewellix_node.cpp b/ewellix_driver/src/ewellix_node/ewellix_node.cpp
+index 6fcc169..d5e4c15 100644
+--- a/ewellix_driver/src/ewellix_node/ewellix_node.cpp
++++ b/ewellix_driver/src/ewellix_node/ewellix_node.cpp
+@@ -30,6 +30,9 @@ POSSIBILITY OF SUCH DAMAGE.
+ 
+ #include "ewellix_driver/ewellix_node/ewellix_node.hpp"
+ 
++#include <cmath>
++#include <stdexcept>
++
+ namespace ewellix_driver
+ {
+ 
+@@ -45,6 +48,7 @@ EwellixNode::EwellixNode(const std::string node_name)
+   this->declare_parameter("rated_effort", 2000.0);
+   this->declare_parameter("tolerance", 0.005);
+   this->declare_parameter("frequency", 10.0);
++  this->declare_parameter("communication_stale_after_sec", 2.0);
+   this->declare_parameter("allow_zero_command", false);
+   this->declare_parameter("encoder_upper_limit", encoder_limits_.UPPER);
+   this->declare_parameter("encoder_lower_limit", encoder_limits_.LOWER);
+@@ -58,6 +62,11 @@ EwellixNode::EwellixNode(const std::string node_name)
+   this->get_parameter("rated_effort", rated_effort_);
+   this->get_parameter("tolerance", tolerance_);
+   this->get_parameter("frequency", frequency_);
++  this->get_parameter("communication_stale_after_sec", communication_stale_after_sec_);
++  if (!std::isfinite(communication_stale_after_sec_) || communication_stale_after_sec_ <= 0.0)
++  {
++    throw std::invalid_argument("communication_stale_after_sec must be finite and positive");
++  }
+   this->get_parameter("allow_zero_command", allow_zero_command_);
+   this->get_parameter("encoder_upper_limit", encoder_limits_.UPPER);
+   this->get_parameter("encoder_lower_limit", encoder_limits_.LOWER);
+@@ -139,6 +148,8 @@ EwellixNode::EwellixNode(const std::string node_name)
+   );
+ 
+   pubState_ = this->create_publisher<ewellix_interfaces::msg::State>("state", 10);
++  pubDiagnostics_ = this->create_publisher<diagnostic_msgs::msg::DiagnosticArray>(
++    "diagnostics", rclcpp::QoS(1).reliable().durability_volatile());
+ 
+   // Publish loop
+   run_timer_ = this->create_wall_timer(
+@@ -184,20 +195,63 @@ EwellixNode::commandCallback(const ewellix_interfaces::msg::Command &msg)
+ void
+ EwellixNode::run()
+ {
++  const auto snapshot = communication_state_.snapshot();
++  const auto & published_state = snapshot.state;
+   ewellix_interfaces::msg::State msg_state;
+-  msg_state.actual_positions = state_.actual_positions;
+-  msg_state.remote_positions = state_.remote_positions;
+-  msg_state.speeds = state_.speeds;
+-  msg_state.currents = state_.currents;
+-  for (size_t i = 0; i < state_.status.size(); i++)
++  msg_state.actual_positions = published_state.actual_positions;
++  msg_state.remote_positions = published_state.remote_positions;
++  msg_state.speeds = published_state.speeds;
++  msg_state.currents = published_state.currents;
++  for (const auto & status : published_state.status)
+   {
+-    msg_state.status.push_back(state_.status[i].code);
++    msg_state.status.push_back(status.code);
+   }
+-  for (size_t i = 0; i < state_.errors.size(); i++)
++  for (const auto & error : published_state.errors)
+   {
+-    msg_state.errors.push_back(state_.errors[i].code);
++    msg_state.errors.push_back(error.code);
+   }
+   pubState_->publish(msg_state);
++
++  diagnostic_msgs::msg::DiagnosticArray diagnostics;
++  diagnostics.header.stamp = this->now();
++  diagnostic_msgs::msg::DiagnosticStatus status;
++  status.name = std::string(this->get_fully_qualified_name()) + "/communication";
++  status.hardware_id = port_;
++  using Health = CommunicationState<EwellixSerial::Cycle2Data>::Health;
++  const auto health = snapshot.health(communication_stale_after_sec_);
++  if (health == Health::OK)
++  {
++    status.level = diagnostic_msgs::msg::DiagnosticStatus::OK;
++    status.message = "Fresh validated lift state";
++  }
++  else if (health == Health::ERROR)
++  {
++    status.level = diagnostic_msgs::msg::DiagnosticStatus::ERROR;
++    status.message = "Latest lift state acquisition failed";
++  }
++  else
++  {
++    status.level = diagnostic_msgs::msg::DiagnosticStatus::STALE;
++    status.message = snapshot.has_sample ? "Lift state acquisition is stale" :
++      "No validated lift state received";
++  }
++  const auto add_value = [&status](const std::string & key, const std::string & value) {
++    diagnostic_msgs::msg::KeyValue entry;
++    entry.key = key;
++    entry.value = value;
++    status.values.push_back(entry);
++  };
++  add_value("hardware_comm_ok", health == Health::OK ? "true" : "false");
++  add_value("has_sample", snapshot.has_sample ? "true" : "false");
++  add_value("last_cycle_ok", snapshot.last_cycle_ok ? "true" : "false");
++  add_value("last_success_age_sec", std::to_string(snapshot.last_success_age_sec));
++  add_value("successful_cycles", std::to_string(snapshot.successful_cycles));
++  add_value("consecutive_failures", std::to_string(snapshot.consecutive_failures));
++  add_value("failure_reason", snapshot.failure_reason);
++  add_value("stale_after_sec", std::to_string(communication_stale_after_sec_));
++  add_value("port", port_);
++  diagnostics.status.push_back(status);
++  pubDiagnostics_->publish(diagnostics);
+ }
+ 
+ /**
+@@ -212,12 +266,23 @@ EwellixNode::updateState()
+   // Cycle Communication to keep alive
+   if(!ewellix_serial_->cycle2(encoder_commands_, data_))
+   {
++    communication_state_.recordFailure("cycle2_failed");
+     RCLCPP_FATAL_STREAM(rclcpp::get_logger("EwellixNode"), "Failed to cycle2 EwellixSerial port.");
+     return false;
+   }
+ 
+-  // Update state from response data
++  // Reject truncated or oversized payloads before decoding or refreshing age.
++  if (data_.size() != 98)
++  {
++    communication_state_.recordFailure("invalid_cycle2_payload_size");
++    RCLCPP_ERROR(this->get_logger(), "Invalid cycle2 payload: expected 98 bytes, got %zu",
++      data_.size());
++    return false;
++  }
++
++  // Only a validated hardware response refreshes the published sample.
+   state_.setFromData(data_);
++  communication_state_.recordSuccess(state_);
+ 
+   return true;
+ }
+@@ -380,7 +445,14 @@ EwellixNode::getInitialState()
+     RCLCPP_FATAL(this->get_logger(), "Failed initial cycle2");
+     exit(1);
+   }
++  if (init_data.size() != 98)
++  {
++    RCLCPP_FATAL(this->get_logger(), "Invalid initial cycle2 payload: expected 98 bytes, got %zu",
++      init_data.size());
++    exit(1);
++  }
+   state_.setFromData(init_data);
++  communication_state_.recordSuccess(state_);
+ }
+ 
+ /**
+diff --git a/ewellix_driver/src/ewellix_serial/ewellix_serial.cpp b/ewellix_driver/src/ewellix_serial/ewellix_serial.cpp
+index 288f5f0..eef08f3 100644
+--- a/ewellix_driver/src/ewellix_serial/ewellix_serial.cpp
++++ b/ewellix_driver/src/ewellix_serial/ewellix_serial.cpp
+@@ -29,6 +29,7 @@ POSSIBILITY OF SUCH DAMAGE.
+ */
+ 
+ #include "ewellix_driver/ewellix_serial/ewellix_serial.hpp"
++#include <stdexcept>
+ 
+ namespace ewellix_driver
+ {
+@@ -1104,7 +1105,7 @@ EwellixSerial::Cycle2Data::Cycle2Data() :
+   actual_positions({0, 0, 0, 0, 0, 0}), remote_positions({0, 0, 0, 0, 0, 0}),
+   speeds({0, 0, 0, 0, 0, 0}), currents({0, 0, 0, 0, 0, 0}),
+   status(std::vector<EwellixSerial::Status1>(6,EwellixSerial::Status1())),
+-  errors(std::vector<EwellixSerial::SCUError>(6,EwellixSerial::SCUError()))
++  errors(std::vector<EwellixSerial::SCUError>(5,EwellixSerial::SCUError()))
+ {
+ }
+ 
+@@ -1117,7 +1118,7 @@ EwellixSerial::Cycle2Data::Cycle2Data(const std::vector<uint8_t> data) :
+   actual_positions({0, 0, 0, 0, 0, 0}), remote_positions({0, 0, 0, 0, 0, 0}),
+   speeds({0, 0, 0, 0, 0, 0}), currents({0, 0, 0, 0, 0, 0}),
+   status(std::vector<EwellixSerial::Status1>(6,EwellixSerial::Status1())),
+-  errors(std::vector<EwellixSerial::SCUError>(6,EwellixSerial::SCUError()))
++  errors(std::vector<EwellixSerial::SCUError>(5,EwellixSerial::SCUError()))
+ {
+   this->setFromData(data);
+ }
+@@ -1130,7 +1131,10 @@ EwellixSerial::Cycle2Data::Cycle2Data(const std::vector<uint8_t> data) :
+ void
+ EwellixSerial::Cycle2Data::setFromData(const std::vector<uint8_t> data)
+ {
+-  assert(data.size() == 98);
++  if (data.size() != 98)
++  {
++    throw std::invalid_argument("Cycle2Data requires exactly 98 bytes");
++  }
+   for(int i = 0; i < 6; i++)
+   {
+     actual_positions[i] = *reinterpret_cast<const int *>(&data[0 + i*sizeof(int)]);
+@@ -1139,7 +1143,7 @@ EwellixSerial::Cycle2Data::setFromData(const std::vector<uint8_t> data)
+     currents[i] = *reinterpret_cast<const uint16_t *>(&data[60 + i*sizeof(uint16_t)]);
+     status[i].setFromData({data[72 + i*sizeof(uint8_t)]});
+   }
+-  for(int i = 0; i < 6; i++)
++  for(size_t i = 0; i < errors.size(); i++)
+   {
+     errors[i].setFromData({
+       data[78 + i*sizeof(int) + 0],
+diff --git a/ewellix_driver/test/test_communication_state.cpp b/ewellix_driver/test/test_communication_state.cpp
+new file mode 100644
+index 0000000..582b3df
+--- /dev/null
++++ b/ewellix_driver/test/test_communication_state.cpp
+@@ -0,0 +1,91 @@
++// SPDX-License-Identifier: BSD-3-Clause
++#include <array>
++#include <atomic>
++#include <chrono>
++#include <thread>
++
++#include "gtest/gtest.h"
++#include "ewellix_driver/ewellix_node/communication_state.hpp"
++
++using Tracker = ewellix_driver::CommunicationState<std::array<uint64_t, 6>>;
++using Health = Tracker::Health;
++using namespace std::chrono_literals;
++
++TEST(CommunicationState, NoSampleIsStale)
++{
++  Tracker tracker;
++  const auto snapshot = tracker.snapshot();
++  EXPECT_FALSE(snapshot.has_sample);
++  EXPECT_FALSE(snapshot.last_cycle_ok);
++  EXPECT_DOUBLE_EQ(snapshot.last_success_age_sec, -1.0);
++  EXPECT_EQ(snapshot.health(2.0), Health::STALE);
++}
++
++TEST(CommunicationState, FailurePreservesSampleAndAgeThenSuccessRecovers)
++{
++  Tracker tracker;
++  const auto acquired = Tracker::Clock::time_point(100s);
++  const std::array<uint64_t, 6> first{{1, 2, 3, 4, 5, 6}};
++  tracker.recordSuccess(first, acquired);
++  EXPECT_EQ(tracker.snapshot(acquired + 100ms).health(2.0), Health::OK);
++
++  tracker.recordFailure("cycle2_failed");
++  tracker.recordFailure("invalid_cycle2_payload_size");
++  auto failed = tracker.snapshot(acquired + 500ms);
++  EXPECT_EQ(failed.state, first);
++  EXPECT_EQ(failed.successful_cycles, 1u);
++  EXPECT_EQ(failed.consecutive_failures, 2u);
++  EXPECT_FALSE(failed.last_cycle_ok);
++  EXPECT_DOUBLE_EQ(failed.last_success_age_sec, 0.5);
++  EXPECT_EQ(failed.health(2.0), Health::ERROR);
++  EXPECT_EQ(failed.failure_reason, "invalid_cycle2_payload_size");
++  EXPECT_EQ(tracker.snapshot(acquired + 3s).health(2.0), Health::STALE);
++
++  const std::array<uint64_t, 6> second{{7, 8, 9, 10, 11, 12}};
++  tracker.recordSuccess(second, acquired + 4s);
++  const auto recovered = tracker.snapshot(acquired + 4100ms);
++  EXPECT_EQ(recovered.state, second);
++  EXPECT_EQ(recovered.successful_cycles, 2u);
++  EXPECT_EQ(recovered.consecutive_failures, 0u);
++  EXPECT_TRUE(recovered.failure_reason.empty());
++  EXPECT_DOUBLE_EQ(recovered.last_success_age_sec, 0.1);
++  EXPECT_EQ(recovered.health(2.0), Health::OK);
++}
++
++TEST(CommunicationState, RepeatedPublicationCannotRefreshStalledAcquisition)
++{
++  Tracker tracker;
++  const auto acquired = Tracker::Clock::time_point(100s);
++  tracker.recordSuccess({{42, 42, 42, 42, 42, 42}}, acquired);
++  // The publishing timer stays alive while the serial thread stalls. No ROS
++  // time is an input, so ROS clock jumps cannot make cached data fresh again.
++  for (int i = 1; i <= 30; ++i) {
++    const auto snapshot = tracker.snapshot(acquired + 100ms * i);
++    EXPECT_DOUBLE_EQ(snapshot.last_success_age_sec, 0.1 * i);
++    EXPECT_EQ(snapshot.successful_cycles, 1u);
++    EXPECT_EQ(snapshot.health(2.0), i <= 20 ? Health::OK : Health::STALE);
++  }
++}
++
++TEST(CommunicationState, ConcurrentSnapshotsKeepStateAndMetadataTogether)
++{
++  Tracker tracker;
++  std::atomic<bool> done{false};
++  std::thread writer([&]() {
++    for (uint64_t n = 1; n <= 20000; ++n) {
++      tracker.recordSuccess({{n, n, n, n, n, n}});
++    }
++    done.store(true);
++  });
++  do {
++    const auto snapshot = tracker.snapshot();
++    if (snapshot.has_sample) {
++      for (const auto value : snapshot.state) {
++        EXPECT_EQ(value, snapshot.successful_cycles);
++      }
++      EXPECT_GE(snapshot.last_success_age_sec, 0.0);
++    }
++  } while (!done.load());
++  writer.join();
++  EXPECT_EQ(tracker.snapshot().successful_cycles, 20000u);
++}
+diff --git a/ewellix_driver/test/test_cycle2_data.cpp b/ewellix_driver/test/test_cycle2_data.cpp
+new file mode 100644
+index 0000000..60cd876
+--- /dev/null
++++ b/ewellix_driver/test/test_cycle2_data.cpp
+@@ -0,0 +1,67 @@
++// SPDX-License-Identifier: BSD-3-Clause
++#include <cstdint>
++#include <stdexcept>
++#include <vector>
++
++#include "gtest/gtest.h"
++#include "ewellix_driver/ewellix_serial/ewellix_serial.hpp"
++
++using Cycle2Data = ewellix_driver::EwellixSerial::Cycle2Data;
++
++namespace
++{
++void set32(std::vector<uint8_t> & data, size_t offset, uint32_t value)
++{
++  for (size_t i = 0; i < 4; ++i) {
++    data.at(offset + i) = static_cast<uint8_t>(value >> (8 * i));
++  }
++}
++
++void set16(std::vector<uint8_t> & data, size_t offset, uint16_t value)
++{
++  data.at(offset) = static_cast<uint8_t>(value);
++  data.at(offset + 1) = static_cast<uint8_t>(value >> 8);
++}
++}  // namespace
++
++TEST(Cycle2Data, DecodesAllActuatorsAndExactlyFiveErrorRecords)
++{
++  std::vector<uint8_t> data(98, 0);
++  for (size_t i = 0; i < 6; ++i) {
++    set32(data, i * 4, static_cast<uint32_t>(-100 - static_cast<int>(i)));
++    set32(data, 24 + i * 4, 200 + i);
++    set16(data, 48 + i * 2, 300 + i);
++    set16(data, 60 + i * 2, 400 + i);
++    data.at(72 + i) = static_cast<uint8_t>(i);
++  }
++  for (size_t i = 0; i < 5; ++i) {
++    set32(data, 78 + i * 4, 1u << i);
++  }
++  const Cycle2Data state(data);
++  ASSERT_EQ(state.errors.size(), 5u);
++  for (size_t i = 0; i < 6; ++i) {
++    EXPECT_EQ(state.actual_positions.at(i), -100 - static_cast<int>(i));
++    EXPECT_EQ(state.remote_positions.at(i), 200 + static_cast<int>(i));
++    EXPECT_EQ(state.speeds.at(i), 300 + i);
++    EXPECT_EQ(state.currents.at(i), 400 + i);
++    EXPECT_EQ(state.status.at(i).code, i);
++  }
++  for (size_t i = 0; i < 5; ++i) {
++    EXPECT_EQ(state.errors.at(i).code, 1u << i);
++  }
++}
++
++TEST(Cycle2Data, RejectsMalformedFramesBeforeChangingTheLastValidState)
++{
++  std::vector<uint8_t> valid(98, 0);
++  set32(valid, 0, 1234);
++  Cycle2Data state(valid);
++  for (const size_t size : {0u, 14u, 78u, 97u, 99u, 102u}) {
++    std::vector<uint8_t> invalid(size, 0);
++    EXPECT_THROW(state.setFromData(invalid), std::invalid_argument);
++    EXPECT_THROW((void)Cycle2Data(invalid), std::invalid_argument);
++    EXPECT_EQ(state.actual_positions.at(0), 1234);
++    EXPECT_EQ(state.errors.size(), 5u);
++  }
++  EXPECT_EQ(Cycle2Data().errors.size(), 5u);
++}
