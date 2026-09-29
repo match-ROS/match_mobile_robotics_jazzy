@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>match_mocap_ros2</name>
+  <version>0.1.0</version>
+  <description>Forward Qualisys QTM rigid-body poses from the ROS 1 host to ROS 2 over SSH.</description>
+  <maintainer email="match@ipa.fraunhofer.de">MATCH</maintainer>
+  <license>BSD</license>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>python3-scipy</exec_depend>
+  <test_depend>python3-pytest</test_depend>
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

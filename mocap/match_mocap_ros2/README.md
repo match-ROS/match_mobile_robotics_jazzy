@@ -1,0 +1,31 @@
+# Qualisys to ROS 2
+
+`qualisys_ssh_bridge` runs on a ROS 2 Jazzy computer. It starts the existing
+`qtm` Python SDK on `roscore` over SSH and forwards tracked 6D rigid bodies as
+`geometry_msgs/PoseStamped` on `/qualisys/<body_name>/pose`. No ROS 2 install,
+OS upgrade, or persistent file change on the Ubuntu 20.04 `roscore` host is
+required. The ROS 1 Qualisys driver can continue to run independently.
+
+The ROS 2 computer needs passwordless SSH access to `roscore`, and `roscore`
+needs the `qtm` Python package and network access to the QTM server. The
+default QTM endpoint is `QTM:22223`, and the default output frame is `mocap`.
+The bridge converts QTM millimetres to metres and converts its column-major
+rotation matrix to a ROS quaternion, as the existing ROS 1 driver does. Missing
+or untracked bodies (NaN coordinates) are not published.
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source /home/rosmatch/colcon_ws/install/setup.bash
+export ROS_DOMAIN_ID=62
+ros2 run match_mocap_ros2 qualisys_ssh_bridge
+```
+
+Optional ROS parameters: `ssh_host`, `qtm_host`, `qtm_port`, `frequency`,
+`frame_id`. Timestamps currently reflect arrival at the ROS 2 host. This is
+appropriate for stationary calibration; time-synchronise and account for
+transport latency before combining moving-camera and mocap measurements.
+
+The bridge publishes the raw QTM `mocap` frame. It does not publish `/tf`,
+apply the ROS 1 `map -> mocap` offset, or assume that a QTM rigid-body origin
+coincides with a MuR `base_link`. Those transforms must be established for
+robot-to-robot calibration.
