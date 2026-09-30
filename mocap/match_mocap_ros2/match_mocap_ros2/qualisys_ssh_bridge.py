@@ -12,7 +12,10 @@ import numpy as np
 import rclpy
 from geometry_msgs.msg import PoseStamped
 from rclpy.node import Node
+from rclpy.executors import ExternalShutdownException
 from scipy.spatial.transform import Rotation
+
+from match_mocap_ros2.planar_smoothing import PlanarMovingAverage
 
 
 def pose_from_qtm(body, stamp, frame_id):
@@ -38,16 +41,23 @@ class QualisysSshBridge(Node):
         self.qtm_port = int(self.declare_parameter('qtm_port', 22223).value)
         self.frequency = int(self.declare_parameter('frequency', 100).value)
         self.frame_id = str(self.declare_parameter('frame_id', 'mocap').value)
+        self.smoothing_window_sec = float(self.declare_parameter('smoothing_window_sec', 0.2).value)
+        self.smoothed_rate_hz = float(self.declare_parameter('smoothed_rate_hz', 10.0).value)
         if not re.fullmatch(r'[A-Za-z0-9_.-]+', self.ssh_host):
             raise ValueError('ssh_host must be a plain SSH host name')
         if not re.fullmatch(r'[A-Za-z0-9_.:-]+', self.qtm_host):
             raise ValueError('qtm_host must be a plain host name or IP address')
         if not 1 <= self.qtm_port <= 65535 or not 1 <= self.frequency <= 200:
             raise ValueError('qtm_port or frequency outside valid range')
+        if not 0 < self.smoothing_window_sec <= 5 or not 0 < self.smoothed_rate_hz <= self.frequency:
+            raise ValueError('smoothing_window_sec or smoothed_rate_hz outside valid range')
 
         self.process = None
         self.messages = queue.Queue(maxsize=256)
         self._body_publishers = {}
+        self._smoothed_publishers = {}
+        self._smoothers = {}
+        self._last_smoothed_at = {}
         self.last_frame_at = 0.0
         self.next_connect_at = 0.0
         self.create_timer(0.005, self.pump)
@@ -74,6 +84,8 @@ class QualisysSshBridge(Node):
             self.next_connect_at = time.monotonic() + 3.0
             return
         self.last_frame_at = time.monotonic()
+        self._smoothers.clear()
+        self._last_smoothed_at.clear()
         threading.Thread(target=self.read_stdout, args=(self.process,), daemon=True).start()
         threading.Thread(target=self.read_stderr, args=(self.process,), daemon=True).start()
         self.get_logger().info(f'Connecting to QTM {self.qtm_host}:{self.qtm_port} via SSH {self.ssh_host}')
@@ -130,9 +142,27 @@ class QualisysSshBridge(Node):
                         self._body_publishers[topic] = self.create_publisher(PoseStamped, topic, 10)
                         self.get_logger().info(f'Publishing {topic} in frame {self.frame_id}')
                     try:
-                        self._body_publishers[topic].publish(pose_from_qtm(body, stamp, self.frame_id))
+                        pose = pose_from_qtm(body, stamp, self.frame_id)
                     except (ValueError, KeyError):
                         self.get_logger().warning(f'Ignoring invalid QTM pose for {topic_name}')
+                        continue
+                    self._body_publishers[topic].publish(pose)
+                    if topic_name in ('mur620a', 'mur620b', 'mur620c', 'mur620d'):
+                        self.publish_smoothed(topic_name, pose, time.monotonic())
+
+    def publish_smoothed(self, body_name, pose, received_at):
+        smoother = self._smoothers.setdefault(
+            body_name, PlanarMovingAverage(self.smoothing_window_sec)
+        )
+        smoothed = smoother.add(pose, received_at)
+        if received_at - self._last_smoothed_at.get(body_name, 0.0) < 1.0 / self.smoothed_rate_hz:
+            return
+        topic = f'/qualisys/{body_name}/pose_smoothed'
+        if topic not in self._smoothed_publishers:
+            self._smoothed_publishers[topic] = self.create_publisher(PoseStamped, topic, 10)
+            self.get_logger().info(f'Publishing {topic} in frame {self.frame_id}')
+        self._smoothed_publishers[topic].publish(smoothed)
+        self._last_smoothed_at[body_name] = received_at
 
     def stop_remote(self):
         process = self.process
@@ -155,7 +185,7 @@ def main(args=None):
     node = QualisysSshBridge()
     try:
         rclpy.spin(node)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, ExternalShutdownException):
         pass
     finally:
         node.destroy_node()

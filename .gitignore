@@ -38,6 +38,7 @@ htmlcov/
 # Regression coverage for the Qualisys ROS 2 bridge.
 !mocap/match_mocap_ros2/test/
 !mocap/match_mocap_ros2/test/test_qtm_pose.py
+!mocap/match_mocap_ros2/test/test_planar_smoothing.py
 
 # Reproducibility coverage for the pinned Ewellix diagnostics patch.
 !/tests/
