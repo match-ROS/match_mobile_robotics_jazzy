@@ -56,20 +56,12 @@ def load_yaml(package_name, file_path):
         return None
 
 
-def arm_controller_config(controller_namespace):
-    if controller_namespace:
-        controller_prefix = f"/{controller_namespace}"
-    else:
-        controller_prefix = ""
-
+def arm_controller_config(controller_namespace, use_lift=True):
+    controller_prefix = f"/{controller_namespace}" if controller_namespace else ""
     left_controller = f"{controller_prefix}/moveit_joint_trajectory_controller_l"
     right_controller = f"{controller_prefix}/moveit_joint_trajectory_controller_r"
-    left_lift_controller = (
-        f"{controller_prefix}/moveit_joint_trajectory_controller_lift_l"
-    )
-    right_lift_controller = (
-        f"{controller_prefix}/moveit_joint_trajectory_controller_lift_r"
-    )
+    left_lift_controller = f"{controller_prefix}/moveit_joint_trajectory_controller_lift_l"
+    right_lift_controller = f"{controller_prefix}/moveit_joint_trajectory_controller_lift_r"
 
     left_joints = [
         "UR10_l/shoulder_pan_joint",
@@ -87,8 +79,35 @@ def arm_controller_config(controller_namespace):
         "UR10_r/wrist_2_joint",
         "UR10_r/wrist_3_joint",
     ]
-    left_lift_joints = ["left_lift_joint"] + left_joints
-    right_lift_joints = ["right_lift_joint"] + right_joints
+    controllers = {
+        "controller_names": [left_controller, right_controller],
+        left_controller: {
+            "action_ns": "follow_joint_trajectory",
+            "type": "FollowJointTrajectory",
+            "default": True,
+            "joints": left_joints,
+        },
+        right_controller: {
+            "action_ns": "follow_joint_trajectory",
+            "type": "FollowJointTrajectory",
+            "default": True,
+            "joints": right_joints,
+        },
+    }
+    if use_lift:
+        controllers["controller_names"].extend([left_lift_controller, right_lift_controller])
+        controllers[left_lift_controller] = {
+            "action_ns": "follow_joint_trajectory",
+            "type": "FollowJointTrajectory",
+            "default": True,
+            "joints": ["left_lift_joint"] + left_joints,
+        }
+        controllers[right_lift_controller] = {
+            "action_ns": "follow_joint_trajectory",
+            "type": "FollowJointTrajectory",
+            "default": True,
+            "joints": ["right_lift_joint"] + right_joints,
+        }
 
     return {
         "moveit_controller_manager": (
@@ -100,42 +119,11 @@ def arm_controller_config(controller_namespace):
             "allowed_start_tolerance": 0.01,
             "execution_duration_monitoring": False,
         },
-        "moveit_simple_controller_manager": {
-            "controller_names": [
-                left_controller,
-                right_controller,
-                left_lift_controller,
-                right_lift_controller,
-            ],
-            left_controller: {
-                "action_ns": "follow_joint_trajectory",
-                "type": "FollowJointTrajectory",
-                "default": True,
-                "joints": left_joints,
-            },
-            right_controller: {
-                "action_ns": "follow_joint_trajectory",
-                "type": "FollowJointTrajectory",
-                "default": True,
-                "joints": right_joints,
-            },
-            left_lift_controller: {
-                "action_ns": "follow_joint_trajectory",
-                "type": "FollowJointTrajectory",
-                "default": True,
-                "joints": left_lift_joints,
-            },
-            right_lift_controller: {
-                "action_ns": "follow_joint_trajectory",
-                "type": "FollowJointTrajectory",
-                "default": True,
-                "joints": right_lift_joints,
-            },
-        },
+        "moveit_simple_controller_manager": controllers,
     }
 
 
-def robot_description_source(robot_name):
+def robot_description_source(robot_name, use_lift, ur_type, geometry):
     mur_description_path = get_package_share_directory("mur_description")
     xacro_file = os.path.join(mur_description_path, "urdf", "mur_620.gazebo.xacro")
     controllers_yaml = os.path.join(
@@ -152,11 +140,14 @@ def robot_description_source(robot_name):
 
     mappings = {
         "use_sim": "true",
+        "use_lift": use_lift,
+        "ur_type": ur_type,
         "tf_prefix": robot_name,
         "tf_prefix_mir": robot_name,
         "robot_namespace": robot_name,
         "simulation_controllers": controllers_yaml,
     }
+    mappings.update({key: value for key, value in geometry.items() if value})
     return xacro_file, mappings
 
 
@@ -197,6 +188,13 @@ def declare_arguments():
                     "ur30",
                 ],
             ),
+            DeclareLaunchArgument("use_lift", default_value="true"),
+            DeclareLaunchArgument("ur_l_xyz", default_value=""),
+            DeclareLaunchArgument("ur_l_rpy", default_value=""),
+            DeclareLaunchArgument("ur_r_xyz", default_value=""),
+            DeclareLaunchArgument("ur_r_rpy", default_value=""),
+            DeclareLaunchArgument("kinematics_params_l", default_value=""),
+            DeclareLaunchArgument("kinematics_params_r", default_value=""),
             DeclareLaunchArgument(
                 "warehouse_sqlite_path",
                 default_value=os.path.expanduser("~/.ros/warehouse_ros.sqlite"),
@@ -284,7 +282,19 @@ def launch_setup(context, *args, **kwargs):
     launch_rviz = LaunchConfiguration("launch_rviz")
     rviz_config = LaunchConfiguration("rviz_config")
     rviz_delay = LaunchConfiguration("rviz_delay")
-    _ur_type = LaunchConfiguration("ur_type").perform(context)
+    ur_type = LaunchConfiguration("ur_type").perform(context)
+    use_lift = LaunchConfiguration("use_lift").perform(context).lower() == "true"
+    geometry = {
+        name: LaunchConfiguration(name).perform(context)
+        for name in (
+            "ur_l_xyz",
+            "ur_l_rpy",
+            "ur_r_xyz",
+            "ur_r_rpy",
+            "kinematics_params_l",
+            "kinematics_params_r",
+        )
+    }
     warehouse_sqlite_path = LaunchConfiguration("warehouse_sqlite_path").perform(context)
     launch_servo = LaunchConfiguration("launch_servo")
     use_sim_time = ParameterValue(LaunchConfiguration("use_sim_time"), value_type=bool)
@@ -318,7 +328,12 @@ def launch_setup(context, *args, **kwargs):
         ("joint_states", joint_states_topic),
     ]
 
-    robot_xacro_file, robot_xacro_mappings = robot_description_source(controller_namespace)
+    robot_xacro_file, robot_xacro_mappings = robot_description_source(
+        controller_namespace,
+        "true" if use_lift else "false",
+        ur_type,
+        geometry,
+    )
     moveit_config = (
         MoveItConfigsBuilder(robot_name="mur620", package_name="mur_moveit_config")
         .robot_description(robot_xacro_file, robot_xacro_mappings)
@@ -330,6 +345,7 @@ def launch_setup(context, *args, **kwargs):
                 "virtual_joint_parent_frame": virtual_joint_parent_frame,
                 "home_custom_l_shoulder_pan": home_custom_l_shoulder_pan,
                 "home_custom_r_shoulder_pan": home_custom_r_shoulder_pan,
+                "use_lift": "true" if use_lift else "false",
             },
         )
         .to_moveit_configs()
@@ -347,7 +363,7 @@ def launch_setup(context, *args, **kwargs):
         output="screen",
         parameters=[
             moveit_config.to_dict(),
-            arm_controller_config(controller_namespace),
+            arm_controller_config(controller_namespace, use_lift),
             warehouse_ros_config,
             {
                 "use_sim_time": use_sim_time,

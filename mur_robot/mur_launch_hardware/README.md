@@ -116,11 +116,11 @@ ros2 launch mur_launch_hardware mur_620.launch.py \
 
 ## Build note
 
-The `ewellix_driver` package links the `serial` dependency into a shared
-library. Build the workspace with position-independent code enabled so the
-vendored `serial` package can be linked correctly:
+The `ewellix_driver` package links the vendored `serial` library into a
+shared library. From the workspace root, use the repository's colcon metadata
+to enable position-independent code for `serial`:
 
 ```bash
 colcon build --symlink-install \
-  --cmake-args -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+  --metas src/match_mobile_robotics_jazzy/colcon.meta
 ```

@@ -116,6 +116,51 @@ stop_old_hardware() {
 }
 
 report_serial_access() {
+  local selected_profile="$ROBOT_PROFILE"
+  local selected_robot_name="mur620"
+  local profile_file="${REPO}/mur_robot/mur_launch_hardware/config/mur_robot_profiles.yaml"
+  local requested_lift=""
+  local arg
+  for arg in "$@"; do
+    case "$arg" in
+      robot_profile:=*) selected_profile="${arg#robot_profile:=}" ;;
+      robot_profile_file:=*) profile_file="${arg#robot_profile_file:=}" ;;
+      robot_name:=*) selected_robot_name="${arg#robot_name:=}" ;;
+      use_lift:=*) requested_lift="${arg#use_lift:=}" ;;
+    esac
+  done
+  if [[ -z "$selected_profile" || "$selected_profile" == "auto" ]]; then
+    selected_profile="$selected_robot_name"
+  fi
+
+  local use_lift=true
+  local profile_lift=""
+  if [[ -r "$profile_file" ]]; then
+    profile_lift="$(python3 - "$profile_file" "$selected_profile" <<'PY_PROFILE'
+import sys
+import yaml
+
+with open(sys.argv[1], encoding="utf-8") as profile_stream:
+    robots = (yaml.safe_load(profile_stream) or {}).get("robots", {})
+value = robots.get(sys.argv[2], {}).get("use_lift")
+if value is not None:
+    print(str(value).lower())
+PY_PROFILE
+    )"
+  fi
+  if [[ -n "$profile_lift" ]]; then
+    use_lift="$profile_lift"
+  elif [[ "$selected_profile" == "$ROBOT_PROFILE" ]]; then
+    use_lift="${USE_LIFT:-true}"
+  fi
+  if [[ -n "$requested_lift" ]]; then
+    use_lift="$requested_lift"
+  fi
+  if [[ "${use_lift,,}" == "false" ]]; then
+    echo "MUR_PREFLIGHT: status=skip issue=lift_serial reason=use_lift_false"
+    return 0
+  fi
+
   local ports=()
   read -r -a ports <<< "${MUR_EWELLIX_PORTS:-/dev/ttyUSB0 /dev/ttyUSB1}"
   local serial_blocking=0
@@ -207,7 +252,7 @@ echo
 
 source_setup /opt/ros/jazzy/setup.bash
 run_host_preflight
-report_serial_access || true
+report_serial_access "$@" || true
 
 if [[ "${CLEAN_START}" == "true" ]]; then
   stop_old_hardware
@@ -220,7 +265,7 @@ if [[ "${BUILD_BEFORE_LAUNCH}" == "true" ]]; then
     --base-paths "${WS}/src" \
     --symlink-install \
     --packages-up-to ${BUILD_PACKAGES} \
-    --cmake-args -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+    --metas "${REPO}/colcon.meta"
   source_setup install/setup.bash
   echo "[start_mur620_hardware_logged] Build finished."
   echo

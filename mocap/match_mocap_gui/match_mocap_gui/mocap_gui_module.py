@@ -31,11 +31,14 @@ class MocapMonitor(QtCore.QThread):
         self._times = {name: deque() for name in ROBOTS}
         self._ever_seen = set()
         self._last_smoothed = {}
+        self._last_map = {}
 
     def shutdown(self):
         self._stop = True
 
-    def _on_raw(self, robot, _msg):
+    def _on_raw(self, robot, msg):
+        if msg.header.frame_id != 'mocap':
+            return
         now = time.monotonic()
         times = self._times[robot]
         times.append(now)
@@ -44,11 +47,17 @@ class MocapMonitor(QtCore.QThread):
             times.popleft()
 
     def _on_smoothed(self, robot, msg):
+        if msg.header.frame_id != 'mocap':
+            return
         q = msg.pose.orientation
         yaw = math.atan2(2.0 * (q.w * q.z + q.x * q.y), 1.0 - 2.0 * (q.y * q.y + q.z * q.z))
         self._last_smoothed[robot] = (
             time.monotonic(), msg.pose.position.x, msg.pose.position.y, math.degrees(yaw),
         )
+
+    def _on_map(self, robot, msg):
+        if msg.header.frame_id == 'map':
+            self._last_map[robot] = time.monotonic()
 
     def _emit_snapshot(self):
         now = time.monotonic()
@@ -64,6 +73,7 @@ class MocapMonitor(QtCore.QThread):
                 'seen': robot in self._ever_seen,
                 'hz': hz,
                 'pose': pose[1:] if live and pose and now - pose[0] <= STALE_AFTER_SEC else None,
+                'map_live': live and now - self._last_map.get(robot, 0.0) <= STALE_AFTER_SEC,
             }
         self.snapshot.emit(result)
 
@@ -82,6 +92,10 @@ class MocapMonitor(QtCore.QThread):
                 node.create_subscription(
                     PoseStamped, f'/qualisys/{robot}/pose_smoothed',
                     partial(self._on_smoothed, robot), 10
+                )
+                node.create_subscription(
+                    PoseStamped, f'/qualisys_map/{robot}/pose_smoothed',
+                    partial(self._on_map, robot), 10
                 )
             executor = SingleThreadedExecutor(context=context)
             executor.add_node(node)
@@ -121,8 +135,18 @@ class MocapGuiModule(MurGuiModule):
 
         panel = QtWidgets.QGroupBox('Qualisys Mocap — selected MuRs')
         layout = QtWidgets.QVBoxLayout(panel)
-        self.table = QtWidgets.QTableWidget(len(ROBOTS), 6)
-        self.table.setHorizontalHeaderLabels(['MuR', 'Pose', 'Raw Hz', 'x [m]', 'y [m]', 'φ [°]'])
+        self.map_check = QtWidgets.QCheckBox(
+            'Map-Posen zusätzlich publishen (/qualisys_map/…, Frame map)'
+        )
+        self.map_check.setChecked(True)
+        self.map_check.setToolTip(
+            'Liest map → mocap beim Start aus dem ROS1-Repo auf roscore. '
+            'Roh- und Mittelwert-Posen unter /qualisys bleiben im mocap-Frame.'
+        )
+        self.map_check.toggled.connect(self.on_map_output_toggled)
+        layout.addWidget(self.map_check)
+        self.table = QtWidgets.QTableWidget(len(ROBOTS), 7)
+        self.table.setHorizontalHeaderLabels(['MuR', 'Pose', 'Raw Hz', 'x [m]', 'y [m]', 'φ [°]', 'Map'])
         self.table.verticalHeader().setVisible(False)
         self.table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self.table.setSelectionMode(QtWidgets.QAbstractItemView.NoSelection)
@@ -130,12 +154,13 @@ class MocapGuiModule(MurGuiModule):
         self.table.setMaximumHeight(170)
         for row, robot in enumerate(ROBOTS):
             self.table.setItem(row, 0, QtWidgets.QTableWidgetItem(robot))
-            for col in range(1, 6):
+            for col in range(1, 7):
                 self.table.setItem(row, col, QtWidgets.QTableWidgetItem('—'))
         layout.addWidget(self.table)
         hint = QtWidgets.QLabel(
             'Pose im Qualisys-Frame mocap (Starrkörper, nicht base_link). '
-            'Anzeige: gleitender Mittelwert über 0,2 s, max. 5 Hz.'
+            'Anzeige: gleitender Mittelwert über 0,2 s, max. 5 Hz. '
+            'Map-Posen werden nur auf /qualisys_map publiziert.'
         )
         layout.addWidget(hint)
         context.add_panel(panel)
@@ -153,6 +178,19 @@ class MocapGuiModule(MurGuiModule):
         for row, robot in enumerate(ROBOTS):
             self.table.setRowHidden(row, robot not in selected)
 
+    def on_map_output_toggled(self, enabled):
+        process = self.context.window.processes.get(PROCESS_NAME)
+        if process is not None and process.state() != QtCore.QProcess.NotRunning:
+            self.context.append_log(
+                f"[mocap] Map output {'enabled' if enabled else 'disabled'}; restarting bridge"
+            )
+            self.stop_driver()
+            self.start_driver()
+        elif self.context is not None:
+            self.context.append_log(
+                f"[mocap] Map output {'enabled' if enabled else 'disabled'} for next start"
+            )
+
     def _update_snapshot(self, snapshot):
         self.last_snapshot = snapshot
         for row, robot in enumerate(ROBOTS):
@@ -167,6 +205,11 @@ class MocapGuiModule(MurGuiModule):
                 values.extend([f'{x:.3f}', f'{y:.3f}', f'{yaw_deg:.1f}'])
             else:
                 values.extend(['—'] * 3)
+            values.append(
+                ('Extern live' if state['map_live'] else 'Aus')
+                if not self.map_check.isChecked()
+                else 'Live' if state['map_live'] else 'Keine Pose'
+            )
             for col, value in enumerate(values, start=1):
                 item = self.table.item(row, col)
                 item.setText(value)
@@ -178,9 +221,15 @@ class MocapGuiModule(MurGuiModule):
         if process is not None and process.state() != QtCore.QProcess.NotRunning:
             self.context.append_log('[mocap] QTM bridge is already running')
             return
-        command = setup_prefix() + 'exec python3 -m match_mocap_ros2.qualisys_ssh_bridge'
+        map_enabled = 'true' if self.map_check.isChecked() else 'false'
+        command = (
+            setup_prefix() + 'exec python3 -m match_mocap_ros2.qualisys_ssh_bridge '
+            + f'--ros-args -p publish_map_pose:={map_enabled}'
+        )
         self.driver_status.setText('starting…')
-        self.context.append_log('[mocap] Starting QTM bridge at 100 Hz')
+        self.context.append_log(
+            f'[mocap] Starting QTM bridge at 100 Hz; map output {map_enabled}'
+        )
         self.context.start_process(PROCESS_NAME, command, on_finished=self._driver_finished)
         self.context.window.processes[PROCESS_NAME].started.connect(
             lambda: self.driver_status.setText('driver running')

@@ -312,6 +312,7 @@ def controller_spawner(namespace, controllers, *, active=True):
             f'/{namespace}/controller_manager',
             '--controller-manager-timeout',
             LaunchConfiguration('controller_spawner_timeout'),
+            '--controller-ros-args=-r joint_states:=/joint_states',
         ] + inactive_flags + controllers,
         output='screen',
     )
@@ -400,9 +401,6 @@ def make_ur_driver(side, robot_name, controllers_file, update_rate_config_file, 
         parameters=[
             update_rate_config_file,
             controllers_file,
-        ],
-        remappings=[
-            ('joint_states', '/joint_states'),
         ],
         output='screen',
     )
@@ -781,14 +779,27 @@ def make_moveit_controller_proxies(robot_name):
     )
 
 
-def make_moveit_launch(robot_name, home_custom_l_shoulder_pan, home_custom_r_shoulder_pan):
+def make_moveit_launch(
+    robot_name,
+    use_lift,
+    robot_geometry,
+    home_custom_l_shoulder_pan,
+    home_custom_r_shoulder_pan,
+):
     mur_moveit_path = get_package_share_directory('mur_moveit_config')
     moveit_launch = os.path.join(mur_moveit_path, 'launch', 'ur_moveit.launch.py')
     return IncludeLaunchDescription(
         PythonLaunchDescriptionSource(moveit_launch),
         condition=IfCondition(LaunchConfiguration('launch_moveit')),
         launch_arguments={
-            'ur_type': LaunchConfiguration('ur_type'),
+            'ur_type': robot_geometry['ur_type'],
+            'use_lift': use_lift,
+            'ur_l_xyz': robot_geometry['ur_l_xyz'],
+            'ur_l_rpy': robot_geometry['ur_l_rpy'],
+            'ur_r_xyz': robot_geometry['ur_r_xyz'],
+            'ur_r_rpy': robot_geometry['ur_r_rpy'],
+            'kinematics_params_l': robot_geometry['kinematics_params_l'],
+            'kinematics_params_r': robot_geometry['kinematics_params_r'],
             'use_sim_time': LaunchConfiguration('use_sim_time'),
             'launch_servo': 'false',
             'launch_rviz': LaunchConfiguration('launch_moveit_rviz'),
@@ -1126,6 +1137,16 @@ def launch_setup(context, *args, **kwargs):
         )
     }
 
+    robot_geometry = {
+        'ur_type': ur_type,
+        'ur_l_xyz': ur_l_xyz,
+        'ur_l_rpy': ur_l_rpy,
+        'ur_r_xyz': ur_r_xyz,
+        'ur_r_rpy': ur_r_rpy,
+        'kinematics_params_l': kinematics_params_file_l,
+        'kinematics_params_r': kinematics_params_file_r,
+    }
+
     doc = xacro.process_file(xacro_file, mappings={
         'robot_namespace': robot_name,
         'tf_prefix': robot_name,
@@ -1138,13 +1159,7 @@ def launch_setup(context, *args, **kwargs):
         'use_simple_collisions': LaunchConfiguration('use_simple_collisions').perform(context),
         'use_simple_visuals': LaunchConfiguration('use_simple_visuals').perform(context),
         'use_high_quality_visuals': LaunchConfiguration('use_high_quality_visuals').perform(context),
-        'ur_type': ur_type,
-        'kinematics_params_l': kinematics_params_file_l,
-        'kinematics_params_r': kinematics_params_file_r,
-        'ur_l_xyz': ur_l_xyz,
-        'ur_l_rpy': ur_l_rpy,
-        'ur_r_xyz': ur_r_xyz,
-        'ur_r_rpy': ur_r_rpy,
+        **robot_geometry,
         **visual_mesh_flags,
     })
 
@@ -1175,6 +1190,8 @@ def launch_setup(context, *args, **kwargs):
         make_cartesian_admittance_nodes(robot_name),
         make_moveit_launch(
             robot_name,
+            use_lift,
+            robot_geometry,
             home_custom_l_shoulder_pan,
             home_custom_r_shoulder_pan,
         ),

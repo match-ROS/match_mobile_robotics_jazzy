@@ -68,11 +68,13 @@ qos_profile_latching = QoSProfile(
 )
 class TimeFilter():
     def __init__(self):
-        self.prev_time = 0
-    def test_time(self, time):
-        result = time < self.prev_time
-        self.prev_time = time 
-        return result
+        self.prev_time_by_source = {}
+
+    def previous_if_older(self, source, stamp):
+        current = (stamp['secs'], stamp['nsecs'])
+        previous = self.prev_time_by_source.get(source)
+        self.prev_time_by_source[source] = current
+        return previous if previous is not None and current < previous else None
 
 class TopicConfig(object):
     def __init__(self, topic, topic_type, topic_renamed=None, dict_filter=None, qos_profile=None):
@@ -223,7 +225,7 @@ def _convert_ros_header(header_msg_dict, to_ros2):
     return header_dict
 
 
-def _prepend_tf_prefix_dict_filter(msg_dict, node_handle, time_filter):
+def _prepend_tf_prefix_dict_filter(msg_dict, node_handle, time_filter, topic_name):
     # filtered_msg_dict = copy.deepcopy(msg_dict)
     if not isinstance(msg_dict, dict):  # can happen during recursion
         return
@@ -243,26 +245,30 @@ def _prepend_tf_prefix_dict_filter(msg_dict, node_handle, time_filter):
             except KeyError:
                 pass  # value doesn't have key 'frame_id'
         if key == 'header':
-            #trying to update the time stamp as the mir robot is often behind
+            # MiR timestamps can lag behind ROS 2. Compare only successive
+            # stamps from the same frame or TF edge before replacing them.
             try:
-                # print(f"setting new time on {value['frame_id']}")
-                
-                if time_filter.test_time(value['stamp']['secs']):
-                    node_handle.get_logger().warn("the timings are mixed up from the MiR")
-                                
-                #print(value['stamp'])
-                value['stamp']['secs'] = node_handle.get_clock().now().to_msg().sec
-                value['stamp']['nsecs'] = node_handle.get_clock().now().to_msg().nanosec
-                # value['stamp'] = node_handle.get_clock().now().to_msg()
-            except Exception as e:
+                source = msg_dict.get('child_frame_id') or value.get('frame_id') or '<no frame>'
+                stamp = value['stamp']
+                previous = time_filter.previous_if_older(source, stamp)
+                if previous is not None:
+                    node_handle.get_logger().warn(
+                        f"MiR timestamp went backwards on {topic_name} frame {source}: "
+                        f"{previous[0]}.{previous[1]:09d} -> "
+                        f"{stamp['secs']}.{stamp['nsecs']:09d}"
+                    )
+
+                now = node_handle.get_clock().now().to_msg()
+                stamp['secs'] = now.sec
+                stamp['nsecs'] = now.nanosec
+            except Exception:
                 pass
-                # print(e)
 
         elif isinstance(value, dict):
-            _prepend_tf_prefix_dict_filter(value, node_handle, time_filter)
+            _prepend_tf_prefix_dict_filter(value, node_handle, time_filter, topic_name)
         elif isinstance(value, Iterable):  # an Iterable other than dict (e.g., a list)
             for item in value:
-                _prepend_tf_prefix_dict_filter(item, node_handle, time_filter)
+                _prepend_tf_prefix_dict_filter(item, node_handle, time_filter, topic_name)
     return msg_dict
 
 
@@ -538,7 +544,9 @@ class PublisherWrapper(object):
     def callback(self, msg_dict):
         if not isinstance(msg_dict, dict):  # can happen during recursion
             return
-        msg_dict = _prepend_tf_prefix_dict_filter(msg_dict, self.node_handle, self.time_filter)
+        msg_dict = _prepend_tf_prefix_dict_filter(
+            msg_dict, self.node_handle, self.time_filter, self.topic_config.topic
+        )
         if self.topic_config.dict_filter is not None:
             msg_dict = self.topic_config.dict_filter(msg_dict, to_ros2=True)
         msg = message_converter.convert_dictionary_to_ros_message(self.topic_config.topic_type, msg_dict)

@@ -10,9 +10,13 @@ import math
 import signal
 import sys
 import time
+from pathlib import Path
 import xml.etree.ElementTree as ET
 
 import qtm
+
+
+MAP_LAUNCH_PATH = Path('/home/rosmatch/catkin_ws/src/match_mocap/launch_mocap/launch/mocap_launch.launch')
 
 
 async def main():
@@ -26,7 +30,12 @@ async def main():
     try:
         parameters = ET.fromstring(await connection.get_parameters(parameters=['6d']))
         body_names = [node.text for node in parameters.findall('.//Body/Name')]
-        print(json.dumps({'kind': 'config', 'body_names': body_names}), flush=True)
+        config = {'kind': 'config', 'body_names': body_names}
+        try:
+            config['map_launch_xml'] = MAP_LAUNCH_PATH.read_text(encoding='utf-8')
+        except OSError as exc:
+            config['map_launch_error'] = str(exc)
+        print(json.dumps(config), flush=True)
 
         last_packet_at = time.monotonic()
 

@@ -30,17 +30,26 @@ ros2 run match_mocap_ros2 qualisys_ssh_bridge
 ```
 
 Optional ROS parameters: `ssh_host`, `qtm_host`, `qtm_port`, `frequency`,
-`frame_id`, `smoothing_window_sec`, `smoothed_rate_hz`. The ROS 2 node checks
-its incoming stream every 5 ms. Raw pose timestamps currently reflect
-publication time on the ROS 2 host, not the instant of camera exposure. This is suitable for stationary calibration; synchronise
-clocks and establish the capture-time offset before combining moving-camera
-and mocap measurements.
-The measured SSH transport delay does not include QTM camera exposure and
-6D reconstruction; QTM provides a separate real-time latency indicator.
+`frame_id`, `smoothing_window_sec`, `smoothed_rate_hz`, and
+`publish_map_pose`. The ROS 2 node checks its incoming stream every 5 ms. Raw
+pose timestamps reflect publication time on the ROS 2 host, not the instant of
+camera exposure. Synchronise clocks and establish the capture-time offset
+before combining moving-camera and mocap measurements. SSH transport delay
+does not include QTM camera exposure and 6D reconstruction; QTM provides a
+separate real-time latency indicator.
 Restart the bridge after loading a different QTM rigid-body configuration so
 its names are read again.
 
-The bridge publishes the raw QTM `mocap` frame. It does not publish `/tf`,
-apply the ROS 1 `map -> mocap` offset, or assume that a QTM rigid-body origin
-coincides with a MuR `base_link`. Those transforms must be established for
-robot-to-robot calibration.
+Map output is enabled by default. At each connection the bridge reads the
+`map_to_mocap` static transform directly from
+`/home/rosmatch/catkin_ws/src/match_mocap/launch_mocap/launch/mocap_launch.launch`
+on `roscore`. It accepts only an unambiguous planar `map -> mocap` transform.
+The currently verified numerical calibration is also pinned in
+`map_transform.py` because the roscore worktree has not committed it and the
+repository contains older values. If the file is missing, malformed, or
+differs from the verified calibration, map output stays off and the raw stream
+continues. Review and update the pin deliberately after any map recalibration. For tracked MuRs, the bridge publishes separate map-frame topics
+`/qualisys_map/<robot>/pose` and `/qualisys_map/<robot>/pose_smoothed`. Set
+`publish_map_pose:=false` to suppress these outputs. The original `/qualisys`
+topics always remain in `mocap`. The bridge publishes no `/tf` and makes no
+assumption that a QTM rigid-body origin coincides with a MuR `base_link`.

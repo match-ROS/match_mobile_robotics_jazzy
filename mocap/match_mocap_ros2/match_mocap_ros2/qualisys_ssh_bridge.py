@@ -16,6 +16,7 @@ from rclpy.executors import ExternalShutdownException
 from scipy.spatial.transform import Rotation
 
 from match_mocap_ros2.planar_smoothing import PlanarMovingAverage
+from match_mocap_ros2.map_transform import checked_map_transform
 
 
 def pose_from_qtm(body, stamp, frame_id):
@@ -41,6 +42,7 @@ class QualisysSshBridge(Node):
         self.qtm_port = int(self.declare_parameter('qtm_port', 22223).value)
         self.frequency = int(self.declare_parameter('frequency', 100).value)
         self.frame_id = str(self.declare_parameter('frame_id', 'mocap').value)
+        self.publish_map_pose = bool(self.declare_parameter('publish_map_pose', True).value)
         self.smoothing_window_sec = float(self.declare_parameter('smoothing_window_sec', 0.2).value)
         self.smoothed_rate_hz = float(self.declare_parameter('smoothed_rate_hz', 10.0).value)
         if not re.fullmatch(r'[A-Za-z0-9_.-]+', self.ssh_host):
@@ -56,6 +58,8 @@ class QualisysSshBridge(Node):
         self.messages = queue.Queue(maxsize=256)
         self._body_publishers = {}
         self._smoothed_publishers = {}
+        self._map_publishers = {}
+        self.map_transform = None
         self._smoothers = {}
         self._last_smoothed_at = {}
         self.last_frame_at = 0.0
@@ -84,6 +88,7 @@ class QualisysSshBridge(Node):
             self.next_connect_at = time.monotonic() + 3.0
             return
         self.last_frame_at = time.monotonic()
+        self.map_transform = None
         self._smoothers.clear()
         self._last_smoothed_at.clear()
         threading.Thread(target=self.read_stdout, args=(self.process,), daemon=True).start()
@@ -130,6 +135,7 @@ class QualisysSshBridge(Node):
                 break
             if item.get('kind') == 'config':
                 self.get_logger().info('QTM rigid bodies: ' + ', '.join(item.get('body_names', [])))
+                self.configure_map_transform(item)
             elif item.get('kind') == 'frame':
                 self.last_frame_at = now
                 stamp = self.get_clock().now().to_msg()
@@ -148,6 +154,7 @@ class QualisysSshBridge(Node):
                         continue
                     self._body_publishers[topic].publish(pose)
                     if topic_name in ('mur620a', 'mur620b', 'mur620c', 'mur620d'):
+                        self.publish_map(topic_name, pose)
                         self.publish_smoothed(topic_name, pose, time.monotonic())
 
     def publish_smoothed(self, body_name, pose, received_at):
@@ -162,9 +169,50 @@ class QualisysSshBridge(Node):
             self._smoothed_publishers[topic] = self.create_publisher(PoseStamped, topic, 10)
             self.get_logger().info(f'Publishing {topic} in frame {self.frame_id}')
         self._smoothed_publishers[topic].publish(smoothed)
+        self.publish_map(body_name, smoothed, smoothed=True)
         self._last_smoothed_at[body_name] = received_at
 
+    def configure_map_transform(self, config):
+        self.clear_map_publishers()
+        self.map_transform = None
+        if not self.publish_map_pose:
+            self.get_logger().info('Map pose publishing disabled')
+            return
+        if self.frame_id != 'mocap':
+            self.get_logger().error('Map output disabled: source frame must be mocap')
+            return
+        if 'map_launch_error' in config:
+            self.get_logger().error(f"Map output disabled: {config['map_launch_error']}")
+            return
+        try:
+            self.map_transform = checked_map_transform(config['map_launch_xml'])
+        except (KeyError, ValueError) as exc:
+            self.get_logger().error(f'Map output disabled: invalid ROS 1 transform: {exc}')
+            return
+        transform = self.map_transform
+        self.get_logger().info(
+            f'Using roscore map -> mocap: x={transform.x:.4f} m, '
+            f'y={transform.y:.4f} m, z={transform.z:.4f} m, yaw={transform.yaw:.6f} rad'
+        )
+
+    def publish_map(self, body_name, pose, smoothed=False):
+        if self.map_transform is None:
+            return
+        suffix = 'pose_smoothed' if smoothed else 'pose'
+        topic = f'/qualisys_map/{body_name}/{suffix}'
+        if topic not in self._map_publishers:
+            self._map_publishers[topic] = self.create_publisher(PoseStamped, topic, 10)
+            self.get_logger().info(f'Publishing {topic} in frame map')
+        self._map_publishers[topic].publish(self.map_transform.apply(pose))
+
+    def clear_map_publishers(self):
+        for publisher in self._map_publishers.values():
+            self.destroy_publisher(publisher)
+        self._map_publishers.clear()
+
     def stop_remote(self):
+        self.map_transform = None
+        self.clear_map_publishers()
         process = self.process
         self.process = None
         if process is not None and process.poll() is None:
