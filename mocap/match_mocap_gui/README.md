@@ -28,3 +28,11 @@ full-6D `/qualisys_map/<mur>/pose` at up to 100 Hz. The URDF's identity joint
 from `base_footprint` to `base_link` gives the exact Qualisys `base_link` pose
 without a second TF parent. Set RViz Fixed Frame to `map`; the smoothed pose
 remains available as a separate topic but does not drive TF.
+
+The Cooperative Handling GUI now has a **Mocap** tab with the same local bridge
+start/stop behavior plus **Freeze selected MuRs** and **Resume selected MuRs**.
+These controls call the bridge's per-robot `std_srvs/SetBool` service
+`/qualisys/<robot>/freeze_localization`. Holding localization keeps the last
+fresh map pose and robot TF alive through temporary QTM occlusion; raw QTM
+poses continue for diagnosis. The standalone Mocap GUI remains a monitor and
+bridge launcher.

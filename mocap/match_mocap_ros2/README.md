@@ -31,7 +31,8 @@ ros2 run match_mocap_ros2 qualisys_ssh_bridge
 
 Optional ROS parameters: `ssh_host`, `qtm_host`, `qtm_port`, `frequency`,
 `frame_id`, `smoothing_window_sec`, `smoothed_rate_hz`, and
-`publish_map_pose`. The ROS 2 node checks its incoming stream every 5 ms. Raw
+`publish_map_pose`, and `publish_robot_tf`. The ROS 2 node checks its incoming
+stream every 5 ms. Raw
 pose timestamps reflect publication time on the ROS 2 host, not the instant of
 camera exposure. Synchronise clocks and establish the capture-time offset
 before combining moving-camera and mocap measurements. SSH transport delay
@@ -68,3 +69,20 @@ including z, roll, and pitch. This avoids a second parent for `base_link`.
 `/qualisys_map/<robot>/pose_smoothed` is not used for TF. Verify that the
 MiRs use the same map calibration before using these TF frames for motion.
 The standalone bridge keeps `publish_robot_tf` disabled by default.
+
+## Holding localization during occlusion
+
+The Cooperative Handling GUI's **Mocap** tab starts this bridge with both
+`publish_map_pose` and `publish_robot_tf` enabled. For each MuR,
+`/qualisys/<robot>/freeze_localization` (`std_srvs/SetBool`) accepts `true`
+to hold the last fresh map pose and `false` to resume live input. The bridge
+rejects either transition when no map pose arrived in the last 0.5 s; a
+robot that is already frozen stays frozen until a fresh pose returns.
+
+While frozen, the bridge republishes the held full 6D pose at 20 Hz on both
+`/qualisys_map/<robot>/pose` and `pose_smoothed`, plus the robot
+`map -> <robot>/base_footprint` TF when robot TF output is enabled. The
+headers get current timestamps, but the position and orientation stay fixed.
+Raw `/qualisys/<robot>/pose` continues to reflect QTM for diagnosis.
+`/qualisys/<robot>/localization_frozen` (`std_msgs/Bool`) reports the
+state. Stopping the bridge also stops held TF publication.
