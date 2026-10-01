@@ -10,7 +10,8 @@ from pathlib import Path
 
 import numpy as np
 import rclpy
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, TransformStamped
+from tf2_ros import StaticTransformBroadcaster, TransformBroadcaster
 from rclpy.node import Node
 from rclpy.executors import ExternalShutdownException
 from scipy.spatial.transform import Rotation
@@ -34,6 +35,23 @@ def pose_from_qtm(body, stamp, frame_id):
     return pose
 
 
+ROBOT_NAMES = ('mur620a', 'mur620b', 'mur620c', 'mur620d')
+
+
+def robot_tf_from_map_pose(mapped_pose, body_name):
+    """Use the QTM base_link pose unchanged for the URDF's identity base joint."""
+    if mapped_pose.header.frame_id != 'map':
+        raise ValueError('Robot TF requires a map-frame Qualisys pose')
+    transform = TransformStamped()
+    transform.header = mapped_pose.header
+    transform.child_frame_id = f'{body_name}/base_footprint'
+    transform.transform.translation.x = mapped_pose.pose.position.x
+    transform.transform.translation.y = mapped_pose.pose.position.y
+    transform.transform.translation.z = mapped_pose.pose.position.z
+    transform.transform.rotation = mapped_pose.pose.orientation
+    return transform
+
+
 class QualisysSshBridge(Node):
     def __init__(self):
         super().__init__('qualisys_ssh_bridge')
@@ -43,6 +61,7 @@ class QualisysSshBridge(Node):
         self.frequency = int(self.declare_parameter('frequency', 100).value)
         self.frame_id = str(self.declare_parameter('frame_id', 'mocap').value)
         self.publish_map_pose = bool(self.declare_parameter('publish_map_pose', True).value)
+        self.publish_robot_tf = bool(self.declare_parameter('publish_robot_tf', False).value)
         self.smoothing_window_sec = float(self.declare_parameter('smoothing_window_sec', 0.2).value)
         self.smoothed_rate_hz = float(self.declare_parameter('smoothed_rate_hz', 10.0).value)
         if not re.fullmatch(r'[A-Za-z0-9_.-]+', self.ssh_host):
@@ -60,6 +79,8 @@ class QualisysSshBridge(Node):
         self._smoothed_publishers = {}
         self._map_publishers = {}
         self.map_transform = None
+        self.static_tf_broadcaster = StaticTransformBroadcaster(self)
+        self.body_tf_broadcaster = TransformBroadcaster(self)
         self._smoothers = {}
         self._last_smoothed_at = {}
         self.last_frame_at = 0.0
@@ -153,7 +174,8 @@ class QualisysSshBridge(Node):
                         self.get_logger().warning(f'Ignoring invalid QTM pose for {topic_name}')
                         continue
                     self._body_publishers[topic].publish(pose)
-                    if topic_name in ('mur620a', 'mur620b', 'mur620c', 'mur620d'):
+                    if topic_name in ROBOT_NAMES:
+                        self.publish_body_tf(topic_name, pose)
                         self.publish_map(topic_name, pose)
                         self.publish_smoothed(topic_name, pose, time.monotonic())
 
@@ -190,10 +212,32 @@ class QualisysSshBridge(Node):
             self.get_logger().error(f'Map output disabled: invalid ROS 1 transform: {exc}')
             return
         transform = self.map_transform
+        static_tf = TransformStamped()
+        static_tf.header.stamp = self.get_clock().now().to_msg()
+        static_tf.header.frame_id = 'map'
+        static_tf.child_frame_id = 'mocap'
+        static_tf.transform.translation.x = transform.x
+        static_tf.transform.translation.y = transform.y
+        static_tf.transform.translation.z = transform.z
+        static_tf.transform.rotation.z = np.sin(transform.yaw / 2.0)
+        static_tf.transform.rotation.w = np.cos(transform.yaw / 2.0)
+        self.static_tf_broadcaster.sendTransform(static_tf)
         self.get_logger().info(
             f'Using roscore map -> mocap: x={transform.x:.4f} m, '
             f'y={transform.y:.4f} m, z={transform.z:.4f} m, yaw={transform.yaw:.6f} rad'
         )
+
+    def publish_body_tf(self, body_name, pose):
+        if self.map_transform is None:
+            return
+        body_tf = TransformStamped()
+        body_tf.header = pose.header
+        body_tf.child_frame_id = f'qualisys/{body_name}'
+        body_tf.transform.translation.x = pose.pose.position.x
+        body_tf.transform.translation.y = pose.pose.position.y
+        body_tf.transform.translation.z = pose.pose.position.z
+        body_tf.transform.rotation = pose.pose.orientation
+        self.body_tf_broadcaster.sendTransform(body_tf)
 
     def publish_map(self, body_name, pose, smoothed=False):
         if self.map_transform is None:
@@ -203,7 +247,12 @@ class QualisysSshBridge(Node):
         if topic not in self._map_publishers:
             self._map_publishers[topic] = self.create_publisher(PoseStamped, topic, 10)
             self.get_logger().info(f'Publishing {topic} in frame map')
-        self._map_publishers[topic].publish(self.map_transform.apply(pose))
+        mapped_pose = self.map_transform.apply(pose)
+        self._map_publishers[topic].publish(mapped_pose)
+        if not smoothed and self.publish_robot_tf and body_name in ROBOT_NAMES:
+            self.body_tf_broadcaster.sendTransform(
+                robot_tf_from_map_pose(mapped_pose, body_name)
+            )
 
     def clear_map_publishers(self):
         for publisher in self._map_publishers.values():

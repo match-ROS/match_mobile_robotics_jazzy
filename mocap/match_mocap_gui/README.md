@@ -20,4 +20,11 @@ has z=0 and roll=pitch=0; its timestamp is the mean publication time of the
 samples in the window. This smoothing adds about 0.1 seconds of group delay
 for moving robots. The transform is read at bridge startup from the ROS 1
 launch file on `roscore`. Raw and smoothed `/qualisys` topics stay in `mocap`,
-and no topic represents the robot's `base_link` without further calibration.
+and the tracked QTM rigid-body frames coincide with each robot's `base_link`.
+
+When map output is enabled (default), the GUI starts the bridge with Qualisys
+robot TF enabled. The robot-model frame `<mur>/base_footprint` follows the raw,
+full-6D `/qualisys_map/<mur>/pose` at up to 100 Hz. The URDF's identity joint
+from `base_footprint` to `base_link` gives the exact Qualisys `base_link` pose
+without a second TF parent. Set RViz Fixed Frame to `map`; the smoothed pose
+remains available as a separate topic but does not drive TF.

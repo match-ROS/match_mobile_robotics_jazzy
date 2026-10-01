@@ -1,21 +1,21 @@
 Panels:
   - Class: rviz_common/Displays
-    Help Height: 78
+    Help Height: 0
     Name: Displays
     Property Tree Widget:
       Expanded:
         - /Global Options1
         - /Status1
         - /RobotModel1
-        - /MotionPlanning1
-        - /TF1
         - /MarkerArray1
         - /LaserScan1
         - /LaserScan1/Topic1
         - /Map1
         - /Map1/Topic1
+        - /RobotModel2
+        - /Pose1
       Splitter Ratio: 0.5
-    Tree Height: 569
+    Tree Height: 1647
   - Class: rviz_common/Views
     Expanded:
       - /Current View1
@@ -52,7 +52,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /mur620d/robot_description
+        Value: /mur620a/robot_description
       Enabled: true
       Links:
         All Links Enabled: true
@@ -291,22 +291,12 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        left_lift_top:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
         left_wheel_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
         right_lift_bottom:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_lift_top:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -341,347 +331,15 @@ Visualization Manager:
         Inertia: false
         Mass: false
       Name: RobotModel
-      TF Prefix: mur620d
+      TF Prefix: mur620a
       Update Interval: 0
       Value: true
       Visual Enabled: true
-    - Acceleration_Scaling_Factor: 0.2
-      Class: moveit_rviz_plugin/MotionPlanning
-      Enabled: true
-      Move Group Namespace: mur620
-      MoveIt_Allow_Approximate_IK: false
-      MoveIt_Allow_External_Program: false
-      MoveIt_Allow_Replanning: false
-      MoveIt_Allow_Sensor_Positioning: false
-      MoveIt_Planning_Attempts: 10
-      MoveIt_Planning_Time: 5
-      MoveIt_Use_Cartesian_Path: false
-      MoveIt_Use_Constraint_Aware_IK: false
-      MoveIt_Workspace:
-        Center:
-          X: 0
-          Y: 0
-          Z: 0
-        Size:
-          X: 2
-          Y: 2
-          Z: 2
-      Name: MotionPlanning
-      Planned Path:
-        Color Enabled: false
-        Interrupt Display: false
-        Links:
-          All Links Enabled: true
-          Expand Joint Details: false
-          Expand Link Details: false
-          Expand Tree: false
-          Link Tree Style: ""
-        Loop Animation: false
-        Robot Alpha: 0.5
-        Robot Color: 150; 50; 150
-        Show Robot Collision: false
-        Show Robot Visual: true
-        Show Trail: false
-        State Display Time: 3x
-        Trail Step Size: 1
-        Trajectory Topic: /display_planned_path
-        Use Sim Time: false
-      Planning Metrics:
-        Payload: 1
-        Show Joint Torques: false
-        Show Manipulability: false
-        Show Manipulability Index: false
-        Show Weight Limit: false
-        TextHeight: 0.07999999821186066
-      Planning Request:
-        Colliding Link Color: 255; 0; 0
-        Goal State Alpha: 1
-        Goal State Color: 250; 128; 0
-        Interactive Marker Size: 0
-        Joint Violation Color: 255; 0; 255
-        Planning Group: UR_arm_r
-        Query Goal State: true
-        Query Start State: false
-        Show Workspace: false
-        Start State Alpha: 1
-        Start State Color: 0; 255; 0
-      Planning Scene Topic: monitored_planning_scene
-      Robot Description: robot_description
-      Scene Geometry:
-        Scene Alpha: 0.8999999761581421
-        Scene Color: 50; 230; 50
-        Scene Display Time: 0.009999999776482582
-        Show Scene Geometry: true
-        Voxel Coloring: Z-Axis
-        Voxel Rendering: Occupied Voxels
-      Scene Robot:
-        Attached Body Color: 150; 50; 150
-        Links:
-          All Links Enabled: true
-          Expand Joint Details: false
-          Expand Link Details: false
-          Expand Tree: false
-          Link Tree Style: Links in Alphabetic Order
-        Robot Alpha: 1
-        Show Robot Collision: false
-        Show Robot Visual: true
-      Value: true
-      Velocity_Scaling_Factor: 0.2
-    - Class: rviz_default_plugins/TF
-      Enabled: true
-      Filter (blacklist): ""
-      Filter (whitelist): ""
-      Frame Timeout: 15
-      Frames:
-        All Enabled: false
-        base_footprint:
-          Value: false
-        mur620d/UR10_l/admittance_equilibrium_pose:
-          Value: true
-        mur620d/UR10_l/admittance_target_pose:
-          Value: true
-        mur620d/UR10_l/base:
-          Value: true
-        mur620d/UR10_l/base_ideal:
-          Value: true
-        mur620d/UR10_l/base_link:
-          Value: true
-        mur620d/UR10_l/base_link_inertia:
-          Value: true
-        mur620d/UR10_l/flange:
-          Value: true
-        mur620d/UR10_l/forearm_link:
-          Value: true
-        mur620d/UR10_l/ft_frame:
-          Value: true
-        mur620d/UR10_l/shoulder_link:
-          Value: true
-        mur620d/UR10_l/tool0:
-          Value: true
-        mur620d/UR10_l/tool0_controller:
-          Value: true
-        mur620d/UR10_l/upper_arm_link:
-          Value: true
-        mur620d/UR10_l/wrist_1_link:
-          Value: true
-        mur620d/UR10_l/wrist_2_link:
-          Value: true
-        mur620d/UR10_l/wrist_3_link:
-          Value: true
-        mur620d/UR10_r/admittance_equilibrium_pose:
-          Value: true
-        mur620d/UR10_r/admittance_target_pose:
-          Value: true
-        mur620d/UR10_r/base:
-          Value: true
-        mur620d/UR10_r/base_ideal:
-          Value: true
-        mur620d/UR10_r/base_link:
-          Value: true
-        mur620d/UR10_r/base_link_inertia:
-          Value: true
-        mur620d/UR10_r/flange:
-          Value: true
-        mur620d/UR10_r/forearm_link:
-          Value: true
-        mur620d/UR10_r/ft_frame:
-          Value: true
-        mur620d/UR10_r/shoulder_link:
-          Value: true
-        mur620d/UR10_r/tool0:
-          Value: true
-        mur620d/UR10_r/tool0_controller:
-          Value: true
-        mur620d/UR10_r/upper_arm_link:
-          Value: true
-        mur620d/UR10_r/wrist_1_link:
-          Value: true
-        mur620d/UR10_r/wrist_2_link:
-          Value: true
-        mur620d/UR10_r/wrist_3_link:
-          Value: true
-        mur620d/back_laser_link:
-          Value: true
-        mur620d/base_footprint:
-          Value: true
-        mur620d/base_link:
-          Value: true
-        mur620d/bl_caster_rotation_link:
-          Value: true
-        mur620d/bl_caster_wheel_link:
-          Value: true
-        mur620d/br_caster_rotation_link:
-          Value: true
-        mur620d/br_caster_wheel_link:
-          Value: true
-        mur620d/camera_bottom_screw_frame:
-          Value: true
-        mur620d/camera_color_frame:
-          Value: true
-        mur620d/camera_color_optical_frame:
-          Value: true
-        mur620d/camera_depth_frame:
-          Value: true
-        mur620d/camera_depth_optical_frame:
-          Value: true
-        mur620d/camera_infra1_frame:
-          Value: true
-        mur620d/camera_infra1_optical_frame:
-          Value: true
-        mur620d/camera_infra2_frame:
-          Value: true
-        mur620d/camera_infra2_optical_frame:
-          Value: true
-        mur620d/camera_link:
-          Value: true
-        mur620d/fl_caster_rotation_link:
-          Value: true
-        mur620d/fl_caster_wheel_link:
-          Value: true
-        mur620d/fr_caster_rotation_link:
-          Value: true
-        mur620d/fr_caster_wheel_link:
-          Value: true
-        mur620d/front_laser_link:
-          Value: true
-        mur620d/imu_frame:
-          Value: true
-        mur620d/imu_link:
-          Value: true
-        mur620d/left_lift_bottom:
-          Value: true
-        mur620d/left_lift_top:
-          Value: true
-        mur620d/left_wheel_link:
-          Value: true
-        mur620d/right_lift_bottom:
-          Value: true
-        mur620d/right_lift_top:
-          Value: true
-        mur620d/right_wheel_link:
-          Value: true
-        mur620d/surface:
-          Value: true
-        mur620d/top_module:
-          Value: true
-        mur620d/us_1_frame:
-          Value: true
-        mur620d/us_2_frame:
-          Value: true
-        mur620d/virtual_laser_link:
-          Value: true
-      Marker Scale: 0.4000000059604645
-      Name: TF
-      Show Arrows: true
-      Show Axes: true
-      Show Names: true
-      Tree:
-        mur620d/base_footprint:
-          base_footprint:
-            {}
-          mur620d/base_link:
-            mur620d/back_laser_link:
-              {}
-            mur620d/bl_caster_rotation_link:
-              mur620d/bl_caster_wheel_link:
-                {}
-            mur620d/br_caster_rotation_link:
-              mur620d/br_caster_wheel_link:
-                {}
-            mur620d/camera_bottom_screw_frame:
-              mur620d/camera_link:
-                mur620d/camera_color_frame:
-                  mur620d/camera_color_optical_frame:
-                    {}
-                mur620d/camera_depth_frame:
-                  mur620d/camera_depth_optical_frame:
-                    {}
-                mur620d/camera_infra1_frame:
-                  mur620d/camera_infra1_optical_frame:
-                    {}
-                mur620d/camera_infra2_frame:
-                  mur620d/camera_infra2_optical_frame:
-                    {}
-            mur620d/fl_caster_rotation_link:
-              mur620d/fl_caster_wheel_link:
-                {}
-            mur620d/fr_caster_rotation_link:
-              mur620d/fr_caster_wheel_link:
-                {}
-            mur620d/front_laser_link:
-              {}
-            mur620d/imu_link:
-              mur620d/imu_frame:
-                {}
-            mur620d/left_wheel_link:
-              {}
-            mur620d/right_wheel_link:
-              {}
-            mur620d/surface:
-              {}
-            mur620d/top_module:
-              mur620d/left_lift_bottom:
-                mur620d/left_lift_top:
-                  mur620d/UR10_l/base_ideal:
-                    mur620d/UR10_l/base_link:
-                      mur620d/UR10_l/admittance_equilibrium_pose:
-                        {}
-                      mur620d/UR10_l/admittance_target_pose:
-                        {}
-                      mur620d/UR10_l/base:
-                        mur620d/UR10_l/tool0_controller:
-                          {}
-                      mur620d/UR10_l/base_link_inertia:
-                        mur620d/UR10_l/shoulder_link:
-                          mur620d/UR10_l/upper_arm_link:
-                            mur620d/UR10_l/forearm_link:
-                              mur620d/UR10_l/wrist_1_link:
-                                mur620d/UR10_l/wrist_2_link:
-                                  mur620d/UR10_l/wrist_3_link:
-                                    mur620d/UR10_l/flange:
-                                      mur620d/UR10_l/tool0:
-                                        {}
-                                    mur620d/UR10_l/ft_frame:
-                                      {}
-              mur620d/right_lift_bottom:
-                mur620d/right_lift_top:
-                  mur620d/UR10_r/base_ideal:
-                    mur620d/UR10_r/base_link:
-                      mur620d/UR10_r/admittance_equilibrium_pose:
-                        {}
-                      mur620d/UR10_r/admittance_target_pose:
-                        {}
-                      mur620d/UR10_r/base:
-                        mur620d/UR10_r/tool0_controller:
-                          {}
-                      mur620d/UR10_r/base_link_inertia:
-                        mur620d/UR10_r/shoulder_link:
-                          mur620d/UR10_r/upper_arm_link:
-                            mur620d/UR10_r/forearm_link:
-                              mur620d/UR10_r/wrist_1_link:
-                                mur620d/UR10_r/wrist_2_link:
-                                  mur620d/UR10_r/wrist_3_link:
-                                    mur620d/UR10_r/flange:
-                                      mur620d/UR10_r/tool0:
-                                        {}
-                                    mur620d/UR10_r/ft_frame:
-                                      {}
-            mur620d/us_1_frame:
-              {}
-            mur620d/us_2_frame:
-              {}
-            mur620d/virtual_laser_link:
-              {}
-      Update Interval: 0
-      Value: true
     - Class: rviz_default_plugins/MarkerArray
       Enabled: true
       Name: MarkerArray
       Namespaces:
-        UR10_r_forbidden_zones: true
-        UR10_r_nearest_collision_pair: true
-        UR10_r_other_collision_spheres: true
-        UR10_r_own_collision_spheres: true
+        {}
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -746,10 +404,323 @@ Visualization Manager:
         Value: /map_updates
       Use Timestamp: false
       Value: true
+    - Alpha: 1
+      Class: rviz_default_plugins/RobotModel
+      Collision Enabled: false
+      Description File: ""
+      Description Source: Topic
+      Description Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /mur620b/robot_description
+      Enabled: true
+      Links:
+        All Links Enabled: true
+        Expand Joint Details: false
+        Expand Link Details: false
+        Expand Tree: false
+        Link Tree Style: Links in Alphabetic Order
+        UR10_l/base:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        UR10_l/base_ideal:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        UR10_l/base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        UR10_l/base_link_inertia:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        UR10_l/flange:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        UR10_l/forearm_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        UR10_l/ft_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        UR10_l/shoulder_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        UR10_l/tool0:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        UR10_l/upper_arm_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        UR10_l/wrist_1_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        UR10_l/wrist_2_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        UR10_l/wrist_3_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        UR10_r/base:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        UR10_r/base_ideal:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        UR10_r/base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        UR10_r/base_link_inertia:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        UR10_r/flange:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        UR10_r/forearm_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        UR10_r/ft_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        UR10_r/shoulder_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        UR10_r/tool0:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        UR10_r/upper_arm_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        UR10_r/wrist_1_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        UR10_r/wrist_2_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        UR10_r/wrist_3_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        back_laser_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        base_footprint:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        bl_caster_rotation_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        bl_caster_wheel_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        br_caster_rotation_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        br_caster_wheel_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        camera_bottom_screw_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        camera_color_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        camera_color_optical_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        camera_depth_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        camera_depth_optical_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        camera_infra1_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        camera_infra1_optical_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        camera_infra2_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        camera_infra2_optical_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        camera_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        fl_caster_rotation_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        fl_caster_wheel_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        fr_caster_rotation_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        fr_caster_wheel_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        front_laser_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        imu_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        imu_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        left_lift_bottom:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        left_wheel_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_lift_bottom:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_wheel_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        surface:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        top_module:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        us_1_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        us_2_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        virtual_laser_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+      Mass Properties:
+        Inertia: false
+        Mass: false
+      Name: RobotModel
+      TF Prefix: mur620b
+      Update Interval: 0
+      Value: true
+      Visual Enabled: true
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.10000000149011612
+      Class: rviz_default_plugins/Pose
+      Color: 255; 25; 0
+      Enabled: false
+      Head Length: 0.30000001192092896
+      Head Radius: 0.10000000149011612
+      Name: Pose
+      Shaft Length: 1
+      Shaft Radius: 0.5
+      Shape: Arrow
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /qualisys_map/mur620b/pose
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: mur620d/base_footprint
+    Fixed Frame: map
     Frame Rate: 30
   Name: root
   Tools:
@@ -775,39 +746,35 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/ThirdPersonFollower
-      Distance: 56.84322738647461
+      Distance: 5.989558219909668
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 23.240234375
-        Y: 48.63491439819336
-        Z: 0
+        X: 45.28678894042969
+        Y: 43.19760513305664
+        Z: 4.76837158203125e-07
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.6400002241134644
+      Pitch: 0.5147973299026489
       Target Frame: <Fixed Frame>
       Value: ThirdPersonFollower (rviz_default_plugins)
-      Yaw: 1.7181484699249268
+      Yaw: 5.766331672668457
     Saved: ~
 Window Geometry:
   Displays:
     collapsed: false
-  Height: 1403
+  Height: 2806
   Hide Left Dock: false
   Hide Right Dock: false
-  MotionPlanning:
-    collapsed: false
-  MotionPlanning - Trajectory Slider:
-    collapsed: false
-  QMainWindow State: 000000ff00000000fd0000000100000000000002b40000051dfc0200000004fb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000004400fffffffb000000100044006900730070006c006100790073010000003f000002c7000000cc00fffffffb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e0067010000030c000001a1000001a100fffffffb0000000a0056006900650077007301000004b3000000a9000000a900ffffff000007460000051d00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd00000001000000000000039b00000a56fc0200000004fb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000000000000000fb000000100044006900730070006c0061007900730100000070000006e10000018600fffffffb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e006700000004fb000003840000000000000000fb0000000a00560069006500770073010000075d000003690000013800ffffff0000105900000a5600000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Views:
     collapsed: false
-  Width: 2560
-  X: 0
+  Width: 5120
+  X: 5120
   Y: 0

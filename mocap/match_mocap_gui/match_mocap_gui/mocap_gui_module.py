@@ -136,11 +136,13 @@ class MocapGuiModule(MurGuiModule):
         panel = QtWidgets.QGroupBox('Qualisys Mocap — selected MuRs')
         layout = QtWidgets.QVBoxLayout(panel)
         self.map_check = QtWidgets.QCheckBox(
-            'Map-Posen zusätzlich publishen (/qualisys_map/…, Frame map)'
+            'Map-Posen und Roboter-TF aus Qualisys publishen'
         )
         self.map_check.setChecked(True)
         self.map_check.setToolTip(
             'Liest map → mocap beim Start aus dem ROS1-Repo auf roscore. '
+            'Roboter-TF nutzt /qualisys_map/<mur>/pose (100 Hz, ungemittelt). '
+            'Qualisys-Starrkörper-Frame entspricht dem jeweiligen base_link. '
             'Roh- und Mittelwert-Posen unter /qualisys bleiben im mocap-Frame.'
         )
         self.map_check.toggled.connect(self.on_map_output_toggled)
@@ -158,9 +160,10 @@ class MocapGuiModule(MurGuiModule):
                 self.table.setItem(row, col, QtWidgets.QTableWidgetItem('—'))
         layout.addWidget(self.table)
         hint = QtWidgets.QLabel(
-            'Pose im Qualisys-Frame mocap (Starrkörper, nicht base_link). '
+            'Qualisys-Pose im Frame mocap (Starrkörper = base_link). '
             'Anzeige: gleitender Mittelwert über 0,2 s, max. 5 Hz. '
-            'Map-Posen werden nur auf /qualisys_map publiziert.'
+            'Map-Posen werden nur auf /qualisys_map publiziert. '
+            'Roboter-TF nutzt die ungemittelte 6D-Pose ohne zusätzlichen Versatz.'
         )
         layout.addWidget(hint)
         context.add_panel(panel)
@@ -222,13 +225,15 @@ class MocapGuiModule(MurGuiModule):
             self.context.append_log('[mocap] QTM bridge is already running')
             return
         map_enabled = 'true' if self.map_check.isChecked() else 'false'
+        robot_tf_enabled = map_enabled
         command = (
             setup_prefix() + 'exec python3 -m match_mocap_ros2.qualisys_ssh_bridge '
-            + f'--ros-args -p publish_map_pose:={map_enabled}'
+            + f'--ros-args -p publish_map_pose:={map_enabled} -p publish_robot_tf:={robot_tf_enabled}'
         )
         self.driver_status.setText('starting…')
         self.context.append_log(
-            f'[mocap] Starting QTM bridge at 100 Hz; map output {map_enabled}'
+            f'[mocap] Starting QTM bridge at 100 Hz; map output {map_enabled}; '
+            f'Qualisys raw-pose robot TF {robot_tf_enabled} (rigid body = base_link)'
         )
         self.context.start_process(PROCESS_NAME, command, on_finished=self._driver_finished)
         self.context.window.processes[PROCESS_NAME].started.connect(

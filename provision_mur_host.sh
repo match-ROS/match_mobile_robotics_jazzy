@@ -459,6 +459,7 @@ apply_software() {
     exit 2
   fi
   TARGET_USER="$TARGET_USER" UPDATE_BASHRC=1 "$SCRIPT_DIR/ROS2_setup.sh"
+  bash "$SCRIPT_DIR/setup_bms_can_host.sh"
 }
 
 check_software() {

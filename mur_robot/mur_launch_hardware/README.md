@@ -76,6 +76,24 @@ Bring up the SocketCAN interface before launching, for example:
 sudo ip link set can0 up type can bitrate 250000
 ```
 
+For persistent setup on the robot host, run once:
+
+```bash
+sudo bash ~/colcon_ws/src/match_mobile_robotics_jazzy/setup_bms_can_host.sh
+```
+
+This installs `mur-bms-can.service` and a udev rule for `can0`. The adapter is
+configured at 250 kbit/s on boot and USB reconnect, and activated immediately
+if present. The software provisioning stage also installs this setup. An already
+active bus is left unchanged; an unexpected bitrate is reported as an error.
+No ROS rebuild is needed. This setup targets the default `can0` interface only.
+
+Check with `systemctl status mur-bms-can.service` and `ip -details link show can0`.
+The GUI's `sudo -n ip link ...` fallback cannot configure the adapter when sudo
+requires a password; configuring it once with `ip link` alone does not survive
+a reboot or USB reconnect. `Network is down` means the local CAN interface is
+administratively down; it does not mean the robot's Ethernet connection is down.
+
 Alternatively, set `bms_configure_can_interface:=true` when the node has
 sufficient privileges. Disable the BMS node with `launch_bms:=false`.
 

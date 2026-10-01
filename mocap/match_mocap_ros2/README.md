@@ -51,5 +51,20 @@ differs from the verified calibration, map output stays off and the raw stream
 continues. Review and update the pin deliberately after any map recalibration. For tracked MuRs, the bridge publishes separate map-frame topics
 `/qualisys_map/<robot>/pose` and `/qualisys_map/<robot>/pose_smoothed`. Set
 `publish_map_pose:=false` to suppress these outputs. The original `/qualisys`
-topics always remain in `mocap`. The bridge publishes no `/tf` and makes no
-assumption that a QTM rigid-body origin coincides with a MuR `base_link`.
+topics always remain in `mocap`. With validated map calibration, the bridge
+also publishes `map -> mocap` on `/tf_static` and each tracked rigid body as
+`mocap -> qualisys/<robot>` on `/tf`. The QTM rigid-body frames for A/B/C/D
+coincide with the respective MuR `base_link` frames. These TF edges are
+suppressed when map output is disabled or its calibration
+check fails. In RViz, use Fixed Frame `map` and add a TF display to compare
+these frames with the robot models.
+
+The Mocap GUI additionally starts the bridge with `publish_robot_tf:=true` when
+its map checkbox is on. Each **raw**, unsmoothed `/qualisys_map/<robot>/pose`
+updates `map -> <robot>/base_footprint` at the QTM frame rate. The MuR URDF
+has an identity fixed joint from `base_footprint` to `base_link`, so the
+resulting `map -> <robot>/base_link` is exactly the full 6D Qualisys pose,
+including z, roll, and pitch. This avoids a second parent for `base_link`.
+`/qualisys_map/<robot>/pose_smoothed` is not used for TF. Verify that the
+MiRs use the same map calibration before using these TF frames for motion.
+The standalone bridge keeps `publish_robot_tf` disabled by default.
