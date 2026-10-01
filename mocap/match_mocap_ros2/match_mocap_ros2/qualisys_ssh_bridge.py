@@ -1,18 +1,23 @@
 """Publish QTM rigid-body poses in ROS 2 without upgrading the ROS 1 host."""
 
+import copy
 import json
 import queue
 import re
 import subprocess
 import threading
 import time
+from functools import partial
 from pathlib import Path
 
 import numpy as np
 import rclpy
 from geometry_msgs.msg import PoseStamped, TransformStamped
+from std_msgs.msg import Bool
+from std_srvs.srv import SetBool
 from tf2_ros import StaticTransformBroadcaster, TransformBroadcaster
 from rclpy.node import Node
+from rclpy.qos import DurabilityPolicy, QoSProfile
 from rclpy.executors import ExternalShutdownException
 from scipy.spatial.transform import Rotation
 
@@ -36,6 +41,41 @@ def pose_from_qtm(body, stamp, frame_id):
 
 
 ROBOT_NAMES = ('mur620a', 'mur620b', 'mur620c', 'mur620d')
+
+
+class LocalizationHold:
+    """Keep the last valid map pose while a robot is hidden from Qualisys."""
+
+    MAX_POSE_AGE_SEC = 0.5
+
+    def __init__(self):
+        self.latest = {}
+        self.frozen = {}
+
+    def observe(self, robot, pose, received_at):
+        self.latest[robot] = (received_at, copy.deepcopy(pose))
+
+    def set_frozen(self, robot, enabled, now):
+        if enabled and robot in self.frozen:
+            return True, 'already frozen'
+        if not enabled and robot not in self.frozen:
+            return True, 'already following Qualisys'
+        latest = self.latest.get(robot)
+        if latest is None or now - latest[0] > self.MAX_POSE_AGE_SEC:
+            return False, 'no fresh map pose; localization state unchanged'
+        if enabled:
+            self.frozen[robot] = copy.deepcopy(latest[1])
+            return True, 'last valid map pose frozen'
+        del self.frozen[robot]
+        return True, 'following live Qualisys map pose'
+
+    def frozen_pose(self, robot, stamp):
+        pose = self.frozen.get(robot)
+        if pose is None:
+            return None
+        result = copy.deepcopy(pose)
+        result.header.stamp = stamp
+        return result
 
 
 def robot_tf_from_map_pose(mapped_pose, body_name):
@@ -83,10 +123,57 @@ class QualisysSshBridge(Node):
         self.body_tf_broadcaster = TransformBroadcaster(self)
         self._smoothers = {}
         self._last_smoothed_at = {}
+        self.localization_hold = LocalizationHold()
+        freeze_qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
+        self._freeze_status_publishers = {}
+        for robot in ROBOT_NAMES:
+            self.create_service(
+                SetBool, f'/qualisys/{robot}/freeze_localization',
+                partial(self.set_localization_frozen, robot)
+            )
+            self._freeze_status_publishers[robot] = self.create_publisher(
+                Bool, f'/qualisys/{robot}/localization_frozen', freeze_qos
+            )
         self.last_frame_at = 0.0
         self.next_connect_at = 0.0
         self.create_timer(0.005, self.pump)
+        self.create_timer(0.05, self.publish_frozen_localizations)
+        self.create_timer(1.0, self.publish_freeze_status)
+        self.publish_freeze_status()
         self.start_remote()
+
+    def set_localization_frozen(self, robot, request, response):
+        response.success, response.message = self.localization_hold.set_frozen(
+            robot, request.data, time.monotonic()
+        )
+        self.publish_freeze_status()
+        if response.success:
+            self.get_logger().info(f'{robot}: {response.message}')
+        else:
+            self.get_logger().warning(f'{robot}: {response.message}')
+        return response
+
+    def publish_freeze_status(self):
+        for robot, publisher in self._freeze_status_publishers.items():
+            message = Bool()
+            message.data = robot in self.localization_hold.frozen
+            publisher.publish(message)
+
+    def publish_frozen_localizations(self):
+        if not self.localization_hold.frozen:
+            return
+        stamp = self.get_clock().now().to_msg()
+        for robot in tuple(self.localization_hold.frozen):
+            mapped_pose = self.localization_hold.frozen_pose(robot, stamp)
+            for suffix in ('pose', 'pose_smoothed'):
+                topic = f'/qualisys_map/{robot}/{suffix}'
+                if topic not in self._map_publishers:
+                    self._map_publishers[topic] = self.create_publisher(PoseStamped, topic, 10)
+                self._map_publishers[topic].publish(mapped_pose)
+            if self.publish_robot_tf:
+                self.body_tf_broadcaster.sendTransform(
+                    robot_tf_from_map_pose(mapped_pose, robot)
+                )
 
     def start_remote(self):
         source = Path(__file__).with_name('remote_qtm_stream.py').read_bytes()
@@ -248,6 +335,10 @@ class QualisysSshBridge(Node):
             self._map_publishers[topic] = self.create_publisher(PoseStamped, topic, 10)
             self.get_logger().info(f'Publishing {topic} in frame map')
         mapped_pose = self.map_transform.apply(pose)
+        if not smoothed and body_name in ROBOT_NAMES:
+            self.localization_hold.observe(body_name, mapped_pose, time.monotonic())
+        if body_name in self.localization_hold.frozen:
+            return
         self._map_publishers[topic].publish(mapped_pose)
         if not smoothed and self.publish_robot_tf and body_name in ROBOT_NAMES:
             self.body_tf_broadcaster.sendTransform(

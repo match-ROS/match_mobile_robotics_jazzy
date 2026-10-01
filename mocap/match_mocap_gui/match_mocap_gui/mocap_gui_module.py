@@ -10,6 +10,7 @@ from PyQt5 import QtCore, QtWidgets
 import rclpy
 from geometry_msgs.msg import PoseStamped
 from rclpy.executors import ExternalShutdownException, SingleThreadedExecutor
+from std_msgs.msg import Bool
 
 from match_mur_gui.base_gui import MurGuiModule, ROBOTS, setup_prefix
 
@@ -17,6 +18,7 @@ from match_mur_gui.base_gui import MurGuiModule, ROBOTS, setup_prefix
 PROCESS_NAME = 'mocap_driver'
 RATE_WINDOW_SEC = 2.0
 STALE_AFTER_SEC = 0.5
+FROZEN_STATUS_SEC = 2.5
 
 
 class MocapMonitor(QtCore.QThread):
@@ -32,6 +34,7 @@ class MocapMonitor(QtCore.QThread):
         self._ever_seen = set()
         self._last_smoothed = {}
         self._last_map = {}
+        self._last_frozen = {}
 
     def shutdown(self):
         self._stop = True
@@ -59,6 +62,9 @@ class MocapMonitor(QtCore.QThread):
         if msg.header.frame_id == 'map':
             self._last_map[robot] = time.monotonic()
 
+    def _on_frozen(self, robot, msg):
+        self._last_frozen[robot] = (time.monotonic(), bool(msg.data))
+
     def _emit_snapshot(self):
         now = time.monotonic()
         result = {}
@@ -68,12 +74,15 @@ class MocapMonitor(QtCore.QThread):
             live = bool(times) and now - times[-1] <= STALE_AFTER_SEC
             hz = (len(times) - 1) / (times[-1] - times[0]) if live and len(times) > 1 and times[-1] > times[0] else 0.0
             pose = self._last_smoothed.get(robot)
+            frozen_state = self._last_frozen.get(robot)
             result[robot] = {
                 'live': live,
                 'seen': robot in self._ever_seen,
                 'hz': hz,
                 'pose': pose[1:] if live and pose and now - pose[0] <= STALE_AFTER_SEC else None,
-                'map_live': live and now - self._last_map.get(robot, 0.0) <= STALE_AFTER_SEC,
+                'map_live': now - self._last_map.get(robot, 0.0) <= STALE_AFTER_SEC,
+                'frozen': (frozen_state[1] if frozen_state and
+                           now - frozen_state[0] <= FROZEN_STATUS_SEC else None),
             }
         self.snapshot.emit(result)
 
@@ -96,6 +105,10 @@ class MocapMonitor(QtCore.QThread):
                 node.create_subscription(
                     PoseStamped, f'/qualisys_map/{robot}/pose_smoothed',
                     partial(self._on_map, robot), 10
+                )
+                node.create_subscription(
+                    Bool, f'/qualisys/{robot}/localization_frozen',
+                    partial(self._on_frozen, robot), 10
                 )
             executor = SingleThreadedExecutor(context=context)
             executor.add_node(node)

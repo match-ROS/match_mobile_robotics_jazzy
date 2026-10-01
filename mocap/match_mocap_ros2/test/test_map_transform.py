@@ -2,10 +2,13 @@ import math
 from types import SimpleNamespace
 
 import pytest
+from builtin_interfaces.msg import Time
 from geometry_msgs.msg import PoseStamped
 
 from match_mocap_ros2.map_transform import MapToMocap, checked_map_transform
-from match_mocap_ros2.qualisys_ssh_bridge import QualisysSshBridge, robot_tf_from_map_pose
+from match_mocap_ros2.qualisys_ssh_bridge import (
+    LocalizationHold, QualisysSshBridge, robot_tf_from_map_pose
+)
 
 
 LAUNCH = '''<launch><node pkg="tf" type="static_transform_publisher"
@@ -85,6 +88,7 @@ def test_only_raw_map_pose_drives_robot_tf():
             '/qualisys_map/mur620a/pose_smoothed': SimpleNamespace(publish=published.append),
         },
         publish_robot_tf=True,
+        localization_hold=LocalizationHold(),
         body_tf_broadcaster=SimpleNamespace(sendTransform=transforms.append),
     )
     pose = PoseStamped()
@@ -98,3 +102,64 @@ def test_only_raw_map_pose_drives_robot_tf():
     assert transforms[0].header.frame_id == 'map'
     assert transforms[0].child_frame_id == 'mur620a/base_footprint'
     assert transforms[0].transform.translation.z == 0.84
+
+
+def test_localization_hold_requires_fresh_pose_and_keeps_full_pose():
+    hold = LocalizationHold()
+    pose = PoseStamped()
+    pose.header.frame_id = 'map'
+    pose.pose.position.x = 3.0
+    pose.pose.position.z = 0.84
+    pose.pose.orientation.w = 1.0
+
+    assert not hold.set_frozen('mur620a', True, 10.0)[0]
+    hold.observe('mur620a', pose, 10.0)
+    assert hold.set_frozen('mur620a', True, 10.1)[0]
+    pose.pose.position.x = 9.0
+    hold.observe('mur620a', pose, 10.2)
+    frozen = hold.frozen_pose('mur620a', Time(sec=11, nanosec=0))
+    assert frozen.pose.position.x == 3.0
+    assert frozen.pose.position.z == 0.84
+    assert frozen.header.stamp.sec == 11
+    assert not hold.set_frozen('mur620a', False, 11.0)[0]
+    assert 'mur620a' in hold.frozen
+    assert hold.set_frozen('mur620a', False, 10.3)[0]
+    assert hold.frozen_pose('mur620a', None) is None
+
+
+def test_frozen_map_topics_and_robot_tf_ignore_new_qtm_pose():
+    published = []
+    transforms = []
+    hold = LocalizationHold()
+    old = PoseStamped()
+    old.header.frame_id = 'map'
+    old.pose.position.x = 2.0
+    old.pose.orientation.w = 1.0
+    hold.observe('mur620a', old, 10.0)
+    assert hold.set_frozen('mur620a', True, 10.1)[0]
+    fake = SimpleNamespace(
+        map_transform=MapToMocap(0.0, 0.0, 0.0, 0.0),
+        _map_publishers={
+            '/qualisys_map/mur620a/pose': SimpleNamespace(publish=published.append),
+            '/qualisys_map/mur620a/pose_smoothed': SimpleNamespace(publish=published.append),
+        },
+        localization_hold=hold,
+        publish_robot_tf=True,
+        body_tf_broadcaster=SimpleNamespace(sendTransform=transforms.append),
+        get_clock=lambda: SimpleNamespace(now=lambda: SimpleNamespace(
+            to_msg=lambda: Time(sec=11, nanosec=0)
+        )),
+    )
+    live = PoseStamped()
+    live.header.frame_id = 'mocap'
+    live.pose.position.x = 9.0
+    live.pose.orientation.w = 1.0
+    QualisysSshBridge.publish_map(fake, 'mur620a', live)
+    QualisysSshBridge.publish_map(fake, 'mur620a', live, smoothed=True)
+    assert not published and not transforms
+    QualisysSshBridge.publish_frozen_localizations(fake)
+    assert len(published) == 2
+    assert all(pose.pose.position.x == 2.0 for pose in published)
+    assert len(transforms) == 1
+    assert transforms[0].transform.translation.x == 2.0
+    assert transforms[0].header.stamp.sec == 11
