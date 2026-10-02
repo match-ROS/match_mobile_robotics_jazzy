@@ -86,6 +86,7 @@ def generate_launch_description():
             DeclareLaunchArgument('mir_type', default_value='mir_600', description='MiR variant: mir_100, mir_200, or mir_600.'),
             DeclareLaunchArgument('enabled_pub_topics', default_value='', description='Optional comma/space separated ROS1 MiR topics to bridge to ROS 2.'),
             DeclareLaunchArgument('disabled_pub_topics', default_value='', description='Optional comma/space separated ROS1 MiR topics to skip.'),
+            DeclareLaunchArgument('tf_excluded_children', default_value='', description='Unprefixed TF child frames owned by another source.'),
             # DeclareLaunchArgument(
             #     'disable_map',
             #     default_value='false',
@@ -120,6 +121,7 @@ def generate_launch_description():
                         'enabled_pub_topics': LaunchConfiguration('enabled_pub_topics'),
                         'disabled_pub_topics': LaunchConfiguration('disabled_pub_topics'),
                         'tf_prefix': LaunchConfiguration('namespace'),
+                        'tf_excluded_children': LaunchConfiguration('tf_excluded_children'),
                     }
                 ],
                 namespace=LaunchConfiguration('namespace'),

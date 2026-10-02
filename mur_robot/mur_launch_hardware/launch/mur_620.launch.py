@@ -66,6 +66,10 @@ def declare_arguments():
             default_value='b_raw_scan b_scan f_raw_scan f_scan scan robot_pose map map_metadata odom odom_enc tf tf_static',
             description='Space separated ROS1 MiR topics to bridge into ROS 2 when launch_mir is true.',
         ),
+        DeclareLaunchArgument(
+            'mir_tf_excluded_children', default_value='odom base_footprint base_link',
+            description='Qualisys owns the MuR base TF and the URDF owns base_link. Set empty for native MiR localization.',
+        ),
         DeclareLaunchArgument('launch_bms', default_value='true'),
         DeclareLaunchArgument(
             'battery_node_id',
@@ -655,6 +659,7 @@ def make_mir_hardware_launch(robot_name, use_sim_time):
             'mir_port': LaunchConfiguration('mir_port'),
             'mir_type': LaunchConfiguration('mir_type'),
             'enabled_pub_topics': LaunchConfiguration('mir_enabled_pub_topics'),
+            'tf_excluded_children': LaunchConfiguration('mir_tf_excluded_children'),
             'launch_cameras': LaunchConfiguration('launch_mir_cameras'),
             'camera_max_rate_hz': LaunchConfiguration('mir_camera_max_rate_hz'),
             'robot_state_publisher_enabled': 'false',
@@ -761,6 +766,7 @@ def make_moveit_controller_proxies(robot_name):
                     f'/{robot_name}/{arm_name}/safe_forward_velocity_controller/commands',
                     '--joint-states-topic', '/joint_states',
                     '--switch-timeout', LaunchConfiguration('moveit_controller_switch_timeout'),
+                    '--check-ur-program', NotSubstitution(LaunchConfiguration('use_mock_hardware')),
                     '--action-timeout', LaunchConfiguration('moveit_trajectory_action_timeout'),
                     '--post-result-settle-sec', LaunchConfiguration('moveit_post_result_settle_sec'),
                     '--goal-reached-tolerance', LaunchConfiguration('moveit_goal_reached_tolerance'),

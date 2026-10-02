@@ -114,10 +114,10 @@ def arm_controller_config(controller_namespace, use_lift=True):
             "moveit_simple_controller_manager/MoveItSimpleControllerManager"
         ),
         "trajectory_execution": {
-            "allowed_execution_duration_scaling": 1.2,
-            "allowed_goal_duration_margin": 0.5,
+            "allowed_execution_duration_scaling": 3.0,
+            "allowed_goal_duration_margin": 5.0,
             "allowed_start_tolerance": 0.01,
-            "execution_duration_monitoring": False,
+            "execution_duration_monitoring": True,
         },
         "moveit_simple_controller_manager": controllers,
     }

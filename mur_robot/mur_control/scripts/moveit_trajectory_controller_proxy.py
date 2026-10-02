@@ -2,6 +2,7 @@
 """Proxy FollowJointTrajectory goals through an automatic controller switch."""
 
 import argparse
+import math
 import threading
 import time
 
@@ -16,10 +17,24 @@ from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
-from std_msgs.msg import Float64MultiArray
+from std_msgs.msg import Bool, Float64MultiArray
+from ur_dashboard_msgs.srv import IsProgramRunning
 
 
 ARM_JOINT_COUNT = 6
+
+
+def trajectory_duration(trajectory):
+    if not trajectory.points:
+        raise ValueError('Empty trajectory')
+    stamp = trajectory.points[-1].time_from_start
+    return stamp.sec + stamp.nanosec * 1e-9
+
+
+def execution_timeout(duration):
+    if not math.isfinite(duration) or duration < 0:
+        raise ValueError('Invalid trajectory duration')
+    return min(300.0, max(15.0, duration * 3.0 + 5.0))
 
 
 class MoveItTrajectoryControllerProxy(Node):
@@ -28,6 +43,8 @@ class MoveItTrajectoryControllerProxy(Node):
         self.args = args
         self.callback_group = ReentrantCallbackGroup()
         self._active_client_goal = None
+        self._goal_reserved = False
+        self._driver_program_running = None
         self._client_goal_lock = threading.Lock()
         self._joint_positions = {}
         self._joint_lock = threading.Lock()
@@ -66,6 +83,15 @@ class MoveItTrajectoryControllerProxy(Node):
             ListControllers,
             f'{self.controller_manager}/list_controllers',
             callback_group=self.callback_group,
+        )
+        self.program_client = self.create_client(
+            IsProgramRunning,
+            f'/{args.robot_name}/{self.arm_name}/dashboard_client/program_running',
+            callback_group=self.callback_group,
+        )
+        self.create_subscription(
+            Bool, f'/{args.robot_name}/{self.arm_name}/io_and_status_controller/robot_program_running',
+            self._program_state_callback, 10, callback_group=self.callback_group,
         )
         self.trajectory_client = ActionClient(
             self,
@@ -116,7 +142,60 @@ class MoveItTrajectoryControllerProxy(Node):
                     self._joint_positions[name] = msg.position[index]
 
     def goal_callback(self, _goal_request):
+        with self._client_goal_lock:
+            if self._goal_reserved:
+                return GoalResponse.REJECT
+            self._goal_reserved = True
         return GoalResponse.ACCEPT
+
+    def _program_state_callback(self, msg):
+        self._driver_program_running = bool(msg.data)
+
+    def _program_ready(self):
+        if not self.args.check_ur_program:
+            return True
+        if self._driver_program_running is False:
+            return False
+        if not self.program_client.wait_for_service(timeout_sec=0.5):
+            return False
+        future = self.program_client.call_async(IsProgramRunning.Request())
+        if not self._wait_for_future(future, 1.0):
+            return False
+        response = future.result()
+        return bool(response and response.success and response.program_running)
+
+    def _stop_execution(self):
+        self._restore_velocity_after_goal = False
+        with self._client_goal_lock:
+            goal = self._active_client_goal
+        if goal is not None:
+            try:
+                cancel = goal.cancel_goal_async()
+                if not self._wait_for_future(cancel, 2.0) or not cancel.result().goals_canceling:
+                    self.get_logger().warn('Trajectory cancel not confirmed; deactivating motion controllers')
+            except Exception as exc:
+                self.get_logger().error(f'Cancel failed: {exc}')
+        if not self._switch_controllers(
+            activate=[], deactivate=[self.trajectory_controller, self.velocity_controller],
+            reason='Execution aborted: disable motion',
+        ):
+            self.get_logger().error('Could not confirm motion-controller deactivation')
+
+    def execute_callback(self, goal_handle):
+        try:
+            return self._execute_goal(goal_handle)
+        except Exception as exc:
+            self.get_logger().error(f'Trajectory execution failed: {exc}')
+            self._stop_execution()
+            if goal_handle.is_active:
+                goal_handle.abort()
+            result = FollowJointTrajectory.Result()
+            result.error_code = FollowJointTrajectory.Result.INVALID_GOAL
+            result.error_string = str(exc)
+            return result
+        finally:
+            with self._client_goal_lock:
+                self._goal_reserved = False
 
     def cancel_callback(self, _goal_handle):
         with self._client_goal_lock:
@@ -317,17 +396,24 @@ class MoveItTrajectoryControllerProxy(Node):
             and 'deactivate transition' in error_string
         )
 
-    def execute_callback(self, goal_handle):
+    def _execute_goal(self, goal_handle):
         result = FollowJointTrajectory.Result()
         self.get_logger().info(
             f"Accepted proxy goal: {self._trajectory_summary(goal_handle.request)}"
         )
+        if not self._program_ready() or goal_handle.is_cancel_requested:
+            result.error_code = FollowJointTrajectory.Result.INVALID_GOAL
+            result.error_string = 'UR program not running or execution canceled before start'
+            goal_handle.abort()
+            return result
         if not self._switch_to_trajectory():
+            self._stop_execution()
             result.error_code = FollowJointTrajectory.Result.INVALID_GOAL
             result.error_string = 'Could not activate trajectory controller'
             goal_handle.abort()
             return result
 
+        completed_successfully = False
         try:
             if not self.trajectory_client.wait_for_server(
                 timeout_sec=self.args.action_timeout
@@ -337,6 +423,11 @@ class MoveItTrajectoryControllerProxy(Node):
                 goal_handle.abort()
                 return result
 
+            if not self._program_ready() or goal_handle.is_cancel_requested:
+                result.error_code = FollowJointTrajectory.Result.INVALID_GOAL
+                result.error_string = 'UR readiness lost before forwarding trajectory'
+                goal_handle.abort()
+                return result
             forwarded_goal = self._goal_with_execution_tolerances(goal_handle.request)
             send_future = self.trajectory_client.send_goal_async(
                 forwarded_goal,
@@ -347,6 +438,11 @@ class MoveItTrajectoryControllerProxy(Node):
             if not self._wait_for_future(send_future, self.args.action_timeout):
                 result.error_code = FollowJointTrajectory.Result.INVALID_GOAL
                 result.error_string = 'Timed out sending goal to real controller'
+                def cancel_late_goal(future):
+                    late_goal = future.result()
+                    if late_goal is not None and late_goal.accepted:
+                        late_goal.cancel_goal_async()
+                send_future.add_done_callback(cancel_late_goal)
                 goal_handle.abort()
                 return result
 
@@ -360,6 +456,9 @@ class MoveItTrajectoryControllerProxy(Node):
             with self._client_goal_lock:
                 self._active_client_goal = client_goal
 
+            duration = trajectory_duration(goal_handle.request.trajectory)
+            deadline = time.monotonic() + execution_timeout(duration)
+            next_readiness_check = time.monotonic()
             result_future = client_goal.get_result_async()
             while rclpy.ok() and not result_future.done():
                 if goal_handle.is_cancel_requested:
@@ -367,6 +466,19 @@ class MoveItTrajectoryControllerProxy(Node):
                     goal_handle.canceled()
                     result.error_code = FollowJointTrajectory.Result.INVALID_GOAL
                     result.error_string = 'Trajectory execution canceled'
+                    return result
+                now = time.monotonic()
+                driver_lost = self.args.check_ur_program and self._driver_program_running is False
+                ready = True
+                if now >= next_readiness_check:
+                    ready = self._program_ready()
+                    next_readiness_check = time.monotonic() + 0.5
+                if now >= deadline or driver_lost or not ready:
+                    result.error_code = FollowJointTrajectory.Result.PATH_TOLERANCE_VIOLATED
+                    result.error_string = ('Trajectory execution timed out' if now >= deadline
+                                           else 'UR program/reverse connection lost during execution')
+                    self.get_logger().error(result.error_string)
+                    goal_handle.abort()
                     return result
                 time.sleep(0.02)
 
@@ -386,7 +498,8 @@ class MoveItTrajectoryControllerProxy(Node):
                 f"error_string='{result.error_string}', "
                 f"final_error={final_error}"
             )
-            if real_result.status == GoalStatus.STATUS_SUCCEEDED:
+            if real_result.status == GoalStatus.STATUS_SUCCEEDED and result.error_code == FollowJointTrajectory.Result.SUCCESSFUL:
+                completed_successfully = True
                 goal_handle.succeed()
             elif self._looks_like_deactivate_cancel(result):
                 if final_error is not None and final_error <= self.args.goal_reached_tolerance:
@@ -396,6 +509,7 @@ class MoveItTrajectoryControllerProxy(Node):
                     )
                     result.error_code = FollowJointTrajectory.Result.SUCCESSFUL
                     result.error_string = ''
+                    completed_successfully = True
                     goal_handle.succeed()
                 else:
                     self.get_logger().warn(
@@ -409,9 +523,12 @@ class MoveItTrajectoryControllerProxy(Node):
                 goal_handle.abort()
             return result
         finally:
+            if completed_successfully and self._program_ready():
+                self._switch_to_velocity()
+            else:
+                self._stop_execution()
             with self._client_goal_lock:
                 self._active_client_goal = None
-            self._switch_to_velocity()
 
 
 def parse_args():
@@ -426,12 +543,14 @@ def parse_args():
     parser.add_argument('--velocity-command-topic', default='')
     parser.add_argument('--joint-states-topic', default='/joint_states')
     parser.add_argument('--switch-timeout', type=float, default=5.0)
+    parser.add_argument('--check-ur-program', choices=['true', 'false'], default='false')
     parser.add_argument('--action-timeout', type=float, default=10.0)
     parser.add_argument('--post-result-settle-sec', type=float, default=0.25)
     parser.add_argument('--goal-reached-tolerance', type=float, default=0.025)
     parser.add_argument('--path-tolerance', type=float, default=0.35)
     parser.add_argument('--goal-tolerance', type=float, default=0.12)
     args, _ = parser.parse_known_args()
+    args.check_ur_program = args.check_ur_program == 'true'
     return args
 
 

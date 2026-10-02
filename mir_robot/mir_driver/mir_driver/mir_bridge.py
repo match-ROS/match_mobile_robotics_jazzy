@@ -191,6 +191,15 @@ def _tf_dict_filter(msg_dict, to_ros2):
     return filtered_msg_dict
 
 
+def filter_tf_children(msg_dict, excluded_children, prefix):
+    """Remove only TF edges owned by another localization/description source."""
+    excluded = {prefix + child.strip('/') for child in excluded_children}
+    return dict(msg_dict, transforms=[
+        transform for transform in msg_dict['transforms']
+        if transform['child_frame_id'].strip('/') not in excluded
+    ])
+
+
 def _convert_ros_time(time_msg_dict, to_ros2):
     time_dict = copy.deepcopy(time_msg_dict)
     if to_ros2:
@@ -549,6 +558,10 @@ class PublisherWrapper(object):
         )
         if self.topic_config.dict_filter is not None:
             msg_dict = self.topic_config.dict_filter(msg_dict, to_ros2=True)
+        if self.topic_config.topic_ros2_name in ('/tf', '/tf_static'):
+            msg_dict = filter_tf_children(msg_dict, self.node_handle.tf_excluded_children, tf_prefix)
+            if not msg_dict['transforms']:
+                return
         msg = message_converter.convert_dictionary_to_ros_message(self.topic_config.topic_type, msg_dict)
         if self.topic_config.topic_ros2_name == '/tf_static':
             for transform in msg.transforms:
@@ -601,6 +614,9 @@ class MiRBridgeNode(Node):
         mir_type = self.declare_parameter('mir_type', 'mir_600').value
         enabled_pub_topics = _topic_filter_set(self.declare_parameter('enabled_pub_topics', '').value)
         disabled_pub_topics = _topic_filter_set(self.declare_parameter('disabled_pub_topics', '').value)
+
+        self.tf_excluded_children = _topic_filter_set(
+            self.declare_parameter('tf_excluded_children', '').value)
 
         global tf_prefix
         self.declare_parameter('tf_prefix', '')
