@@ -44,3 +44,8 @@ htmlcov/
 # Reproducibility coverage for the pinned Ewellix diagnostics patch.
 !/tests/
 !/tests/test_ewellix_diagnostics_patch.py
+
+# Regression coverage for explicit Cartesian startup and FT calibration.
+!mur_robot/mur_control/test/
+!mur_robot/mur_control/test/test_wrench_bias.cpp
+!mur_robot/mur_control/test/test_moveit_proxy_startup.py

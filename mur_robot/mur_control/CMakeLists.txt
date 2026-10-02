@@ -130,7 +130,12 @@ install(DIRECTORY
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
+  find_package(ament_cmake_pytest REQUIRED)
+  ament_add_pytest_test(test_moveit_proxy_startup test/test_moveit_proxy_startup.py)
   find_package(ament_lint_auto REQUIRED)
+
+  ament_add_gtest(test_wrench_bias test/test_wrench_bias.cpp)
+  target_include_directories(test_wrench_bias PRIVATE include)
 
   ament_add_gtest(test_collision_response
     test/test_collision_response.cpp

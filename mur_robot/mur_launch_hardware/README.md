@@ -52,6 +52,38 @@ power-on and brake release must be handled separately.
 After updating `setup_mur_hardware_host.sh` locally, use the GUI's Connect with
 code synchronization enabled before Start Hardware to update the remote check.
 
+## Explicit Cartesian motion activation
+
+The General/Cooperative GUI loads the integrated Cartesian controller **inactive**
+on Start Hardware, with the other joint motion controllers inactive as well.
+UR power-on, brake release and External Control program startup still follow the
+existing startup/recovery sequence. Reverse-interface readiness does not imply
+that Cartesian control is active.
+
+- Cooperative `START MOTION` activates Cartesian control after the existing arm
+  readiness checks, then starts virtual-object control.
+- In the Jog dialog, press `Enable Cartesian control` explicitly before jogging.
+  Opening the dialog alone does not activate admittance.
+- An explicit Align action activates Cartesian control before starting alignment.
+- MoveIt/Home uses its trajectory controller and only restores Cartesian control
+  if it was already active before the goal.
+- `STOP ARM MOTION` and Cooperative `STOP MOTION` also deactivate Cartesian
+  control; zero twist alone does not disable force-driven admittance.
+
+Each controller activation clears old twist references and initializes the target
+from the measured pose. With FT enabled, calibration holds zero joint commands
+for a complete stationary sampling window (`wrench_bias_duration`, default 1 s),
+regardless of `require_wrench`. All six FT values and joint velocities must be
+finite; joint speeds must remain at or below 0.01 rad/s. Movement or missing
+samples restart calibration. During calibration the target tracks the measured
+pose and incoming motion references are discarded. Fresh commands are needed
+afterwards. Missing FT data therefore blocks initial calibration even when
+`require_wrench=false`.
+
+After synchronizing these changes, rebuild `mur_control` and `match_mur_gui` on
+each robot before using the GUI (the GUI's Build before launch includes both).
+This change does not alter automatic Dashboard stop recovery.
+
 ## BMS battery state
 
 The hardware launch starts `bms_can_node.py` by default. It queries the

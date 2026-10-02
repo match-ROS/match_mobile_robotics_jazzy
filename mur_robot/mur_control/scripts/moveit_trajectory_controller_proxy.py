@@ -214,6 +214,10 @@ class MoveItTrajectoryControllerProxy(Node):
             time.sleep(0.02)
 
     def _switch_to_trajectory(self):
+        states = self._controller_states()
+        if not states:
+            return False
+        self._restore_velocity_after_goal = states.get(self.velocity_controller) == 'active'
         self._publish_zero_velocity()
         return self._switch_controllers(
             activate=[self.trajectory_controller],
@@ -222,6 +226,9 @@ class MoveItTrajectoryControllerProxy(Node):
         )
 
     def _switch_to_velocity(self):
+        # A MoveIt goal must not enable admittance that was inactive before it.
+        if not getattr(self, '_restore_velocity_after_goal', False):
+            return True
         time.sleep(max(0.0, self.args.post_result_settle_sec))
         ok = self._switch_controllers(
             activate=[self.velocity_controller],

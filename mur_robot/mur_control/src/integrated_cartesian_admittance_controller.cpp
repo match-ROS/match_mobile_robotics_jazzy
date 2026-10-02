@@ -38,6 +38,7 @@
 #include <visualization_msgs/msg/marker_array.hpp>
 
 #include "mur_control/collision_response.hpp"
+#include "mur_control/wrench_bias.hpp"
 
 namespace mur_control
 {
@@ -609,9 +610,13 @@ public:
     }
 
     reset_filters();
+    received_reference_.set(TwistReference{});
+    last_reference_ = TwistReference{};
+    std::fill(reference_interfaces_.begin(), reference_interfaces_.end(), 0.0);
     last_commanded_velocity_.assign(command_joint_names_.size(), 0.0);
     last_commanded_acceleration_.assign(command_joint_names_.size(), 0.0);
     last_update_time_ = get_node()->now();
+    reference_accept_after_ = last_update_time_;
     previous_publish_time_ = rclcpp::Time(0, 0, get_node()->get_clock()->get_clock_type());
 
     KDL::JntArray q;
@@ -680,7 +685,9 @@ protected:
     auto maybe_reference = received_reference_.try_get();
     const TwistReference reference = maybe_reference.value_or(last_reference_);
     last_reference_ = reference;
-    if (!reference.valid || (time - reference.stamp).seconds() > command_timeout_) {
+    if (!reference.valid || reference.stamp < reference_accept_after_ ||
+      (time - reference.stamp).seconds() > command_timeout_)
+    {
       std::fill(reference_interfaces_.begin(), reference_interfaces_.end(), 0.0);
       return return_type::OK;
     }
@@ -715,6 +722,13 @@ protected:
     }
 
     if (!update_wrench(time, current_tcp)) {
+      // Follow the measured pose while calibrating, without sending motion.
+      reference_accept_after_ = time;
+      equilibrium_position_ = current_tcp.getOrigin();
+      equilibrium_orientation_ = current_tcp.getRotation();
+      std::fill(reference_interfaces_.begin(), reference_interfaces_.end(), 0.0);
+      received_reference_.set(TwistReference{});
+      last_reference_ = TwistReference{};
       write_zero();
       if (should_publish(time)) {
         publish_state(time, current_tcp, true);
@@ -1540,7 +1554,10 @@ private:
     for (std::size_t i = 0; i < sample.size(); ++i) {
       const auto value = state_interfaces_[offset + i].get_optional<double>();
       if (!value.has_value() || !std::isfinite(value.value())) {
-        return !require_wrench_;
+        // Never finish calibration using missing values, or reuse stale forces.
+        filtered_wrench_.fill(0.0);
+        if (!bias_ready_) {wrench_bias_estimator_.reset();}
+        return bias_ready_ && !require_wrench_;
       }
       sample[i] = value.value() * wrench_sign_[i];
     }
@@ -1575,21 +1592,16 @@ private:
 
   void accumulate_bias(const Vector6 & sample, const rclcpp::Time & time)
   {
-    if (bias_sample_count_ == 0) {
-      bias_start_time_ = time;
+    bool stationary = true;
+    for (std::size_t i = 0; i < joint_names_.size(); ++i) {
+      const auto velocity = state_interfaces_[joint_names_.size() + i].get_optional<double>();
+      stationary = stationary && velocity.has_value() && std::isfinite(velocity.value()) &&
+        std::abs(velocity.value()) <= 0.01;
     }
-    for (std::size_t i = 0; i < wrench_bias_.size(); ++i) {
-      wrench_bias_[i] += sample[i];
-    }
-    ++bias_sample_count_;
-    if (wrench_bias_duration_ <= 0.0 || (time - bias_start_time_).seconds() >= wrench_bias_duration_) {
-      for (double & value : wrench_bias_) {
-        value /= static_cast<double>(std::max<std::size_t>(1, bias_sample_count_));
-      }
+    if (wrench_bias_estimator_.update(sample, time.seconds(), wrench_bias_duration_, stationary)) {
+      wrench_bias_ = wrench_bias_estimator_.value();
       bias_ready_ = true;
-      RCLCPP_INFO(
-        get_node()->get_logger(),
-        "Integrated controller wrench bias ready from %zu samples", bias_sample_count_);
+      RCLCPP_INFO(get_node()->get_logger(), "Integrated controller stationary wrench bias ready");
     }
   }
 
@@ -1597,8 +1609,8 @@ private:
   {
     filtered_wrench_ = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     wrench_bias_ = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-    bias_sample_count_ = 0;
-    bias_ready_ = !use_ft_sensor_ || !require_wrench_;
+    wrench_bias_estimator_.reset();
+    bias_ready_ = !use_ft_sensor_;
     have_wrench_ = false;
   }
 
@@ -2184,7 +2196,7 @@ private:
 
   Vector6 filtered_wrench_{0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   Vector6 wrench_bias_{0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-  std::size_t bias_sample_count_{0};
+  WrenchBias wrench_bias_estimator_;
   bool bias_ready_{true};
   bool have_wrench_{false};
 
@@ -2199,9 +2211,9 @@ private:
   bool equilibrium_initialized_{false};
   bool latest_collision_points_valid_{false};
 
+  rclcpp::Time reference_accept_after_{0, 0, RCL_ROS_TIME};
   rclcpp::Time last_update_time_{0, 0, RCL_ROS_TIME};
   rclcpp::Time last_wrench_time_{0, 0, RCL_ROS_TIME};
-  rclcpp::Time bias_start_time_{0, 0, RCL_ROS_TIME};
   rclcpp::Time previous_publish_time_{0, 0, RCL_ROS_TIME};
   rclcpp::Time previous_collision_marker_publish_time_{0, 0, RCL_ROS_TIME};
 

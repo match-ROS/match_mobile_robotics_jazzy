@@ -36,3 +36,17 @@ These controls call the bridge's per-robot `std_srvs/SetBool` service
 fresh map pose and robot TF alive through temporary QTM occlusion; raw QTM
 poses continue for diagnosis. The standalone Mocap GUI remains a monitor and
 bridge launcher.
+
+## Ubuntu application shortcut
+
+After building this package in the GUI computer's Jazzy workspace, install its
+application-search entry and matching desktop icon with:
+
+```bash
+python3 /home/rosmatch/colcon_ws/src/match_mur_gui/scripts/install_gui_desktop.py --app mocap
+```
+
+The shared installer in `match_mur_gui` checks the executable and creates a
+user-level launcher that sources Jazzy and the workspace before opening the GUI.
+Use `--workspace PATH` for a different Colcon workspace. No terminal is needed
+to launch “MuR Mocap” afterward.
