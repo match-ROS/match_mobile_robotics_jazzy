@@ -63,6 +63,7 @@
 	<xacro:include filename="$(find ur_description)/urdf/ur_macro.xacro"/>
 	<xacro:include filename="$(find mir_description)/ros2_control/mir_robot.ros2_control.xacro" />
 	<xacro:include filename="$(find mir_description)/urdf/mir_600/mir_600_top_lift.urdf.xacro" />
+	<xacro:include filename="$(find mur_description)/urdf/calibrated_markers.xacro" />
 
 	<!-- Include plugin xacros -->
 	<xacro:include filename="$(find mir_description)/urdf/general/plugins.gazebo.xacro" />
@@ -80,6 +81,7 @@
 		use_lift_visual_mesh="$(arg use_lift_visual_mesh)"
 		use_laser_visual_mesh="$(arg use_laser_visual_mesh)"
 	/>
+	<xacro:calibrated_marker_frames robot_name="$(arg robot_namespace)"/>
 	<!-- Init the MiR600 macro that includes all infos that Gazebo need to function -->
 	<xacro:mir_600_gazebo tf_prefix="$(arg tf_prefix_mir)" robot_namespace="$(arg robot_namespace)" use_camera="$(arg use_camera)" use_lidar="$(arg use_lidar)"/>
 	<!-- Init the plugins that run the MiR in Gazebo -->

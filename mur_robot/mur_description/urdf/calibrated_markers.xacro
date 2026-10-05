@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://wiki.ros.org/xacro">
+  <!-- Frame names stay unprefixed: robot_state_publisher adds robot_name/. -->
+  <xacro:macro name="calibrated_marker" params="name markers parent">
+    <xacro:if value="${name in markers}">
+      <xacro:property name="marker" value="${markers[name]}"/>
+      <link name="aruco_${name}"/>
+      <joint name="${parent}_to_aruco_${name}" type="fixed">
+        <parent link="${parent}"/>
+        <child link="aruco_${name}"/>
+        <origin xyz="${' '.join(str(v) for v in marker['translation'])}"
+                rpy="${' '.join(str(v) for v in marker['rpy'])}"/>
+      </joint>
+    </xacro:if>
+  </xacro:macro>
+
+  <xacro:macro name="calibrated_marker_frames" params="robot_name parent:=base_link config_file:='$(find mur_description)/config/calibrated_markers.yaml'">
+    <xacro:property name="marker_config" value="${xacro.load_yaml(config_file)}"/>
+    <xacro:property name="markers" value="${marker_config['robots'].get(robot_name, dict()).get('markers', dict())}"/>
+    <xacro:calibrated_marker name="rear_left" markers="${markers}" parent="${parent}"/>
+    <xacro:calibrated_marker name="rear_right" markers="${markers}" parent="${parent}"/>
+    <xacro:calibrated_marker name="front_left" markers="${markers}" parent="${parent}"/>
+    <xacro:calibrated_marker name="front_right" markers="${markers}" parent="${parent}"/>
+  </xacro:macro>
+</robot>

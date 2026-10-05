@@ -1,0 +1,46 @@
+# base_link -> centred OpenCV marker frame; quaternion order x,y,z,w.
+# rpy is the equivalent URDF rotation in radians, generated from quaternion_xyzw.
+schema_version: 1
+units: metres
+robots:
+  mur620a:
+    dictionary: DICT_APRILTAG_36h11
+    source_session: 20261005T132811Z_a702dd6a
+    quality: draft
+    validation_corner_p95_px: 3.8697024637814446
+    height_anchor:
+      marker: rear_left
+      z_m: 0.58
+    markers:
+      rear_left:
+        id: 0
+        length_m: 0.16
+        translation:
+        - -0.6803755366131629
+        - 0.24727121102306585
+        - 0.58
+        quaternion_xyzw:
+        - -0.5034839532230057
+        - -0.49193135858944237
+        - 0.4944206322141928
+        - 0.5099565527809184
+        rpy:
+        - -1.5617812429037217
+        - -0.0038615403346546895
+        - 1.5436892513998746
+      rear_right:
+        id: 1
+        length_m: 0.16
+        translation:
+        - -0.6715933520616044
+        - -0.24572919787152578
+        - 0.5856178011216068
+        quaternion_xyzw:
+        - -0.7040569484802444
+        - -0.02212117248947497
+        - 0.7092681909768097
+        - -0.02744267284470325
+        rpy:
+        - 0.7608112900128918
+        - 1.5602629581678564
+        - -2.310672171391133
