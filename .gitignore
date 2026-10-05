@@ -49,3 +49,7 @@ htmlcov/
 !mur_robot/mur_control/test/
 !mur_robot/mur_control/test/test_wrench_bias.cpp
 !mur_robot/mur_control/test/test_moveit_proxy_startup.py
+
+# Regression coverage for calibrated marker frames in the robot description.
+!mur_robot/mur_description/test/
+!mur_robot/mur_description/test/test_calibrated_markers.py
