@@ -174,3 +174,17 @@ to enable position-independent code for `serial`:
 colcon build --symlink-install \
   --metas src/match_mobile_robotics_jazzy/colcon.meta
 ```
+
+### TF ownership with Qualisys localization
+
+MuR hardware bringup defaults `mir_tf_excluded_children` to `odom base_footprint base_link`.
+The MiR bridge filters these child frames from both `/tf` and `/tf_static`, after adding
+the robot prefix. Qualisys owns `map -> <robot>/base_footprint`; the MuR robot description
+owns `<robot>/base_footprint -> <robot>/base_link`. Sensor transforms and MiR odometry
+messages remain available. Publishing the MiR's `odom -> base_footprint` concurrently
+with Qualisys gives the base two parents and causes large jumps between the two maps.
+For native MiR localization without Qualisys robot TF, explicitly pass
+`mir_tf_excluded_children:=''`. Standalone MiR launches keep their original TF behavior;
+the equivalent bridge/launch parameter is `tf_excluded_children` (empty by default).
+Restart the MiR bridge after changing this setting. Existing TF buffers may retain old
+static transforms until their consumers restart.
