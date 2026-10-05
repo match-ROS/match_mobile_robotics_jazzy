@@ -2,7 +2,7 @@
 <robot xmlns:xacro="http://wiki.ros.org/xacro">
   <!-- Frame names stay unprefixed: robot_state_publisher adds robot_name/. -->
   <xacro:macro name="calibrated_marker" params="name markers parent">
-    <xacro:if value="${name in markers}">
+    <xacro:if value="${name in markers and markers[name].get('publish_tf', True)}">
       <xacro:property name="marker" value="${markers[name]}"/>
       <link name="aruco_${name}"/>
       <joint name="${parent}_to_aruco_${name}" type="fixed">

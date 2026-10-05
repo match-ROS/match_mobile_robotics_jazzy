@@ -1,5 +1,7 @@
 # base_link -> centred OpenCV marker frame; quaternion order x,y,z,w.
 # rpy is the equivalent URDF rotation in radians, generated from quaternion_xyzw.
+# Legacy robot-level provenance describes the rear pair; see calibration_groups for each pair.
+# Front results failed independent validation and remain publish_tf: false.
 schema_version: 1
 units: metres
 robots:
@@ -44,3 +46,58 @@ robots:
         - 0.7608112900128918
         - 1.5602629581678564
         - -2.310672171391133
+      front_left:
+        id: 24
+        length_m: 0.16
+        quality: draft
+        publish_tf: false
+        source_session: 20261005T141627Z_a2cfeb5e
+        translation:
+        - 0.4483922038793208
+        - 0.30413302535451947
+        - 0.434940176911403
+        quaternion_xyzw:
+        - -0.4893068523549769
+        - 0.5338485761080808
+        - -0.519069641418197
+        - 0.45403877519857694
+        rpy:
+        - -1.6196599037630706
+        - -0.02319483726512872
+        - -1.6798971138112835
+      front_right:
+        id: 7
+        length_m: 0.16
+        quality: draft
+        publish_tf: false
+        source_session: 20261005T141627Z_a2cfeb5e
+        translation:
+        - 0.4588698885855119
+        - -0.3657728649237445
+        - 0.44
+        quaternion_xyzw:
+        - 0.5433875016644185
+        - 0.5629784391262491
+        - 0.467783794378501
+        - 0.41105184810523115
+        rpy:
+        - 1.7973930737658375
+        - -0.045564843976927616
+        - 1.6424647869323317
+    calibration_groups:
+      rear:
+        source_session: 20261005T132811Z_a702dd6a
+        quality: draft
+        validation_corner_p95_px: 3.8697024637814446
+        height_anchor:
+          marker: rear_left
+          z_m: 0.58
+      front:
+        source_session: 20261005T141627Z_a2cfeb5e
+        quality: draft
+        validation_corner_p95_px: 8.333913840417303
+        height_anchor:
+          marker: front_right
+          id: 7
+          z_m: 0.44
+        report_file: config/calibration_results/mur620a_front_20261005T141627Z.yaml

@@ -1,0 +1,183 @@
+# Unvalidated joint fit. Original stationary images re-detected with detector v2.
+schema_version: 1
+quality: draft
+units: metres
+height_anchor:
+  marker: front_right
+  id: 7
+  z_m: 0.44
+transforms:
+  left:
+    parent_frame: mur620d/base_link
+    child_frame: mur620d/camera_floor_left_color_optical_frame
+    translation:
+    - 0.6067990184531443
+    - 0.10941073789367121
+    - -0.004551855131034201
+    quaternion_xyzw:
+    - 0.5828354942751601
+    - -0.0979631195011716
+    - 0.7690335789979484
+    - 0.24350229609643342
+  right:
+    parent_frame: mur620d/base_link
+    child_frame: mur620d/camera_floor_right_color_optical_frame
+    translation:
+    - 0.6237438755245057
+    - -0.052864134338808606
+    - -0.08811694412542805
+    quaternion_xyzw:
+    - 0.5639339778032705
+    - 0.13815110997448318
+    - 0.7846842347944046
+    - -0.21717134055146
+  front_right:
+    parent_frame: mur620a/base_link
+    child_frame: mur620a/aruco_front_right
+    translation:
+    - 0.4588698885855119
+    - -0.3657728649237445
+    - 0.44
+    quaternion_xyzw:
+    - 0.5433875016644185
+    - 0.5629784391262491
+    - 0.467783794378501
+    - 0.41105184810523115
+  front_left:
+    parent_frame: mur620a/base_link
+    child_frame: mur620a/aruco_front_left
+    translation:
+    - 0.4483922038793208
+    - 0.30413302535451947
+    - 0.434940176911403
+    quaternion_xyzw:
+    - -0.4893068523549769
+    - 0.5338485761080808
+    - -0.519069641418197
+    - 0.45403877519857694
+report:
+  rank: 23
+  unknowns: 23
+  singular_values:
+  - 6054.625787684532
+  - 5448.359513860894
+  - 5325.640044593807
+  - 4270.454866314611
+  - 2102.83466749402
+  - 1526.2636707797508
+  - 626.2928675019482
+  - 553.0054454396678
+  - 543.0122608920433
+  - 494.5271683378317
+  - 354.24223155151617
+  - 319.37757611530634
+  - 293.2017079933352
+  - 257.8745540385503
+  - 206.5406614457533
+  - 195.62008525316656
+  - 169.83240722593357
+  - 152.786400578176
+  - 64.67334486233355
+  - 60.24146414175163
+  - 55.352159817936
+  - 49.76761085825014
+  - 43.35090046281623
+  condition_number: 139.66551381966846
+  converged: true
+  robust_cost: 1896.821299243555
+  training:
+    corner_error_px:
+      rms: 3.494652783332227
+      median: 2.2454355710143092
+      p95: 6.572609264171178
+    relative_pose_translation_m:
+      rms: 0.20419040446109465
+      median: 0.1226408530235985
+      p95: 0.433117514559224
+    relative_pose_rotation_deg:
+      rms: 19.061125945780567
+      median: 10.337073296715552
+      p95: 43.1882943671963
+    detections: 114
+  coverage:
+    right: 10
+    front_right: 14
+    left: 13
+    front_left: 10
+  accepted_measurements: 20
+  distinct_poses: 16
+  validation:
+    corner_error_px:
+      rms: 5.764679217545576
+      median: 6.3269998532819836
+      p95: 8.333913840417303
+    relative_pose_translation_m:
+      rms: 0.31665717790182063
+      median: 0.13931533646589134
+      p95: 0.6318414503025744
+    relative_pose_rotation_deg:
+      rms: 26.057207033940163
+      median: 12.994380204444951
+      p95: 49.666907642663595
+    detections: 22
+  validation_pose_ids:
+  - '000006'
+  - '000012'
+  - '000022'
+  validation_training_rank: 23
+  notes:
+  - Absolute height is conditioned on the supplied marker height.
+  - PnP pose validation uses the image-best hypothesis; planar ambiguity may increase
+    its error.
+  - Residuals alone do not certify absolute accuracy of mocap or camera intrinsics.
+  - Canonical front_left is ID 24 (positive base_link y); canonical front_right is
+    ID 7 (negative base_link y). Recorded source labels were reversed and remain unchanged
+    in the original data.
+  - Independent reprojection validation failed (p95 limit 3 px). Do not use these
+    draft transforms for localization.
+  - The joint estimate places the right camera optical origin below base_link z=0;
+    inspect camera extrinsics, raw mocap frame agreement and marker measurements before
+    accepting this fit.
+  - A second optimization with 8 starts and previously fitted camera guesses reproduced
+    the failed validation; no observations were discarded to improve the score.
+  redetection:
+    detector:
+      version: 2
+      opencv: 4.6.0
+      robust_detection: true
+      known_ids:
+      - 7
+      - 24
+      minimum_code_distance: 11
+      recovery_correction_limit_bits: 2
+      recovery_methods:
+      - known_ids
+      - upscaled
+      - contrast
+      recovery_max_pnp_error_px: 1.5
+      corners: original image coordinates, observed in this frame; no temporal/mocap
+        predictions
+    images: 200
+    recorded_detections: 47
+    redetected_detections: 114
+    added_id_observations: 67
+    lost_id_observations: 0
+    methods:
+      standard: 47
+      upscaled: 28
+      known_ids: 33
+      contrast: 6
+  observer_mocap_variation:
+    z_span_m: 0.013462768554687421
+    max_rotation_from_first_deg: 1.5958745753949348
+    reference: first image of each accepted measurement
+    interpretation: Variation observed in the recorded raw poses; cause (physical
+      motion or tracking) not independently verified.
+source_session: 20261005T141627Z_a2cfeb5e
+marker_ids:
+  front_left: 24
+  front_right: 7
+recorded_label_to_canonical_label:
+  front_left: front_right
+  front_right: front_left
+publish_tf: false
