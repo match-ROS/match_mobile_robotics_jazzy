@@ -1,7 +1,7 @@
 # base_link -> centred OpenCV marker frame; quaternion order x,y,z,w.
 # rpy is the equivalent URDF rotation in radians, generated from quaternion_xyzw.
 # Legacy robot-level provenance describes the rear pair; see calibration_groups for each pair.
-# Front results failed independent validation and remain publish_tf: false.
+# Front TFs are provisionally enabled at operator request after excluding measurement 000000.
 schema_version: 1
 units: metres
 robots:
@@ -49,41 +49,41 @@ robots:
       front_left:
         id: 24
         length_m: 0.16
-        quality: draft
-        publish_tf: false
-        source_session: 20261005T141627Z_a2cfeb5e
+        quality: validated
+        publish_tf: true
+        source_session: 20261006T133414Z_573a8ad0
         translation:
-        - 0.4483922038793208
-        - 0.30413302535451947
-        - 0.434940176911403
+        - 0.44151809094921857
+        - 0.342907410091635
+        - 0.44
         quaternion_xyzw:
-        - -0.4893068523549769
-        - 0.5338485761080808
-        - -0.519069641418197
-        - 0.45403877519857694
+        - 0.4781086239644537
+        - -0.5118447481324331
+        - 0.5298430147806188
+        - -0.478219068198088
         rpy:
-        - -1.6196599037630706
-        - -0.02319483726512872
-        - -1.6798971138112835
+        - -1.5519382577988767
+        - -0.01709802546759409
+        - -1.6563504807395475
       front_right:
         id: 7
         length_m: 0.16
-        quality: draft
-        publish_tf: false
-        source_session: 20261005T141627Z_a2cfeb5e
+        quality: validated
+        publish_tf: true
+        source_session: 20261006T133414Z_573a8ad0
         translation:
-        - 0.4588698885855119
-        - -0.3657728649237445
-        - 0.44
+        - 0.434313843822064
+        - -0.3258349779784567
+        - 0.44593749055786613
         quaternion_xyzw:
-        - 0.5433875016644185
-        - 0.5629784391262491
-        - 0.467783794378501
-        - 0.41105184810523115
+        - 0.4884518460776342
+        - 0.5028679749262112
+        - 0.5089608596445966
+        - 0.4994971843832514
         rpy:
-        - 1.7973930737658375
-        - -0.045564843976927616
-        - 1.6424647869323317
+        - 1.5537180818569907
+        - 0.005156555087128867
+        - 1.5946336147865472
     calibration_groups:
       rear:
         source_session: 20261005T132811Z_a702dd6a
@@ -93,11 +93,16 @@ robots:
           marker: rear_left
           z_m: 0.58
       front:
-        source_session: 20261005T141627Z_a2cfeb5e
-        quality: draft
-        validation_corner_p95_px: 8.333913840417303
+        source_session: 20261006T133414Z_573a8ad0
+        quality: validated
+        publication: provisional_operator_requested
+        validation_corner_p95_px: 2.3560534344954216
         height_anchor:
-          marker: front_right
-          id: 7
+          marker: front_left
           z_m: 0.44
-        report_file: config/calibration_results/mur620a_front_20261005T141627Z.yaml
+          id: 24
+        excluded_measurement_ids:
+        - '000000'
+        accepted_measurements: 22
+        marker_observations: 164
+        report_file: config/calibration_results/mur620a_front_20261006T133414Z.yaml

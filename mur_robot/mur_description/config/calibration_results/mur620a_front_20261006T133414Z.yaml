@@ -1,0 +1,162 @@
+# Joint fit after excluding measurement 000000; provisional marker TF publication requested by operator.
+schema_version: 1
+quality: validated
+units: metres
+height_anchor:
+  marker: front_left
+  z_m: 0.44
+transforms:
+  left:
+    parent_frame: mur620d/base_link
+    child_frame: mur620d/camera_floor_left_color_optical_frame
+    translation:
+    - 0.6152788825343793
+    - 0.04508286919501693
+    - 0.06140440331722936
+    quaternion_xyzw:
+    - 0.6001966092928523
+    - -0.08425758444290528
+    - 0.7570938642108022
+    - 0.24387203700212357
+  right:
+    parent_frame: mur620d/base_link
+    child_frame: mur620d/camera_floor_right_color_optical_frame
+    translation:
+    - 0.6231175566094538
+    - -0.06357771414468705
+    - 0.069948202014437
+    quaternion_xyzw:
+    - 0.6053670482742282
+    - 0.1053523025127109
+    - 0.7513395896434777
+    - -0.24066667873511124
+  front_left:
+    parent_frame: mur620a/base_link
+    child_frame: mur620a/aruco_front_left
+    translation:
+    - 0.44151809094921857
+    - 0.342907410091635
+    - 0.44
+    quaternion_xyzw:
+    - 0.4781086239644537
+    - -0.5118447481324331
+    - 0.5298430147806188
+    - -0.478219068198088
+  front_right:
+    parent_frame: mur620a/base_link
+    child_frame: mur620a/aruco_front_right
+    translation:
+    - 0.434313843822064
+    - -0.3258349779784567
+    - 0.44593749055786613
+    quaternion_xyzw:
+    - 0.4884518460776342
+    - 0.5028679749262112
+    - 0.5089608596445966
+    - 0.4994971843832514
+report:
+  rank: 23
+  unknowns: 23
+  singular_values:
+  - 7958.217806531021
+  - 6604.644032438057
+  - 5559.746974397522
+  - 5078.90842947864
+  - 2786.1842041146115
+  - 1948.7391217315817
+  - 1197.768418817146
+  - 1061.019711652984
+  - 614.4513477121873
+  - 537.5031413421037
+  - 525.7671211337118
+  - 480.6943861051245
+  - 418.6188049470575
+  - 347.5575356782143
+  - 312.53259345604044
+  - 266.3117324063624
+  - 252.3371941087856
+  - 226.48474950383255
+  - 101.78043339438695
+  - 82.19553685862724
+  - 76.02113288432538
+  - 73.45971609446497
+  - 57.060231878852974
+  condition_number: 139.47047785272682
+  converged: true
+  robust_cost: 581.1905849009138
+  training:
+    corner_error_px:
+      rms: 1.3563332959672287
+      median: 0.9553037655391493
+      p95: 2.404041692084399
+    relative_pose_translation_m:
+      rms: 0.2272779154784915
+      median: 0.1152536906386433
+      p95: 0.4734876458159431
+    relative_pose_rotation_deg:
+      rms: 21.665772990318032
+      median: 11.37474457995751
+      p95: 44.84268884326361
+    detections: 164
+  coverage:
+    left: 19
+    right: 12
+    front_right: 17
+    front_left: 19
+  accepted_measurements: 22
+  distinct_poses: 22
+  validation:
+    corner_error_px:
+      rms: 1.4774231568080707
+      median: 0.8551099322837918
+      p95: 2.3560534344954216
+    relative_pose_translation_m:
+      rms: 0.19669196184997492
+      median: 0.12161083612471724
+      p95: 0.364299462356294
+    relative_pose_rotation_deg:
+      rms: 21.88321846537572
+      median: 18.081934816649657
+      p95: 39.66848994065299
+    detections: 30
+  validation_pose_ids:
+  - '000005'
+  - '000010'
+  - '000015'
+  - '000020'
+  validation_training_rank: 23
+  notes:
+  - Absolute height is conditioned on the supplied marker height.
+  - PnP pose validation uses the image-best hypothesis; planar ambiguity may increase
+    its error.
+  - Residuals alone do not certify absolute accuracy of mocap or camera intrinsics.
+  - Measurement 000000 was excluded explicitly at operator request after raw observer
+    pose discontinuity; all other 22 complete measurements are retained.
+  - Marker TF publication is provisionally enabled at operator request. Camera transformations
+    are results only; current hardware camera TFs are unchanged.
+  - Single-marker PnP ambiguity/measurement sensitivity remains visible in the relative-pose
+    validation errors.
+source_session: 20261006T133414Z_573a8ad0
+provenance:
+  excluded_measurement_ids:
+  - '000000'
+  exclusion_reason: Operator-requested exclusion of the first measurement following
+    independently observed raw observer pose discontinuity; original images retained.
+  detection: Detector v2 plus independently verified offline color-channel, scale,
+    contrast, and polygon candidate recovery.
+  observations_used: 164
+  additional_offline_observations_used: 10
+  marker_ids:
+    front_left: 24
+    front_right: 7
+  marker_length_m: 0.16
+  raw_reference_topics:
+  - /qualisys/mur620a/pose
+  - /qualisys/mur620d/pose
+publication:
+  marker_tf_enabled: true
+  mode: provisional_operator_requested
+  camera_hardware_tf_replaced: false
+  accuracy_note: Validated means the numerical/reprojection checks passed. Image-only
+    single-marker pose validation still has about 0.197 m translation RMS and 21.88
+    degrees rotation RMS; localization accuracy is not certified.

@@ -25,9 +25,10 @@ def render(tmp_path, robot):
 def test_calibrated_transform_direction_and_rotation(tmp_path):
     root = render(tmp_path, 'mur620a')
     markers = yaml.safe_load(CONFIG.read_text())['robots']['mur620a']['markers']
-    assert len(root.findall('joint')) == 2
+    assert len(root.findall('joint')) == 4
     assert {link.attrib['name'] for link in root.findall('link')} == {
-        'base_link', 'aruco_rear_left', 'aruco_rear_right'}
+        'base_link', 'aruco_rear_left', 'aruco_rear_right',
+        'aruco_front_left', 'aruco_front_right'}
     for name, data in markers.items():
         joint = root.find(f"joint[@name='base_link_to_aruco_{name}']")
         if not data.get('publish_tf', True):
@@ -42,28 +43,36 @@ def test_calibrated_transform_direction_and_rotation(tmp_path):
         np.testing.assert_allclose(xyz, data['translation'], atol=1e-12)
         np.testing.assert_allclose(Rotation.from_euler('xyz', rpy).as_matrix(),
                                    Rotation.from_quat(data['quaternion_xyzw']).as_matrix(), atol=1e-12)
-        assert xyz[0] < -.6  # These are the measured rear markers.
+        assert xyz[0] < -.6 if name.startswith('rear_') else xyz[0] > .4
     assert markers['rear_left']['id'] == 0 and markers['rear_right']['id'] == 1
     assert markers['rear_left']['translation'][2] == .58
 
 
-def test_front_draft_frames_are_disabled_until_independent_validation(tmp_path):
+def test_front_frames_use_reviewed_calibration_and_explicit_publication(tmp_path):
     root = render(tmp_path, 'mur620a')
     markers = yaml.safe_load(CONFIG.read_text())['robots']['mur620a']['markers']
     for name, mid, sign in [('front_left', 24, 1), ('front_right', 7, -1)]:
         marker = markers[name]
         assert marker['id'] == mid
-        assert marker['quality'] == 'draft'
-        assert marker['publish_tf'] is False
+        assert marker['quality'] == 'validated'
+        assert marker['publish_tf'] is True
         assert marker['translation'][0] > 0
         assert marker['translation'][1]*sign > 0
-        assert root.find(f"link[@name='aruco_{name}']") is None
+        assert root.find(f"link[@name='aruco_{name}']") is not None
+    data = yaml.safe_load(CONFIG.read_text())['robots']['mur620a']['calibration_groups']['front']
+    assert data['excluded_measurement_ids'] == ['000000']
+    assert data['publication'] == 'provisional_operator_requested'
+    report = yaml.safe_load((PACKAGE/data['report_file']).read_text())
+    assert report['report']['validation']['corner_error_px']['p95'] < 3.0
+    for name in ('front_left', 'front_right'):
+        np.testing.assert_allclose(markers[name]['translation'], report['transforms'][name]['translation'])
+        np.testing.assert_allclose(markers[name]['quaternion_xyzw'], report['transforms'][name]['quaternion_xyzw'])
 
 
-def test_front_frames_can_be_rendered_for_explicit_review(tmp_path):
+def test_front_publication_can_be_disabled_without_removing_rear_frames(tmp_path):
     config = yaml.safe_load(CONFIG.read_text())
-    for marker in config['robots']['mur620a']['markers'].values():
-        marker['publish_tf'] = True
+    for name in ('front_left', 'front_right'):
+        config['robots']['mur620a']['markers'][name]['publish_tf'] = False
     file = tmp_path/'review_config.yaml'
     file.write_text(yaml.safe_dump(config))
     wrapper = tmp_path/'review.xacro'
@@ -73,16 +82,11 @@ def test_front_frames_can_be_rendered_for_explicit_review(tmp_path):
       <xacro:calibrated_marker_frames robot_name="mur620a" config_file="{file}"/>
     </robot>''')
     root = ET.fromstring(xacro.process_file(str(wrapper)).toxml())
+    assert len(root.findall('joint')) == 2
+    for name in ('rear_left', 'rear_right'):
+        assert root.find(f"joint[@name='base_link_to_aruco_{name}']") is not None
     for name in ('front_left', 'front_right'):
-        data = config['robots']['mur620a']['markers'][name]
-        joint = root.find(f"joint[@name='base_link_to_aruco_{name}']")
-        assert joint is not None
-        origin = joint.find('origin')
-        xyz = np.fromstring(origin.attrib['xyz'], sep=' ')
-        rpy = np.fromstring(origin.attrib['rpy'], sep=' ')
-        np.testing.assert_allclose(xyz, data['translation'], atol=1e-12)
-        np.testing.assert_allclose(Rotation.from_euler('xyz', rpy).as_matrix(),
-                                   Rotation.from_quat(data['quaternion_xyzw']).as_matrix(), atol=1e-12)
+        assert root.find(f"joint[@name='base_link_to_aruco_{name}']") is None
 
 
 @pytest.mark.parametrize('robot', ['mur620b', 'mur620d', ''])
@@ -98,3 +102,5 @@ def test_hardware_description_includes_marker_frames():
         mappings={'robot_namespace': 'mur620a', 'use_sim': 'false', 'use_arms': 'false'}).toxml())
     assert root.find("joint[@name='base_link_to_aruco_rear_left']") is not None
     assert root.find("joint[@name='base_link_to_aruco_rear_right']") is not None
+    assert root.find("joint[@name='base_link_to_aruco_front_left']") is not None
+    assert root.find("joint[@name='base_link_to_aruco_front_right']") is not None
