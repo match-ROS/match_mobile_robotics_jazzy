@@ -41,3 +41,14 @@ ros2 topic list | grep /mur620c/camera_floor_
 
 The general MuR GUI sets `ROS_STATIC_PEERS=mur620c` by default when the variable
 is otherwise unset. Restart the GUI to apply this to its ROS helper.
+
+## Battery details
+
+`mir_battery_state_publisher` polls `/api/v2.0.0/status` for battery percentage
+and publishes the controller's `battery_time_remaining` in seconds as
+`/<robot>/battery_time_remaining` (`std_msgs/Int32`). In parallel it subscribes
+read-only to MiR ROS 1 `/PB/bms_status` via rosbridge and adds voltage, signed
+net current, remaining/full capacity and charging state to
+`/<robot>/battery_state` (`sensor_msgs/BatteryState`). If the BMS stream is
+unavailable, these fields remain unknown (`NaN`/`UNKNOWN`) while REST
+percentage and remaining-time reporting continue.

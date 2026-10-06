@@ -81,6 +81,7 @@ def generate_launch_description():
             parameters=[{
                 'use_sim_time': use_sim_time,
                 'mir_hostname': mir_hostname,
+                'mir_port': mir_port,
                 'mir_restapi_auth': mir_restapi_auth,
             }],
             output='screen',

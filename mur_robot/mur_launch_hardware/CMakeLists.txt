@@ -25,4 +25,11 @@ install(FILES
   DESTINATION share/${PROJECT_NAME}
 )
 
+if(BUILD_TESTING)
+  find_package(ament_cmake_pytest REQUIRED)
+  ament_add_pytest_test(robot_joint_states test/test_robot_joint_states.py
+    APPEND_ENV ROS_LOG_DIR=${CMAKE_CURRENT_BINARY_DIR}/test_ros_logs
+  )
+endif()
+
 ament_package()

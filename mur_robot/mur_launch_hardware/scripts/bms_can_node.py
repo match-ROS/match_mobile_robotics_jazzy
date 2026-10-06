@@ -2,6 +2,8 @@
 """Read the MUR superstructure BMS over SocketCAN and publish battery state."""
 
 from dataclasses import dataclass
+import math
+import time
 import os
 import subprocess
 
@@ -15,6 +17,7 @@ from std_msgs.msg import Float32
 
 REQUEST_PRIORITY = 0x18
 SOC_DATA_ID = 0x90
+OPERATING_DATA_ID = 0x93
 
 
 @dataclass
@@ -23,6 +26,12 @@ class BmsStatus:
     gathered_total_voltage: float
     current: float
     soc_percent: float
+
+
+@dataclass
+class BmsOperatingState:
+    state: int  # Daly 0x93: 0 idle, 1 charging, 2 discharging
+    remaining_capacity_ah: float
 
 
 def parse_int_parameter(value):
@@ -145,6 +154,7 @@ class BmsCanNode(Node):
             return
 
         self.last_status = status
+        operating = self.query_operating_state()
 
         soc_msg = Float32()
         soc_msg.data = round(status.soc_percent, 1)
@@ -157,9 +167,23 @@ class BmsCanNode(Node):
             if status.gathered_total_voltage > 0.0
             else status.cumulative_total_voltage
         )
+        # Daly's current is positive while charging, matching BatteryState.
         battery_msg.current = status.current
         battery_msg.percentage = max(0.0, min(1.0, status.soc_percent / 100.0))
-        battery_msg.power_supply_status = BatteryState.POWER_SUPPLY_STATUS_UNKNOWN
+        battery_msg.charge = operating.remaining_capacity_ah if operating else math.nan
+        battery_msg.capacity = math.nan  # Last-full capacity is not in 0x90/0x93.
+        battery_msg.design_capacity = math.nan
+        battery_msg.temperature = math.nan
+        battery_msg.present = True
+        status_by_state = {
+            0: BatteryState.POWER_SUPPLY_STATUS_NOT_CHARGING,
+            1: BatteryState.POWER_SUPPLY_STATUS_CHARGING,
+            2: BatteryState.POWER_SUPPLY_STATUS_DISCHARGING,
+        }
+        battery_msg.power_supply_status = (
+            status_by_state.get(operating.state, BatteryState.POWER_SUPPLY_STATUS_UNKNOWN)
+            if operating else BatteryState.POWER_SUPPLY_STATUS_UNKNOWN
+        )
         battery_msg.power_supply_health = BatteryState.POWER_SUPPLY_HEALTH_UNKNOWN
         battery_msg.power_supply_technology = BatteryState.POWER_SUPPLY_TECHNOLOGY_UNKNOWN
         self.battery_state_publisher.publish(battery_msg)
@@ -171,11 +195,23 @@ class BmsCanNode(Node):
         )
 
     def query_status(self):
+        data = self.query_frame(SOC_DATA_ID)
+        return self.decode_soc_response(data) if data is not None else None
+
+    def query_operating_state(self):
+        data = self.query_frame(OPERATING_DATA_ID)
+        if data is None or len(data) < 8 or data[0] not in (0, 1, 2):
+            return None
+        return BmsOperatingState(
+            state=data[0],
+            remaining_capacity_ah=int.from_bytes(data[4:8], byteorder='big') / 1000.0,
+        )
+
+    def query_frame(self, data_id):
         bus = self.open_bus()
         if bus is None:
             return None
-
-        request_id = (((REQUEST_PRIORITY << 8) | SOC_DATA_ID) << 16) | self.battery_node_id
+        request_id = (((REQUEST_PRIORITY << 8) | data_id) << 16) | self.battery_node_id
         try:
             bus.send(self.can_module.Message(
                 arbitration_id=request_id,
@@ -183,18 +219,18 @@ class BmsCanNode(Node):
                 is_extended_id=True,
             ))
         except self.can_module.CanError as exc:
-            self.get_logger().warn(f'Failed to send BMS request: {exc}', throttle_duration_sec=5.0)
+            self.get_logger().warn(f'Failed to send BMS 0x{data_id:02x} request: {exc}',
+                                   throttle_duration_sec=5.0)
             self.close_bus()
             return None
 
-        deadline = self.get_clock().now().nanoseconds * 1e-9 + self.response_timeout
+        deadline = time.monotonic() + self.response_timeout
         while rclpy.ok():
-            remaining = deadline - self.get_clock().now().nanoseconds * 1e-9
+            remaining = deadline - time.monotonic()
             if remaining <= 0.0:
-                self.get_logger().warn('Timed out waiting for BMS SOC response.',
-                                       throttle_duration_sec=5.0)
+                self.get_logger().warn(f'Timed out waiting for BMS 0x{data_id:02x} response.',
+                                       throttle_duration_sec=10.0)
                 return None
-
             try:
                 msg = bus.recv(timeout=remaining)
             except self.can_module.CanError as exc:
@@ -202,16 +238,19 @@ class BmsCanNode(Node):
                                        throttle_duration_sec=5.0)
                 self.close_bus()
                 return None
-
             if msg is None:
                 continue
-            if ((int(msg.arbitration_id) >> 16) & 0xff) != SOC_DATA_ID:
+            response_id = int(msg.arbitration_id)
+            # Daly replies to host 0x40 with the BMS address in the low byte.
+            if (response_id >> 24) != REQUEST_PRIORITY or \
+                    ((response_id >> 16) & 0xff) != data_id or \
+                    ((response_id >> 8) & 0xff) != 0x40 or \
+                    (response_id & 0xff) != ((self.battery_node_id >> 8) & 0xff):
                 continue
-
-            status = self.decode_soc_response(msg.data)
-            if status is not None:
-                return status
-
+            if len(msg.data) < 8:
+                self.get_logger().debug(f'Ignoring short BMS 0x{data_id:02x} frame.')
+                continue
+            return bytes(msg.data)
         return None
 
     def decode_soc_response(self, data):

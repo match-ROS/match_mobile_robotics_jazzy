@@ -35,6 +35,24 @@ ros2 launch mur_launch_hardware mur_620.launch.py \
   ur_r_rpy:="0.0 0.0 2.9"
 ```
 
+## Joint states with multiple MuRs
+
+Each MuR publishes its arm, lift and wheel joint states on
+`/<robot_name>/joint_states`. Its robot state publisher, MoveIt, trajectory
+proxies, velocity controllers and collision checks consume that same topic.
+Joint names remain unchanged, for example `UR10_r/shoulder_pan_joint`.
+
+Do not merge these streams onto `/joint_states`: different MuRs use identical
+joint names, so a shared stream makes each robot model alternate between the
+robots' actual arm configurations. TF frame prefixes alone cannot prevent this.
+
+After updating, synchronize and rebuild `mur_launch_hardware` on every MuR,
+then restart hardware through the GUI when the robots can safely be restarted.
+Already running nodes retain their old topic configuration. External tools
+that previously subscribed to `/joint_states` must select the relevant MuR's
+topic. An explicit `integrated_controller_collision_joint_states_topic`
+override is still supported; its default now follows `robot_name`.
+
 
 ## Automatic UR startup
 

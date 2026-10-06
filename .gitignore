@@ -53,3 +53,7 @@ htmlcov/
 # Regression coverage for calibrated marker frames in the robot description.
 !mur_robot/mur_description/test/
 !mur_robot/mur_description/test/test_calibrated_markers.py
+
+# Regression coverage for independent joint state streams per MuR.
+!mur_robot/mur_launch_hardware/test/
+!mur_robot/mur_launch_hardware/test/test_robot_joint_states.py

@@ -186,7 +186,10 @@ def declare_arguments():
         DeclareLaunchArgument('integrated_controller_reset_equilibrium_on_zero_command', default_value='auto'),
         DeclareLaunchArgument('integrated_controller_enable_collision_avoidance', default_value='true'),
         DeclareLaunchArgument('integrated_controller_collision_common_link', default_value='base_link'),
-        DeclareLaunchArgument('integrated_controller_collision_joint_states_topic', default_value='/joint_states'),
+        DeclareLaunchArgument(
+            'integrated_controller_collision_joint_states_topic',
+            default_value=['/', LaunchConfiguration('robot_name'), '/joint_states'],
+        ),
         DeclareLaunchArgument('integrated_controller_collision_joint_state_timeout', default_value='0.1'),
         DeclareLaunchArgument('integrated_controller_collision_sample_spacing', default_value='0.08'),
         DeclareLaunchArgument('integrated_controller_collision_sphere_radius', default_value='0.04'),
@@ -308,6 +311,9 @@ def ur_description_arguments(side, kinematics_params_file):
 
 def controller_spawner(namespace, controllers, *, active=True):
     inactive_flags = [] if active else ['--inactive']
+    # Joint names contain the arm prefix, but no MuR name. Keep each MuR's
+    # state stream separate so another robot cannot overwrite its joint values.
+    robot_namespace = namespace.rsplit('/', 1)[0]
     return Node(
         package='controller_manager',
         executable='spawner',
@@ -316,7 +322,7 @@ def controller_spawner(namespace, controllers, *, active=True):
             f'/{namespace}/controller_manager',
             '--controller-manager-timeout',
             LaunchConfiguration('controller_spawner_timeout'),
-            '--controller-ros-args=-r joint_states:=/joint_states',
+            f'--controller-ros-args=-r joint_states:=/{robot_namespace}/joint_states',
         ] + inactive_flags + controllers,
         output='screen',
     )
@@ -634,7 +640,7 @@ def make_lift_joint_state_bridge(robot_name, launch_condition):
             'conversion': LaunchConfiguration('lift_conversion'),
             'position_multiplier': LaunchConfiguration('lift_position_multiplier'),
             'publish_frequency': LaunchConfiguration('lift_frequency'),
-            'joint_states_topic': '/joint_states',
+            'joint_states_topic': f'/{robot_name}/joint_states',
         }],
         condition=IfCondition(launch_condition),
         output='screen',
@@ -674,7 +680,7 @@ def make_fake_mir_wheel_joint_publisher(robot_name):
         namespace=robot_name,
         parameters=[{
             'publish_frequency': LaunchConfiguration('fake_mir_wheel_joint_frequency'),
-            'joint_states_topic': '/joint_states',
+            'joint_states_topic': f'/{robot_name}/joint_states',
         }],
         condition=IfCondition(LaunchConfiguration('publish_fake_mir_wheel_joints')),
         output='screen',
@@ -709,7 +715,7 @@ def make_arm_velocity_safety_node(robot_name):
         name=f'{robot_name}_arm_velocity_safety',
         parameters=[{
             'robot_name': robot_name,
-            'joint_states_topic': '/joint_states',
+            'joint_states_topic': f'/{robot_name}/joint_states',
             'rate_hz': LaunchConfiguration('arm_velocity_safety_rate_hz'),
             'command_timeout': LaunchConfiguration('arm_velocity_safety_command_timeout'),
             'max_joint_velocity': LaunchConfiguration('arm_velocity_safety_max_joint_velocity'),
@@ -764,7 +770,7 @@ def make_moveit_controller_proxies(robot_name):
                     LaunchConfiguration('moveit_hardware_trajectory_controller'),
                     '--velocity-command-topic',
                     f'/{robot_name}/{arm_name}/safe_forward_velocity_controller/commands',
-                    '--joint-states-topic', '/joint_states',
+                    '--joint-states-topic', f'/{robot_name}/joint_states',
                     '--switch-timeout', LaunchConfiguration('moveit_controller_switch_timeout'),
                     '--check-ur-program', NotSubstitution(LaunchConfiguration('use_mock_hardware')),
                     '--action-timeout', LaunchConfiguration('moveit_trajectory_action_timeout'),
@@ -815,7 +821,7 @@ def make_moveit_launch(
             'publish_tf_alias': 'true',
             'tf_topic': '/tf',
             'tf_static_topic': '/tf_static',
-            'joint_states_topic': '/joint_states',
+            'joint_states_topic': f'/{robot_name}/joint_states',
             'virtual_joint_parent_frame': f'{robot_name}/base_footprint',
             'default_velocity_scaling': LaunchConfiguration('moveit_default_velocity_scaling'),
             'default_acceleration_scaling': LaunchConfiguration('moveit_default_acceleration_scaling'),
@@ -841,7 +847,7 @@ def make_jparse_nodes(robot_name):
                 parameters=[{
                     'robot_name': robot_name,
                     'arm': side,
-                    'joint_states_topic': '/joint_states',
+                    'joint_states_topic': f'/{robot_name}/joint_states',
                     'command_topic': command_topic,
                     'debug_twist_topic': debug_topic,
                     'rate_hz': LaunchConfiguration('jparse_rate_hz'),
@@ -863,7 +869,7 @@ def make_jparse_nodes(robot_name):
                     '--arm', side,
                     '--twist-topic', twist_topic,
                     '--joint-velocity-topic', command_topic,
-                    '--joint-states-topic', '/joint_states',
+                    '--joint-states-topic', f'/{robot_name}/joint_states',
                     '--max-linear-velocity', LaunchConfiguration('jparse_max_linear_velocity'),
                     '--max-angular-velocity', LaunchConfiguration('jparse_max_angular_velocity'),
                     '--max-joint-velocity', LaunchConfiguration('jparse_max_joint_velocity'),
@@ -1180,7 +1186,7 @@ def launch_setup(context, *args, **kwargs):
             {'use_sim_time': use_sim_time},
             {'frame_prefix': f'{robot_name}/'},
         ],
-        remappings=[('joint_states', '/joint_states')],
+        remappings=[('joint_states', f'/{robot_name}/joint_states')],
         output='screen',
     )
 
