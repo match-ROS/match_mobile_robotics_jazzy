@@ -78,7 +78,8 @@ def test_robot_tf_preserves_full_raw_qualisys_base_link_pose():
         robot_tf_from_map_pose(pose, 'mur620a')
 
 
-def test_only_raw_map_pose_drives_robot_tf():
+@pytest.mark.parametrize('hardware_owner', [False, True])
+def test_only_raw_map_pose_drives_robot_tf(hardware_owner):
     published = []
     transforms = []
     fake = SimpleNamespace(
@@ -88,7 +89,7 @@ def test_only_raw_map_pose_drives_robot_tf():
             '/qualisys_map/mur620a/pose_smoothed': SimpleNamespace(publish=published.append),
         },
         publish_robot_tf=True,
-        count_publishers=lambda _: 0,
+        count_publishers=lambda topic: int(hardware_owner and topic == '/mur620a/localization_source'),
         localization_hold=LocalizationHold(),
         body_tf_broadcaster=SimpleNamespace(sendTransform=transforms.append),
     )
@@ -99,6 +100,9 @@ def test_only_raw_map_pose_drives_robot_tf():
     QualisysSshBridge.publish_map(fake, 'mur620a', pose)
     QualisysSshBridge.publish_map(fake, 'mur620a', pose, smoothed=True)
     assert len(published) == 2
+    if hardware_owner:
+        assert transforms == []
+        return
     assert len(transforms) == 1
     assert transforms[0].header.frame_id == 'map'
     assert transforms[0].child_frame_id == 'mur620a/base_footprint'
@@ -128,7 +132,8 @@ def test_localization_hold_requires_fresh_pose_and_keeps_full_pose():
     assert hold.frozen_pose('mur620a', None) is None
 
 
-def test_frozen_map_topics_and_robot_tf_ignore_new_qtm_pose():
+@pytest.mark.parametrize('hardware_owner', [False, True])
+def test_frozen_map_topics_and_robot_tf_ignore_new_qtm_pose(hardware_owner):
     published = []
     transforms = []
     hold = LocalizationHold()
@@ -146,7 +151,7 @@ def test_frozen_map_topics_and_robot_tf_ignore_new_qtm_pose():
         },
         localization_hold=hold,
         publish_robot_tf=True,
-        count_publishers=lambda _: 0,
+        count_publishers=lambda topic: int(hardware_owner and topic == '/mur620a/localization_source'),
         body_tf_broadcaster=SimpleNamespace(sendTransform=transforms.append),
         get_clock=lambda: SimpleNamespace(now=lambda: SimpleNamespace(
             to_msg=lambda: Time(sec=11, nanosec=0)
@@ -162,6 +167,9 @@ def test_frozen_map_topics_and_robot_tf_ignore_new_qtm_pose():
     QualisysSshBridge.publish_frozen_localizations(fake)
     assert len(published) == 2
     assert all(pose.pose.position.x == 2.0 for pose in published)
+    if hardware_owner:
+        assert transforms == []
+        return
     assert len(transforms) == 1
     assert transforms[0].transform.translation.x == 2.0
     assert transforms[0].header.stamp.sec == 11

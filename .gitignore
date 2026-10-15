@@ -34,6 +34,7 @@ htmlcov/
 # Regression coverage for the MiR camera message conversion.
 !mir_robot/mir_launch_hardware/test/
 !mir_robot/mir_launch_hardware/test/test_mir_camera_bridge.py
+!mir_robot/mir_launch_hardware/test/test_auto_localization.py
 
 # Regression coverage for the Qualisys ROS 2 bridge.
 !mocap/match_mocap_ros2/test/

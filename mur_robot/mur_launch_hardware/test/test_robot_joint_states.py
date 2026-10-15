@@ -90,6 +90,22 @@ def test_collision_topic_can_still_be_overridden():
     assert context.launch_configurations['integrated_controller_collision_joint_states_topic'] == '/custom/states'
 
 
+@pytest.mark.parametrize('robot', ['mur620a', 'mur620b', 'mur620c', 'mur620d'])
+def test_base_localization_defaults_to_auto_with_robot_specific_mocap_input(robot):
+    context = launch_context(robot)
+    action = hardware.make_mir_hardware_launch(robot, False)
+    arguments = {
+        perform_substitutions(context, normalize_to_list_of_substitutions(name)):
+        perform_substitutions(context, normalize_to_list_of_substitutions(value))
+        for name, value in action.launch_arguments
+    }
+    assert arguments['localization_type'] == 'auto'
+    assert arguments['publish_localization_tf'] == 'true'
+    assert arguments['localization_topic'] == f'/qualisys_map/{robot}/pose'
+    assert arguments['localization_timeout'] == '1.0'
+    assert arguments['tf_excluded_children'] == 'odom base_footprint base_link'
+
+
 def test_spawner_locks_are_shared_within_one_arm_and_separate_across_arms(monkeypatch):
     records = []
     real_node = hardware.Node
