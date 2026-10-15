@@ -88,6 +88,7 @@ def test_only_raw_map_pose_drives_robot_tf():
             '/qualisys_map/mur620a/pose_smoothed': SimpleNamespace(publish=published.append),
         },
         publish_robot_tf=True,
+        count_publishers=lambda _: 0,
         localization_hold=LocalizationHold(),
         body_tf_broadcaster=SimpleNamespace(sendTransform=transforms.append),
     )
@@ -145,6 +146,7 @@ def test_frozen_map_topics_and_robot_tf_ignore_new_qtm_pose():
         },
         localization_hold=hold,
         publish_robot_tf=True,
+        count_publishers=lambda _: 0,
         body_tf_broadcaster=SimpleNamespace(sendTransform=transforms.append),
         get_clock=lambda: SimpleNamespace(now=lambda: SimpleNamespace(
             to_msg=lambda: Time(sec=11, nanosec=0)

@@ -194,6 +194,15 @@ class MocapGuiModule(MurGuiModule):
         for row, robot in enumerate(ROBOTS):
             self.table.setRowHidden(row, robot not in selected)
 
+    def on_hardware_start(self):
+        super().on_hardware_start()
+        if not self.map_check.isChecked():
+            return
+        if any(state.get('map_live') for state in self.last_snapshot.values()):
+            self.context.append_log('[mocap] Hardware will use the running Qualisys map stream')
+            return
+        self.start_driver()
+
     def on_map_output_toggled(self, enabled):
         process = self.context.window.processes.get(PROCESS_NAME)
         if process is not None and process.state() != QtCore.QProcess.NotRunning:

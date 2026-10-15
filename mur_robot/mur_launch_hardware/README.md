@@ -53,6 +53,14 @@ that previously subscribed to `/joint_states` must select the relevant MuR's
 topic. An explicit `integrated_controller_collision_joint_states_topic`
 override is still supported; its default now follows `robot_name`.
 
+The state broadcasters are spawned before inactive motion controllers. Each
+arm's spawners share a lock in
+`/tmp/mur_launch_hardware/spawner_ros_home/<robot_name>/UR10_<side>/locks`;
+other arms use separate locks. A slow motion-controller setup therefore cannot
+prevent another arm from publishing measured joint states. Automatic UR startup
+only proceeds after both spawners exit successfully. A spawner failure is logged
+and stops that arm's automatic startup sequence.
+
 
 ## Automatic UR startup
 
@@ -193,16 +201,28 @@ colcon build --symlink-install \
   --metas src/match_mobile_robotics_jazzy/colcon.meta
 ```
 
-### TF ownership with Qualisys localization
+### Automatic MiR / Qualisys localization
 
 MuR hardware bringup defaults `mir_tf_excluded_children` to `odom base_footprint base_link`.
 The MiR bridge filters these child frames from both `/tf` and `/tf_static`, after adding
-the robot prefix. Qualisys owns `map -> <robot>/base_footprint`; the MuR robot description
-owns `<robot>/base_footprint -> <robot>/base_link`. Sensor transforms and MiR odometry
-messages remain available. Publishing the MiR's `odom -> base_footprint` concurrently
-with Qualisys gives the base two parents and causes large jumps between the two maps.
-For native MiR localization without Qualisys robot TF, explicitly pass
-`mir_tf_excluded_children:=''`. Standalone MiR launches keep their original TF behavior;
-the equivalent bridge/launch parameter is `tf_excluded_children` (empty by default).
-Restart the MiR bridge after changing this setting. Existing TF buffers may retain old
-static transforms until their consumers restart.
+the robot prefix. `mir_pose_simple` now owns `map -> <robot>/base_footprint`, using
+the MiR's own `/<robot>/robot_pose` by default. A fresh, valid map pose on
+`/qualisys_map/<robot>/pose` takes priority automatically, including when Mocap
+was started before the hardware. Each robot selects its source independently.
+The MuR robot description owns `<robot>/base_footprint -> <robot>/base_link`.
+Sensor transforms and MiR odometry messages remain available.
+
+The normal base GUI needs no Mocap process. Starting hardware in the Mocap GUI
+also starts the Mocap bridge when map output is enabled, or reuses an existing
+map stream. Starting or stopping Mocap later changes the source without a
+hardware restart. After `mir_localization_timeout` seconds without a valid pose
+(default 1.0), the selector falls back to a fresh MiR pose. If neither source
+is fresh it stops publishing base TF. Frozen Qualisys localization continues
+to take priority because the Mocap bridge keeps publishing the held pose.
+
+`/<robot>/localization_source` reports `mir`, `mocap`, or `waiting`. Its publisher
+also identifies the hardware's base-TF owner: the Mocap bridge leaves this
+robot's base TF to the selector, while keeping its standalone TF behavior for
+robots without that owner. Keep the default `mir_tf_excluded_children` when
+using this automatic selector to avoid competing base transforms.
+Standalone MiR launches retain their original localization and TF behavior.

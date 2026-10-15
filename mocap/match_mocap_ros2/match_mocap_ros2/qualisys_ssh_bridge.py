@@ -170,7 +170,7 @@ class QualisysSshBridge(Node):
                 if topic not in self._map_publishers:
                     self._map_publishers[topic] = self.create_publisher(PoseStamped, topic, 10)
                 self._map_publishers[topic].publish(mapped_pose)
-            if self.publish_robot_tf:
+            if self.publish_robot_tf and not self.count_publishers(f'/{robot}/localization_source'):
                 self.body_tf_broadcaster.sendTransform(
                     robot_tf_from_map_pose(mapped_pose, robot)
                 )
@@ -340,7 +340,8 @@ class QualisysSshBridge(Node):
         if body_name in self.localization_hold.frozen:
             return
         self._map_publishers[topic].publish(mapped_pose)
-        if not smoothed and self.publish_robot_tf and body_name in ROBOT_NAMES:
+        if (not smoothed and self.publish_robot_tf and body_name in ROBOT_NAMES
+                and not self.count_publishers(f'/{body_name}/localization_source')):
             self.body_tf_broadcaster.sendTransform(
                 robot_tf_from_map_pose(mapped_pose, body_name)
             )

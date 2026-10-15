@@ -41,6 +41,8 @@ def generate_launch_description():
         DeclareLaunchArgument('bridge_light_commands', default_value='true'),
         DeclareLaunchArgument('set_default_light_on_start', default_value='false'),
         DeclareLaunchArgument('localization_type', default_value='robot_pose'),
+        DeclareLaunchArgument('publish_localization_tf', default_value='false'),
+        DeclareLaunchArgument('localization_timeout', default_value='1.0'),
         DeclareLaunchArgument('external_localization', default_value='false'),
         DeclareLaunchArgument('run_rosapi_audit', default_value='false'),
         DeclareLaunchArgument('launch_cameras', default_value='false'),
@@ -106,6 +108,9 @@ def generate_launch_description():
             parameters=[{
                 'use_sim_time': use_sim_time,
                 'localization_type': LaunchConfiguration('localization_type'),
+                'publish_robot_tf': LaunchConfiguration('publish_localization_tf'),
+                'localization_timeout': LaunchConfiguration('localization_timeout'),
+                'tf_prefix': namespace,
                 'mocap_topic': LaunchConfiguration('localization_topic'),
                 'robot_pose_topic': 'robot_pose',
                 'odom_topic': 'odom',

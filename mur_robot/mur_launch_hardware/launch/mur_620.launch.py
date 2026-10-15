@@ -19,6 +19,7 @@ from launch.actions import (
 )
 from launch.conditions import IfCondition, UnlessCondition
 from launch.event_handlers import OnProcessExit
+from launch.logging import get_logger
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import AndSubstitution, LaunchConfiguration, NotSubstitution, PathJoinSubstitution
 from launch_ros.actions import Node, PushRosNamespace, SetRemap
@@ -68,8 +69,9 @@ def declare_arguments():
         ),
         DeclareLaunchArgument(
             'mir_tf_excluded_children', default_value='odom base_footprint base_link',
-            description='Qualisys owns the MuR base TF and the URDF owns base_link. Set empty for native MiR localization.',
+            description='The localization selector owns the MuR base TF; the URDF owns base_link.',
         ),
+        DeclareLaunchArgument('mir_localization_timeout', default_value='1.0'),
         DeclareLaunchArgument('launch_bms', default_value='true'),
         DeclareLaunchArgument(
             'battery_node_id',
@@ -317,6 +319,14 @@ def controller_spawner(namespace, controllers, *, active=True):
     return Node(
         package='controller_manager',
         executable='spawner',
+        # Jazzy's spawner uses one lock under ROS_HOME for the entire host.
+        # Serialize spawners for this controller manager without blocking
+        # independent arms when another manager is slow or unresponsive.
+        additional_env={
+            'ROS_HOME': os.path.join(
+                tempfile.gettempdir(), 'mur_launch_hardware', 'spawner_ros_home', namespace
+            ),
+        },
         arguments=[
             '--controller-manager',
             f'/{namespace}/controller_manager',
@@ -326,6 +336,19 @@ def controller_spawner(namespace, controllers, *, active=True):
         ] + inactive_flags + controllers,
         output='screen',
     )
+
+
+def successful_spawner_followup(namespace, next_actions):
+    """Continue bringup only when the preceding controllers actually started."""
+    def on_exit(event, context):
+        if event.returncode == 0:
+            return next_actions
+        get_logger('mur_launch_hardware').error(
+            f'{namespace}: controller spawner failed with exit code {event.returncode}; '
+            'subsequent controller spawning and automatic UR startup skipped.'
+        )
+        return []
+    return on_exit
 
 
 def make_arm_controllers_file(source_file, robot_name, arm_name, integrated_controller_params):
@@ -571,17 +594,19 @@ def make_ur_driver(side, robot_name, controllers_file, update_rate_config_file, 
 
         active_spawner = controller_spawner(namespace, active)
         inactive_spawner = controller_spawner(namespace, inactive, active=False)
-        startup_after_spawners = RegisterEventHandler(
-            OnProcessExit(
-                target_action=inactive_spawner,
-                on_exit=[startup_enable_node],
-            )
-        )
-
+        # Publish measured joints before loading optional motion controllers.
+        # Racing these spawners can let a slow motion-controller setup hold
+        # the lock until state broadcasters time out and TCP TF remains absent.
         return [
+            RegisterEventHandler(OnProcessExit(
+                target_action=active_spawner,
+                on_exit=successful_spawner_followup(namespace, [inactive_spawner]),
+            )),
+            RegisterEventHandler(OnProcessExit(
+                target_action=inactive_spawner,
+                on_exit=successful_spawner_followup(namespace, [startup_enable_node]),
+            )),
             active_spawner,
-            inactive_spawner,
-            startup_after_spawners,
         ]
 
     return GroupAction(
@@ -666,6 +691,10 @@ def make_mir_hardware_launch(robot_name, use_sim_time):
             'mir_type': LaunchConfiguration('mir_type'),
             'enabled_pub_topics': LaunchConfiguration('mir_enabled_pub_topics'),
             'tf_excluded_children': LaunchConfiguration('mir_tf_excluded_children'),
+            'localization_type': 'auto',
+            'publish_localization_tf': 'true',
+            'localization_topic': f'/qualisys_map/{robot_name}/pose',
+            'localization_timeout': LaunchConfiguration('mir_localization_timeout'),
             'launch_cameras': LaunchConfiguration('launch_mir_cameras'),
             'camera_max_rate_hz': LaunchConfiguration('mir_camera_max_rate_hz'),
             'robot_state_publisher_enabled': 'false',

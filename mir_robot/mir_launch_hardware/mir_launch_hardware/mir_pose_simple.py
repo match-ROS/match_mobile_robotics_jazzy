@@ -1,8 +1,45 @@
 #!/usr/bin/env python3
+import math
+import time
+
 import rclpy
 from rclpy.node import Node
-from geometry_msgs.msg import Pose, PoseStamped, PoseWithCovarianceStamped
+from geometry_msgs.msg import Pose, PoseStamped, PoseWithCovarianceStamped, TransformStamped
 from nav_msgs.msg import Odometry
+from rclpy.qos import QoSProfile, DurabilityPolicy
+from std_msgs.msg import String
+from tf2_ros import TransformBroadcaster
+
+
+class AutomaticLocalization:
+    """Prefer fresh map-frame Mocap poses, otherwise use the MiR's map pose."""
+
+    def __init__(self, timeout):
+        if not math.isfinite(timeout) or timeout <= 0:
+            raise ValueError('localization_timeout must be positive and finite')
+        self.timeout = timeout
+        self.poses = {}
+
+    def observe(self, source, pose, received_at, ros_now):
+        if pose.header.frame_id != 'map':
+            return False
+        p, q = pose.pose.position, pose.pose.orientation
+        if not all(math.isfinite(v) for v in (p.x, p.y, p.z, q.x, q.y, q.z, q.w)):
+            return False
+        if abs(q.x*q.x + q.y*q.y + q.z*q.z + q.w*q.w - 1.0) > 0.01:
+            return False
+        stamp = pose.header.stamp.sec + pose.header.stamp.nanosec * 1e-9
+        if abs(ros_now - stamp) > self.timeout:
+            return False
+        self.poses[source] = (received_at, pose)
+        return True
+
+    def select(self, now):
+        for source in ('mocap', 'mir'):
+            latest = self.poses.get(source)
+            if latest is not None and 0 <= now - latest[0] <= self.timeout:
+                return source, latest[1]
+        return 'waiting', None
 
 
 class MirPoseSimple(Node):
@@ -15,12 +52,36 @@ class MirPoseSimple(Node):
         self.mocap_topic = self.declare_parameter('mocap_topic', '/qualisys/mur620b/pose').value
         self.robot_pose_topic = self.declare_parameter('robot_pose_topic', 'robot_pose').value
         self.output_frame = self.declare_parameter('output_frame', 'map').value
+        self.publish_robot_tf = self.declare_parameter('publish_robot_tf', False).value
+        self.tf_prefix = self.declare_parameter('tf_prefix', self.get_namespace()).value.strip('/')
 
         self.pose_pub = self.create_publisher(Pose, 'mir_pose_simple', 1)
         self.pose_stamped_pub = self.create_publisher(PoseStamped, 'mir_pose_stamped_simple', 1)
         self._input_subscriptions = []
 
-        if self.localization_type == 'amcl':
+        if self.localization_type == 'auto':
+            if self.output_frame != 'map':
+                raise ValueError('Automatic localization requires output_frame=map')
+            self.localization = AutomaticLocalization(
+                float(self.declare_parameter('localization_timeout', 1.0).value)
+            )
+            self.localization_source = None
+            if self.publish_robot_tf:
+                self.tf_broadcaster = TransformBroadcaster(self)
+                # Presence of this publisher also tells the standalone Mocap
+                # bridge to leave this robot's base TF to this selector.
+                self.source_pub = self.create_publisher(
+                    String, 'localization_source',
+                    QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL),
+                )
+            self._input_subscriptions.extend([
+                self.create_subscription(Pose, self.robot_pose_topic, self.auto_mir_callback, 10),
+                self.create_subscription(PoseStamped, self.mocap_topic, self.auto_mocap_callback, 10),
+            ])
+            self.create_timer(0.05, self.publish_auto_pose)
+        elif self.publish_robot_tf:
+            raise ValueError('publish_robot_tf requires localization_type=auto')
+        elif self.localization_type == 'amcl':
             self._input_subscriptions.append(self.create_subscription(PoseWithCovarianceStamped, self.amcl_pose_topic, self.amcl_pose_callback, 10))
         elif self.localization_type == 'ground_truth':
             self._input_subscriptions.append(self.create_subscription(Odometry, self.ground_truth_topic, self.odom_callback, 10))
@@ -32,6 +93,47 @@ class MirPoseSimple(Node):
             self._input_subscriptions.append(self.create_subscription(Pose, self.robot_pose_topic, self.robot_pose_callback, 10))
         else:
             self.get_logger().warning('Unknown localization_type: {}'.format(self.localization_type))
+
+    def auto_mir_callback(self, msg):
+        stamped = PoseStamped()
+        stamped.header.frame_id = 'map'
+        stamped.header.stamp = self.get_clock().now().to_msg()
+        stamped.pose = msg
+        self.observe_auto_pose('mir', stamped)
+
+    def auto_mocap_callback(self, msg):
+        self.observe_auto_pose('mocap', msg)
+
+    def observe_auto_pose(self, source, msg):
+        self.localization.observe(
+            source, msg, time.monotonic(), self.get_clock().now().nanoseconds * 1e-9
+        )
+
+    def publish_auto_pose(self):
+        source, pose = self.localization.select(time.monotonic())
+        if source != self.localization_source:
+            self.localization_source = source
+            self.get_logger().info(f'Base localization source: {source}')
+            if self.publish_robot_tf:
+                self.source_pub.publish(String(data=source))
+        if pose is None:
+            return
+        # Both sources own the same map -> base edge, so changing source never
+        # changes the TF tree's parent or competes with the URDF's base joint.
+        stamped = PoseStamped()
+        stamped.header.frame_id = 'map'
+        stamped.header.stamp = self.get_clock().now().to_msg()
+        stamped.pose = pose.pose
+        self._publish(stamped.pose, stamped.header)
+        if self.publish_robot_tf:
+            transform = TransformStamped()
+            transform.header = stamped.header
+            transform.child_frame_id = '/'.join(filter(None, (self.tf_prefix, 'base_footprint')))
+            transform.transform.translation.x = pose.pose.position.x
+            transform.transform.translation.y = pose.pose.position.y
+            transform.transform.translation.z = pose.pose.position.z
+            transform.transform.rotation = pose.pose.orientation
+            self.tf_broadcaster.sendTransform(transform)
 
     def odom_callback(self, msg):
         self._publish(msg.pose.pose, msg.header)
