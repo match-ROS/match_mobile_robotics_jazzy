@@ -58,3 +58,8 @@ htmlcov/
 # Regression coverage for independent joint state streams per MuR.
 !mur_robot/mur_launch_hardware/test/
 !mur_robot/mur_launch_hardware/test/test_robot_joint_states.py
+
+# Mapping core, ROS integration, GUI and Nav2 export regression coverage.
+!navigation/match_mur_navigation/test/
+!navigation/match_mur_navigation/test/*.py
+!navigation/match_mur_navigation/test/*.cpp

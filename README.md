@@ -273,6 +273,7 @@ Axes mapping (Xbox layout):
 
 ## Package Notes
 
+* [`match_mur_navigation`](navigation/match_mur_navigation/README.md) extends the MuR base GUI with Mocap-referenced mapping, standalone SLAM, robot-specific RViz and Nav2 map export. Start with `ros2 run match_mur_navigation navigation_gui` after building the package.
 * Some packages (e.g. `mir_driver`, `mir_navigation`) require additional hardware / map / config assets; ensure their dependencies are installed or selectively build using `--packages-select`.
 * Ignore packages by creating a `COLCON_IGNORE` file in their directory (already used for some doc folders).
 * UR simulation support: Use provided `ur_simulation_gz.jazzy.repos` if you want the full UR environment.
