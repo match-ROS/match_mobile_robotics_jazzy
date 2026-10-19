@@ -135,6 +135,12 @@ def _goal_status_dict_filter(msg_dict, to_ros2):
     return filtered_msg_dict
 
 
+def _goal_id_dict_filter(msg_dict, to_ros2):
+    result = copy.deepcopy(msg_dict)
+    result['stamp'] = _convert_ros_time(result['stamp'], to_ros2)
+    return result
+
+
 def _header_dict_filter(msg_dict, to_ros2):
     filtered_msg_dict = copy.deepcopy(msg_dict)
     filtered_msg_dict['header'] = _convert_ros_header(filtered_msg_dict['header'], to_ros2)
@@ -512,7 +518,7 @@ SUB_TOPICS = [
     # TopicConfig('initialpose', geometry_msgs.msg.PoseWithCovarianceStamped),
     # TopicConfig('light_cmd', std_msgs.msg.String),
     # TopicConfig('mir_cmd', std_msgs.msg.String),
-    # TopicConfig('move_base/cancel', actionlib_msgs.msg.GoalID),
+    TopicConfig('move_base/cancel', actionlib_msgs.msg.GoalID, dict_filter=_goal_id_dict_filter),
     # really mir_actions/MirMoveBaseActionGoal:
     # TopicConfig('move_base/goal', move_base_msgs.msg.MoveBaseActionGoal,
     #   dict_filter=_move_base_goal_dict_filter),

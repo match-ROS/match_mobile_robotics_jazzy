@@ -1,0 +1,20 @@
+# Parameters for the ROS/Nav2 backend; native MiR settings remain in the MiR controller.
+max_speed: 0.25
+max_reverse_speed: 0.0
+max_accel: 0.25
+max_decel: 0.4
+max_angular_speed: 0.4
+max_angular_accel: 0.5
+max_angular_decel: 0.8
+xy_goal_tolerance: 0.1
+yaw_goal_tolerance: 0.15
+inflation_radius: 1.0
+cost_scaling_factor: 3.0
+obstacle_range: 8.0
+raytrace_range: 10.0
+footprint_length: 1.35
+footprint_width: 0.91
+footprint_padding: 0.05
+progress_distance: 0.1
+progress_timeout: 15.0
+goal_timeout: 300.0

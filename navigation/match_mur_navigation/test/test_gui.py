@@ -1,5 +1,7 @@
 from PyQt5 import QtCore, QtWidgets
+import pytest
 from match_mur_navigation import gui
+from match_mur_navigation import navigation_gui
 from match_mur_gui import base_gui
 
 
@@ -18,9 +20,24 @@ class Monitor(QtCore.QObject):
     def cache_topic(self, robot): return '/test/cache/' + robot
 
 
+class DrivingWorker(QtCore.QObject):
+    snapshot = QtCore.pyqtSignal(object)
+    event = QtCore.pyqtSignal(str,str,bool)
+    def start(self): pass
+    def shutdown(self): pass
+    def wait(self,_timeout): pass
+    def request(self,*_args): pass
+
+
+@pytest.fixture(autouse=True)
+def mock_driving_monitor(monkeypatch):
+    monkeypatch.setattr(navigation_gui,'DrivingMonitor',DrivingWorker)
+
+
 class Context:
     def __init__(self):
         self.window = QtWidgets.QWidget()
+        self.window.open_mir_goals = lambda:None
         self.window.processes = {}
         self.selected = []
         self.commands = []
@@ -175,12 +192,12 @@ def test_module_in_actual_base_window(monkeypatch, tmp_path):
     window.resize(1280, 1000)
     window.show()
     app.processEvents()
-    assert window.module_tabs.tabText(0) == 'Navigation / Lokalisierung'
-    assert window.module_tabs.tabText(1) == 'Kartierung'
+    assert [window.module_tabs.tabText(i) for i in range(3)] == ['Navigation','Lokalisierung','Kartierung']
     assert module.robot.currentText() == 'mur620d'
     assert module.start_button.isEnabled()
     captured = []
     monkeypatch.setattr(window, 'start_process', lambda name, command, **kwargs: captured.append((name, command)))
+    window.module_tabs.setCurrentWidget(module.localization_scroll)
     window.open_rviz()
     assert captured[-1][0] == 'navigation_localization_rviz'
     assert '--robot mur620c --mode localization' in captured[-1][1]

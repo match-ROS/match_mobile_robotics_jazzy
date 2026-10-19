@@ -26,6 +26,7 @@ from match_mur_gui.app_icon import configure_gui_icon
 from .session import LATCHED, valid_pose
 from .settings import DEFAULTS, ROBOTS, validate
 from .localization_gui import LocalizationPanel
+from .navigation_gui import DrivingPanel
 
 
 class NavigationMonitor(QtCore.QThread):
@@ -237,11 +238,17 @@ class NavigationModule(MurGuiModule):
     def setup_ui(self, context):
         self.context = context
         self.localization_panel = LocalizationPanel(self)
+        self.driving_panel = DrivingPanel(self)
+        self.driving_scroll = QtWidgets.QScrollArea()
+        self.driving_scroll.setWidgetResizable(True)
+        self.driving_scroll.setFrameShape(QtWidgets.QFrame.NoFrame)
+        self.driving_scroll.setWidget(self.driving_panel)
+        context.add_module_tab(self.driving_scroll, 'Navigation')
         self.localization_scroll = QtWidgets.QScrollArea()
         self.localization_scroll.setWidgetResizable(True)
         self.localization_scroll.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.localization_scroll.setWidget(self.localization_panel)
-        context.add_module_tab(self.localization_scroll, 'Navigation / Lokalisierung')
+        context.add_module_tab(self.localization_scroll, 'Lokalisierung')
         self.panel = QtWidgets.QWidget()
         layout = QtWidgets.QVBoxLayout(self.panel)
         form = QtWidgets.QFormLayout()
@@ -341,6 +348,8 @@ class NavigationModule(MurGuiModule):
         self.on_robot_selection_changed()
 
     def on_robot_selection_changed(self):
+        if self.context is not None and hasattr(self,'driving_panel'):
+            self.driving_panel.update_selection()
         if self.context is None or self.active or self.ending_robot:
             return
         previous = self.robot.currentText()
@@ -374,12 +383,38 @@ class NavigationModule(MurGuiModule):
         return process is not None and process.state() != QtCore.QProcess.NotRunning
 
     def on_open_rviz(self):
+        if self.context.window.module_tabs.currentWidget() is self.driving_scroll:
+            self.driving_panel.open_rviz()
+            return True
         # The shared button used to open the unrelated MoveIt configuration.
         if self.context.window.module_tabs.currentWidget() is self.localization_scroll or not self.session:
             self.localization_panel.open_rviz()
         else:
             self.open_rviz()
         return True
+
+    def on_mir_goal(self, namespace, frame_id, x, y, yaw):
+        return self.driving_panel.send(namespace,frame_id,x,y,yaw)
+
+    def on_mir_cancel(self, namespace):
+        if self.driving_panel.backend.currentData() != 'nav2':
+            return None
+        robot = namespace.strip('/')
+        if robot != self.driving_panel.session_robot or not self.driving_panel.running():
+            return False,'Nav2 läuft nicht für diesen MuR'
+        self.driving_panel.worker.request('cancel',robot)
+        return True,'Nav2-Abbruch angefordert'
+
+    def mir_navigation_description(self):
+        return self.driving_panel.description()
+
+    def on_mir_manual_control(self):
+        # Wait for process shutdown before opening a jog dialog that can issue commands.
+        self.driving_panel.stop()
+
+    def stop_motion_like_actions(self):
+        if hasattr(self,'driving_panel') and self.driving_panel.running():
+            self.driving_panel.worker.request('cancel',self.driving_panel.session_robot)
 
     def command(self, module, arguments):
         return setup_prefix() + 'exec python3 -m ' + module + ' ' + shlex.join(arguments)
@@ -614,6 +649,7 @@ class NavigationModule(MurGuiModule):
         self.update_buttons()
 
     def on_shutdown(self):
+        self.driving_panel.shutdown()
         self.monitor.shutdown()
         self.monitor.wait(3000)
         self.temp.cleanup()

@@ -28,7 +28,7 @@ Check that the printed path matches your actual workspace folder name. Update
 set `REMOTE_WS` or the GUI's Remote WS field to the path on the remote computer.
 
 
-Die Anwendung erweitert `MurBaseGui` um den Tab **Kartierung**. Hardwarestart,
+Die Anwendung erweitert `MurBaseGui` um **Navigation**, **Lokalisierung** und **Kartierung**. Hardwarestart,
 MiR-Jog und die übrigen Basisfunktionen bleiben in der gemeinsamen Oberfläche.
 Eine Sitzung verwendet genau einen ausdrücklich markierten MuR. Die GUI und
 Kartierung laufen auf dem Bedienrechner; dessen ROS-Domain muss der Hardware
@@ -59,6 +59,107 @@ python3 "$WS"/src/match_mur_gui/scripts/install_gui_desktop.py \
 ```
 
 Ohne `--no-desktop-shortcut` wird zusätzlich eine Verknüpfung auf dem Desktop angelegt.
+
+## Fahren: interne MiR-Navigation oder Nav2
+
+Im Tab **Navigation** das **Zielbackend** auswählen. **Interne MiR-Navigation**
+bleibt der Standard und sendet die bisherigen Ziele an den MiR-Controller.
+**Eigener Stack · Nav2** verwendet Smac 2D als globalen Planer und MPPI als
+lokalen Regler, dazu Hinderniskarten für beide Laserscanner, einen
+Geschwindigkeitsglätter und Collision Monitor. Die Navigation läuft auf dem
+GUI-Rechner. Sie benötigt eine gespeicherte Mocap-Karte; die Kartierung bleibt
+ein eigener Arbeitsgang.
+
+1. Genau den gewünschten MuR markieren und seine Hardware starten. Nach dem
+   Update `mir_driver` und `mur_launch_hardware` auf dem Roboter bauen und den
+   Hardwareprozess neu starten: Die Bridge benötigt `move_base/status` sowie
+   die neue Weiterleitung `move_base/cancel`.
+2. Für Nav2 eine Karte und Lokalisierung wählen. **Mocap / Qualisys** verwendet
+   direkt die Rohposen; eine fehlende Empfangs-Bridge wird gestartet.
+   **Vorhandene AMCL-Lokalisierung** benötigt eine bereits initialisierte
+   Sitzung im Tab **Lokalisierung**, auf exakt derselben Karten-YAML. Es gibt
+   keinen automatischen Wechsel zwischen diesen Quellen.
+3. Einstellungen prüfen, **Nav2 starten** und die Bereitschaft abwarten.
+   Karte, Encoder-Odometrie, beide Scanner, Scanner-TFs, Lokalisierung,
+   interner MiR-Navigationsstatus und alle Nav2-Lifecycle-Knoten müssen bereit sein.
+   Eine aktive interne MiR-Fahrt muss zuerst dort abgebrochen werden.
+4. **MiR Goals öffnen** oder den bisherigen Knopf im Tab MiR verwenden.
+   Gespeicherte Ziele und manuell eingegebene Koordinaten benutzen dieselbe
+   Datei wie bisher. Im Dialog wird das aktuelle Zielbackend angezeigt.
+   Es wird jeweils ein Ziel bearbeitet; eine neue Fahrt erst nach Ende oder
+   bestätigtem Abbruch der vorherigen senden.
+5. **Fahrt abbrechen** stoppt die aktuelle Fahrt; **Nav2 stoppen** beendet den
+   GUI-eigenen Stack. Für einen Backendwechsel zuerst Nav2 stoppen. Das Öffnen
+   von MiR Jog beendet den eigenen Stack ebenfalls, bevor manuell gefahren wird.
+
+Ziele behalten ihren gespeicherten Frame. `map`-Ziele werden für Nav2 über das
+vorhandene statische `map -> mocap` nach `mocap` transformiert. `mocap`-Ziele
+werden für die interne MiR-Navigation nach `map` umgerechnet. Ohne passende
+Transformation wird nichts gesendet; bloßes Umbenennen eines Frames ist kein
+Ersatz. **Save Current Robot Pose** speichert die MiR-Controller-Pose ausdrücklich
+als `map`-Pose. Bestehende Zieldateien werden nicht migriert.
+
+Die aufklappbaren **Navigationseinstellungen** gelten ausschließlich für Nav2
+und werden beim nächsten Stackstart übernommen. Während der Stack läuft sind
+sie gesperrt. **Einstellungen für diesen MuR speichern** legt pro Roboter ein
+Profil in `src/match_mur_gui/logs/navigation_settings.yaml` ab; Starten allein
+ändert diese Profile nicht. Die interne MiR-Navigation wird weiterhin im
+MiR-Webinterface eingestellt.
+
+| Einstellung | Standard |
+| --- | --- |
+| Vorwärts / rückwärts | 0,25 / 0 m/s |
+| Beschleunigung / Bremsverzögerung | 0,25 / 0,4 m/s² |
+| Drehrate | 0,4 rad/s |
+| Winkelbeschleunigung / -verzögerung | 0,5 / 0,8 rad/s² |
+| Zielposition / Zielwinkel | 0,10 m / 0,15 rad |
+| Inflationsradius / Kostenabfall | 1,0 m / 3,0 |
+| Hindernis- / Raytracing-Reichweite | 8 / 10 m |
+| Basis-Footprint / zusätzlicher Abstand | 1,35 × 0,91 m / 0,05 m |
+| Erforderlicher Fortschritt / Zeitfenster | 0,10 m / 15 s |
+| Zeitlimit pro Ziel | 300 s |
+
+Die Footprint-Basismaße entsprechen den [MiR600-Herstellermaßen](https://mobile-industrial-robots.com/cs/produkty/roboti/mir600/specifikace).
+MuR-Aufbauten, ausgefahrene Arme und Lasten können darüber hinausragen: Den
+Footprint entsprechend vergrößern und für die erste Fahrt die Transportstellung
+der Arme verwenden. Der Inflationsradius muss den gepolsterten Footprint
+umschließen. MPPI prüft den vollständigen Footprint; der globale Planer fährt
+nicht durch unbekannte Kartenbereiche. Die Recovery-Sequenz räumt Costmaps neu
+auf und wartet, führt aber keine automatischen Rückwärts- oder Drehmanöver aus.
+
+### Ausgänge, Abbruch und CLI
+
+Alle Planer-, Costmap- und TF-Topics liegen unter `/<robot>/navigation/`.
+`navigate_to_pose` ist eine überwachte `nav2_msgs/action/NavigateToPose`-Action;
+`nav2_navigate_to_pose` ist deren interner Nav2-Zugang und darf nicht direkt
+für Fahrten verwendet werden. `cancel` (`std_srvs/Trigger`) bricht die aktuelle
+Fahrt unabhängig vom ursprünglichen Client ab. `status` ist ein JSON-Status auf
+`std_msgs/String`; RViz zeigt Karte, beide Scans, Pfad und Hinderniskarten.
+
+Nur während eines angenommenen Ziels leitet die Sitzung Fahrbefehle als
+`TwistStamped` an `/<robot>/cmd_vel_stamped` weiter. Der Glätter begrenzt
+Beschleunigung und Verzögerung; die letzte Ausgangsstufe begrenzt zusätzlich
+die Geschwindigkeit. Fehlende Eingangsdaten, eine gleichzeitig aktivierte
+interne MiR-Fahrt oder ein Nav2-Ausfall sperren den Ausgang sofort und fordern
+den Abbruch an. Die unterbrochene Fahrt wird bei Rückkehr der Daten nicht
+automatisch fortgesetzt. Ein nicht bestätigter Nav2-Abbruch sperrt neue Ziele
+bis zum Neustart des Stacks. Im Leerlauf beansprucht der Stack den Motorzugang
+nicht. Andere Bediengeräte dürfen während der Fahrt keine parallelen Jog- oder
+Navigationsbefehle senden; eine hardwareseitige Befehlsarbitrierung ersetzt dies
+nicht. Scanner-Schutzfunktionen und Not-Halt des MiR bleiben maßgeblich.
+
+```bash
+ros2 launch match_mur_navigation navigation.launch.py \
+  robot:=mur620c localization_source:=mocap map:=/absolut/labor.yaml
+# Eigene Einstellungen: params_file:=/absolut/navigation.yaml
+ros2 service call /mur620c/navigation/cancel std_srvs/srv/Trigger '{}'
+```
+
+`sensor_namespace` und `output_topic` dienen isolierten Tests bzw. Simulation.
+Ohne Override ist das Ausgabetopic der echte MiR-Fahrzugang. GUI und Tests
+starten keine echte Fahrt automatisch. Vor der ersten Hardwarefahrt Grenzen,
+Footprint, native Abbruchweiterleitung und Trackingausfall bei niedriger
+Geschwindigkeit prüfen. Lokale Tests ersetzen diese Inbetriebnahme nicht.
 
 ## Standardkarte und AMCL gegen Mocap
 
@@ -302,12 +403,18 @@ Mocap-Karte nicht stillschweigend als bisherige MiR-`map` interpretieren.
 ## Tests und Hardware-Abnahme
 
 ```bash
+# Für Änderungen an der Fahrnavigation gezielt deren Tests ausführen:
+python3 -m pytest -q navigation/match_mur_navigation/test/test_navigation.py \
+  navigation/match_mur_navigation/test/test_navigation_gui.py \
+  navigation/match_mur_navigation/test/test_navigation_runtime.py
 # Für Änderungen am AMCL-Vergleich gezielt dessen Tests ausführen:
 python3 -m pytest -q navigation/match_mur_navigation/test/test_localization.py
 # Weitere Tests nur auswählen, wenn die Änderung deren Schnittstellen betrifft.
 ```
 
-Die Tests prüfen Rasterberechnung, Poseninterpolation, Sensor-/TF-Weiterleitung,
+Die Navigationstests prüfen Parametrierung, Zielumrechnung, GUI-Routing,
+Hindernisumfahrung, Fahrgrenzen und Abbruch mit simulierter Motorausgabe.
+Die übrigen Tests prüfen Rasterberechnung, Poseninterpolation, Sensor-/TF-Weiterleitung,
 Aufnahmestopp, GUI-Auswahl und Export mit Nav2. Für die reale Abnahme eine
 gerade Wand von mehreren Positionen und Fahrtrichtungen sowie nach einer
 Rundfahrt erfassen. Auf Doppelkonturen und richtungsabhängigen Versatz achten,
