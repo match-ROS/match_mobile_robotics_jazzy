@@ -73,6 +73,20 @@ gestartete alte Sitzung. Die GUI behält zusätzlich einen eigenen Kartencache;
 auch nach einem Backendabsturz kann die zuletzt empfangene Karte gespeichert
 werden. Beim Ersetzen einer ungespeicherten Karte wird nachgefragt.
 
+**Kartierung beenden** beendet zusätzlich den Kartierungsprozess und gibt den
+ausgewählten MuR für eine neue Sitzung frei. Wird eine Sitzung aus einer anderen
+GUI oder vom CLI erkannt, ist der Button als **Externe Kartierung beenden**
+verfügbar. Eine ungespeicherte externe Karte vorher in der ursprünglichen GUI
+speichern. Beendet wird ausschließlich die Kartierung dieses MuR; Hardware,
+Fahrsteuerung und andere Roboter bleiben aktiv. Der Start ist erst wieder möglich,
+wenn die Kartierungs-Backends aus der ROS-Erkennung verschwunden sind.
+
+Neue Backends bieten dafür `/<robot>/mapping/end_session` an. Ältere, bereits
+laufende Sitzungen auf dem Bedienrechner werden anhand ihrer exakten Prozessargumente
+und des Roboter-Namens erkannt und regulär per SIGINT beendet. Der Fallback beendet
+keine fremden Benutzerprozesse und erzwingt kein SIGKILL. Alte Backends auf einem
+anderen Rechner müssen dort beendet oder auf den neuen Dienst aktualisiert werden.
+
 **Mocap stoppen** beendet ausschließlich die GUI-eigene Bridge. Vorhandene
 Bridges werden erkannt und verwendet; deren Einstellungen werden nicht verändert.
 Die GUI-eigene Bridge läuft mit `publish_map_pose:=false` und
@@ -132,7 +146,8 @@ ros2 service call /mur620d/mapping/set_recording std_srvs/srv/SetBool '{data: fa
 ```
 
 Eine gestoppte Sitzung wird nicht wieder aufgenommen; eine neue Sitzung startet
-eine neue Karte. Externe CLI-Sitzungen verwaltet die GUI nicht.
+eine neue Karte. Externe CLI-Sitzungen können über **Externe Kartierung beenden**
+freigegeben werden.
 
 | Parameter | Standard | Bedeutung |
 | --- | --- | --- |
@@ -163,6 +178,7 @@ Alle sitzungsbezogenen Topics liegen unter `/<robot>/mapping/`:
 | `map` | `nav_msgs/OccupancyGrid`, reliable/transient-local |
 | `status` | `std_msgs/String`, JSON mit Modus, Aufnahmezustand, Eingangsstatus und Mocap-Scanzählern |
 | `set_recording` | `std_srvs/SetBool`, `false` beendet die Aufnahme |
+| `end_session` | `std_srvs/Trigger`, beendet die Sitzung samt Kartierungsbackend |
 | `pose`, `robot_pose` | zeitkorrigierte Mocap-Pose / RViz-Anzeige |
 | `front_scan`, `rear_scan`, `scan` | sitzungsbezogene Scans |
 | `tf`, `tf_static` | privater TF-Datenstrom |

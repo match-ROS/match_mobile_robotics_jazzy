@@ -12,7 +12,7 @@ from geometry_msgs.msg import PoseStamped, TransformStamped
 from nav_msgs.msg import OccupancyGrid, Odometry
 from sensor_msgs.msg import LaserScan
 from std_msgs.msg import String
-from std_srvs.srv import SetBool
+from std_srvs.srv import SetBool, Trigger
 from tf2_msgs.msg import TFMessage
 from rclpy.qos import qos_profile_sensor_data
 import yaml
@@ -89,6 +89,28 @@ def test_launch_mapping_stop_and_tracking_recovery(mode, tmp_path):
             rclpy.spin_once(node, timeout_sec=0.03)
             app.processEvents()
             time.sleep(0.01)
+
+    def end_session():
+        if monitor is not None:
+            results = []
+            monitor.session_end_result.connect(lambda *args: results.append(args))
+            monitor.request_end(robot)
+            deadline = time.monotonic()+4
+            while not results and time.monotonic() < deadline:
+                rclpy.spin_once(node, timeout_sec=0.05)
+                app.processEvents()
+            assert results and results[-1][0:2] == (robot, True)
+        else:
+            client = node.create_client(Trigger, ns+'/end_session')
+            assert client.wait_for_service(timeout_sec=3)
+            future = client.call_async(Trigger.Request())
+            deadline = time.monotonic()+4
+            while not future.done() and time.monotonic() < deadline:
+                rclpy.spin_once(node, timeout_sec=0.05)
+            assert future.done() and future.result().success
+        process.wait(timeout=7)
+        assert process.returncode == 0, (tmp_path/'launch.log').read_text()
+        assert node.context.ok()
     try:
         deadline = time.monotonic()+20
         while not maps and time.monotonic() < deadline:
@@ -147,8 +169,7 @@ def test_launch_mapping_stop_and_tracking_recovery(mode, tmp_path):
             node.create_subscription(OccupancyGrid, monitor.cache_topic(robot), cache.append, LATCHED)
             pump(0.3)
             assert cache
-            os.killpg(process.pid, signal.SIGINT)
-            process.wait(timeout=7)
+            end_session()
             late_cache = []
             node.create_subscription(OccupancyGrid, monitor.cache_topic(robot), late_cache.append, LATCHED)
             deadline = time.monotonic()+3
@@ -156,6 +177,8 @@ def test_launch_mapping_stop_and_tracking_recovery(mode, tmp_path):
                 rclpy.spin_once(node, timeout_sec=0.05)
                 app.processEvents()
             assert late_cache and list(late_cache[-1].data) == list(cache[-1].data)
+        else:
+            end_session()
     finally:
         if monitor:
             monitor.shutdown()

@@ -18,7 +18,7 @@ from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import OccupancyGrid
 from rclpy.executors import SingleThreadedExecutor, ExternalShutdownException
 from std_msgs.msg import String
-from std_srvs.srv import SetBool
+from std_srvs.srv import SetBool, Trigger
 import yaml
 
 from match_mur_gui.base_gui import MurBaseGui, MurGuiModule, setup_prefix
@@ -31,6 +31,7 @@ class NavigationMonitor(QtCore.QThread):
     snapshot = QtCore.pyqtSignal(object)
     map_changed = QtCore.pyqtSignal(str, str, int)
     log = QtCore.pyqtSignal(str)
+    session_end_result = QtCore.pyqtSignal(str, bool, str)
 
     def __init__(self):
         super().__init__()
@@ -50,6 +51,9 @@ class NavigationMonitor(QtCore.QThread):
     def request_stop(self, robot):
         self.commands.put(('stop', robot))
 
+    def request_end(self, robot):
+        self.commands.put(('end', robot))
+
     def reset(self, robot, session_id):
         self.commands.put(('reset', (robot, session_id)))
 
@@ -60,6 +64,7 @@ class NavigationMonitor(QtCore.QThread):
         context = rclpy.context.Context()
         node = executor = None
         clients = {}
+        end_clients = {}
         pending = []
         try:
             rclpy.init(args=[], context=context)
@@ -100,6 +105,7 @@ class NavigationMonitor(QtCore.QThread):
                 node.create_subscription(OccupancyGrid, f'/{robot}/mapping/map',
                                          lambda m, r=robot: map_received(r, m), LATCHED)
                 clients[robot] = node.create_client(SetBool, f'/{robot}/mapping/set_recording')
+                end_clients[robot] = node.create_client(Trigger, f'/{robot}/mapping/end_session')
             next_snapshot = 0
             discovery_started = time.monotonic()
             while context.ok() and not self.stop_event.is_set():
@@ -113,23 +119,37 @@ class NavigationMonitor(QtCore.QThread):
                         self.statuses.pop(robot, None)
                         node.destroy_publisher(self.publishers[robot])
                         self.publishers[robot] = node.create_publisher(OccupancyGrid, self.cache_topic(robot), LATCHED)
+                    elif action == 'end':
+                        if end_clients[value].service_is_ready():
+                            pending.append((end_clients[value].call_async(Trigger.Request()),
+                                            time.monotonic(), action, value))
+                        else:
+                            self.session_end_result.emit(value, False, 'service_unavailable')
                     elif clients[value].service_is_ready():
                         robot = value
-                        pending.append((clients[robot].call_async(SetBool.Request(data=False)), time.monotonic()))
+                        pending.append((clients[robot].call_async(SetBool.Request(data=False)),
+                                        time.monotonic(), action, robot))
                     else:
                         self.log.emit('[mapping] Stop-Dienst nicht erreichbar; Backendstatus prüfen.')
-                for future, started in list(pending):
+                for item in list(pending):
+                    future, started, action, robot = item
                     if future.done():
                         try:
                             result = future.result()
                             self.log.emit('[mapping] ' + result.message)
+                            if action == 'end':
+                                self.session_end_result.emit(robot, result.success, result.message)
                         except Exception as exc:
                             self.log.emit(f'[mapping] Stop fehlgeschlagen: {exc}')
-                        pending.remove((future, started))
+                            if action == 'end':
+                                self.session_end_result.emit(robot, False, str(exc))
+                        pending.remove(item)
                     elif time.monotonic() - started > 3:
                         future.cancel()
-                        pending.remove((future, started))
+                        pending.remove(item)
                         self.log.emit('[mapping] Stop-Zeitüberschreitung; Backendstatus prüfen.')
+                        if action == 'end':
+                            self.session_end_result.emit(robot, False, 'Dienst-Zeitüberschreitung')
                 if time.monotonic() >= next_snapshot:
                     now = time.monotonic()
                     names = node.get_node_names()
@@ -137,7 +157,8 @@ class NavigationMonitor(QtCore.QThread):
                         discovery_ready=now-discovery_started >= 2,
                         raw={r: now - self.sources.get(r, -100) < 0.5 for r in ROBOTS},
                         bridge_present='qualisys_ssh_bridge' in names,
-                        owners={r: node.count_publishers(f'/{r}/mapping/status') > 0 for r in ROBOTS},
+                        owners={r: (node.count_publishers(f'/{r}/mapping/status') > 0 or
+                                    node.count_publishers(f'/{r}/mapping/map_raw') > 0) for r in ROBOTS},
                         statuses={r: value for r, (stamp, value) in self.statuses.items() if now-stamp < 2}))
                     next_snapshot = now + 0.2
         except (ExternalShutdownException, KeyboardInterrupt):
@@ -179,6 +200,8 @@ class NavigationModule(MurGuiModule):
         self.revision = 0
         self.last_snapshot = {}
         self.stopping = False
+        self.ending_robot = None
+        self.end_generation = 0
         self.temp = tempfile.TemporaryDirectory(prefix='mur_navigation_')
 
     def setup_ui(self, context):
@@ -207,8 +230,10 @@ class NavigationModule(MurGuiModule):
         self.mocap_stop = button('Mocap stoppen', self.stop_mocap, 0, 1)
         self.start_button = button('Kartierung starten', self.start_mapping, 1, 0)
         self.stop_button = button('Kartierung stoppen', self.stop_mapping, 1, 1)
-        self.save_button = button('Karte speichern', self.save_map, 2, 0)
-        self.rviz_button = button('RViz öffnen', self.open_rviz, 2, 1)
+        self.end_button = button('Kartierung beenden', self.end_mapping, 2, 0)
+        self.end_button.setToolTip('Beendet auch externe Kartierungen für den ausgewählten MuR und gibt ihn für einen Neustart frei.')
+        self.save_button = button('Karte speichern', self.save_map, 3, 0)
+        self.rviz_button = button('RViz öffnen', self.open_rviz, 3, 1)
         layout.addLayout(buttons)
         self.auto_rviz = QtWidgets.QCheckBox('RViz beim Kartierungsstart öffnen')
         layout.addWidget(self.auto_rviz)
@@ -274,12 +299,13 @@ class NavigationModule(MurGuiModule):
         self.monitor.snapshot.connect(self.update_snapshot)
         self.monitor.map_changed.connect(self.on_map_changed)
         self.monitor.log.connect(context.append_log)
+        self.monitor.session_end_result.connect(self.end_result)
         self.monitor.start()
         self.robot.currentIndexChanged.connect(self.update_buttons)
         self.on_robot_selection_changed()
 
     def on_robot_selection_changed(self):
-        if self.context is None or self.active:
+        if self.context is None or self.active or self.ending_robot:
             return
         previous = self.robot.currentText()
         self.robot.blockSignals(True)
@@ -291,12 +317,18 @@ class NavigationModule(MurGuiModule):
         self.update_buttons()
 
     def update_buttons(self):
-        self.start_button.setEnabled(bool(self.robot.currentText()) and not self.active and not self.saving)
-        self.stop_button.setEnabled(self.active and not self.stopping)
+        robot = self.robot.currentText()
+        owned = self.session and self.session['robot'] == robot and self.running('navigation_mapping')
+        external = self.last_snapshot.get('owners', {}).get(robot, False) and not owned
+        self.start_button.setEnabled(bool(robot) and not self.active and not self.saving
+                                     and not self.ending_robot and not external)
+        self.stop_button.setEnabled(self.active and not self.stopping and not self.ending_robot)
+        self.end_button.setText('Externe Kartierung beenden' if external else 'Kartierung beenden')
+        self.end_button.setEnabled(bool(owned or external) and not self.ending_robot and not self.saving)
         self.save_button.setEnabled(self.has_map and not self.saving)
         self.rviz_button.setEnabled(self.session is not None)
         for widget in (self.robot, self.mode, self.settings_panel, self.auto_rviz):
-            widget.setEnabled(not self.active and not self.saving)
+            widget.setEnabled(not self.active and not self.saving and not self.ending_robot)
         self.mocap_stop.setEnabled(self.running('navigation_mocap'))
         self.mocap_start.setEnabled(bool(self.last_snapshot.get('discovery_ready')) and
                                    not self.running('navigation_mocap'))
@@ -348,7 +380,7 @@ class NavigationModule(MurGuiModule):
 
     def start_mapping(self):
         robot = self.robot.currentText()
-        if not robot or self.active or self.saving:
+        if not robot or self.active or self.saving or self.ending_robot:
             return
         try:
             settings = validate(robot, self.mode.currentData(), {k: f.value() for k, f in self.fields.items()})
@@ -358,7 +390,8 @@ class NavigationModule(MurGuiModule):
         old_robot = self.session['robot'] if self.session else None
         if self.last_snapshot.get('owners', {}).get(robot) and not (
                 old_robot == robot and self.running('navigation_mapping')):
-            self.status.setText('Für diesen MuR läuft bereits eine externe Kartierung.')
+            self.status.setText('Für diesen MuR läuft bereits eine externe Kartierung. '
+                                'Mit „Externe Kartierung beenden“ freigeben.')
             return
         if self.dirty and not self.confirm_discard():
             return
@@ -400,6 +433,56 @@ class NavigationModule(MurGuiModule):
             self.status.setText('Stop nicht bestätigt. Erneut versuchen oder verwaltete Prozesse stoppen.')
             self.update_buttons()
 
+    def end_mapping(self):
+        robot = self.robot.currentText()
+        if not robot or self.ending_robot or self.saving:
+            return
+        owned = self.session and self.session['robot'] == robot and self.running('navigation_mapping')
+        if not owned and not self.last_snapshot.get('owners', {}).get(robot):
+            return
+        if not owned and QtWidgets.QMessageBox.question(
+                self.panel, 'Externe Kartierung beenden',
+                f'Kartierung für {robot} vollständig beenden? '
+                'Eine ungespeicherte externe Karte vorher in ihrer GUI speichern.',
+                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.Cancel,
+                QtWidgets.QMessageBox.Cancel) != QtWidgets.QMessageBox.Yes:
+            return
+        self.ending_robot = robot
+        self.end_generation += 1
+        generation = self.end_generation
+        self.status.setText(f'Kartierung für {robot} wird beendet …')
+        self.monitor.request_end(robot)
+        self.update_buttons()
+        QtCore.QTimer.singleShot(12000, lambda: self.end_timeout(generation))
+
+    def end_result(self, robot, success, message):
+        if self.ending_robot != robot:
+            return
+        if not success and message == 'service_unavailable':
+            # Older local sessions cannot acquire a newly added ROS service
+            # without restarting; stop only their exact mapping processes.
+            generation = self.end_generation
+            self.context.start_process(
+                'navigation_end_' + robot,
+                self.command('match_mur_navigation.stop_session', ['--robot', robot]),
+                on_finished=lambda code, _status: self.end_fallback_finished(robot, generation, code))
+        elif not success:
+            self.ending_robot = None
+            self.status.setText('Kartierung nicht beendet: ' + message)
+            self.update_buttons()
+
+    def end_fallback_finished(self, robot, generation, code):
+        if self.ending_robot == robot and self.end_generation == generation and code != 0:
+            self.ending_robot = None
+            self.status.setText('Externe Kartierung nicht beendet; Details im Prozesslog.')
+            self.update_buttons()
+
+    def end_timeout(self, generation):
+        if self.ending_robot and self.end_generation == generation:
+            self.ending_robot = None
+            self.status.setText('Beenden nicht bestätigt. Backendstatus prüfen und erneut versuchen.')
+            self.update_buttons()
+
     def backend_finished(self, code, _status):
         self.active = self.stopping = False
         self.status.setText(f'Kartierungsprozess beendet (Code {code}). Empfangene Karte bleibt speicherbar.')
@@ -407,6 +490,10 @@ class NavigationModule(MurGuiModule):
 
     def update_snapshot(self, snapshot):
         self.last_snapshot = snapshot
+        if self.ending_robot and not snapshot.get('owners', {}).get(self.ending_robot):
+            robot = self.ending_robot
+            self.ending_robot = None
+            self.status.setText(f'Kartierung für {robot} beendet. Neue Kartierung möglich.')
         if self.session and self.running('navigation_mapping'):
             status = snapshot.get('statuses', {}).get(self.session['robot'])
             if status and status.get('session_id') == self.session['session_id']:
