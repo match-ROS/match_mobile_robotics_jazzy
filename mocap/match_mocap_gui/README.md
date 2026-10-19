@@ -1,5 +1,33 @@
 # MuR Mocap GUI
 
+**Required: configure your workspace path in `~/.bashrc` before using these commands.**
+Replace the example directory below with the actual name and location of your
+workspace. `WS` must point to the workspace root containing `src/`, not to a
+repository inside `src/`. There is no automatic workspace discovery.
+
+```bash
+# Add these lines to ~/.bashrc; adjust the workspace folder to match your setup.
+export WS="$HOME/your_workspace_folder"
+source /opt/ros/jazzy/setup.bash
+if [ -f "$WS/install/setup.bash" ]; then
+    source "$WS/install/setup.bash"
+fi
+export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-62}"
+```
+
+Then reload and verify the configured path:
+
+```bash
+source ~/.bashrc
+printf 'Workspace: %s\n' "$WS"
+test -d "$WS/src" && echo "Workspace src directory found" || echo "Fix WS in ~/.bashrc"
+```
+
+Check that the printed path matches your actual workspace folder name. Update
+`WS` whenever you move or rename the workspace. Remote workspaces can differ;
+set `REMOTE_WS` or the GUI's Remote WS field to the path on the remote computer.
+
+
 Run with `ros2 run match_mocap_gui mocap_gui` after sourcing ROS 2 Jazzy and the
 workspace install. It defaults to ROS domain 62 unless `ROS_DOMAIN_ID` is
 already set. The application extends `MurBaseGui` like the OAK camera GUI.
@@ -43,7 +71,7 @@ After building this package in the GUI computer's Jazzy workspace, install its
 application-search entry and matching desktop icon with:
 
 ```bash
-python3 /home/rosmatch/colcon_ws/src/match_mur_gui/scripts/install_gui_desktop.py --app mocap
+python3 "$WS"/src/match_mur_gui/scripts/install_gui_desktop.py --app mocap
 ```
 
 The shared installer in `match_mur_gui` checks the executable and creates a

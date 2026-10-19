@@ -1,5 +1,33 @@
 # Ewellix hardware-state freshness
 
+**Required: configure your workspace path in `~/.bashrc` before using these commands.**
+Replace the example directory below with the actual name and location of your
+workspace. `WS` must point to the workspace root containing `src/`, not to a
+repository inside `src/`. There is no automatic workspace discovery.
+
+```bash
+# Add these lines to ~/.bashrc; adjust the workspace folder to match your setup.
+export WS="$HOME/your_workspace_folder"
+source /opt/ros/jazzy/setup.bash
+if [ -f "$WS/install/setup.bash" ]; then
+    source "$WS/install/setup.bash"
+fi
+export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-62}"
+```
+
+Then reload and verify the configured path:
+
+```bash
+source ~/.bashrc
+printf 'Workspace: %s\n' "$WS"
+test -d "$WS/src" && echo "Workspace src directory found" || echo "Fix WS in ~/.bashrc"
+```
+
+Check that the printed path matches your actual workspace folder name. Update
+`WS` whenever you move or rename the workspace. Remote workspaces can differ;
+set `REMOTE_WS` or the GUI's Remote WS field to the path on the remote computer.
+
+
 `ewellix-communication-diagnostics-eb41860.patch` adds an acquisition-health
 signal to the standalone Ewellix lift node. It applies only to the checked-in
 `ewellix/ewellix_lift` revision
@@ -28,7 +56,7 @@ does not build or launch anything; diagnostic collection never applies patches.
 Rebuild the patched driver separately, with the ROS environment sourced:
 
 ```bash
-cd /home/rosmatch/colcon_ws
+cd "$WS"
 source /opt/ros/jazzy/setup.bash
 source install/setup.bash
 colcon build --symlink-install --packages-select ewellix_driver \
