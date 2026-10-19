@@ -7,7 +7,7 @@ import rclpy
 from rclpy.parameter import Parameter
 from geometry_msgs.msg import PoseStamped, TransformStamped
 from sensor_msgs.msg import LaserScan
-from std_srvs.srv import SetBool
+from std_srvs.srv import SetBool, Trigger
 from tf2_msgs.msg import TFMessage
 
 from match_mur_navigation.session import MappingSession, corrected
@@ -93,3 +93,13 @@ def test_full_pose_forwarding_no_global_publication_and_stop(session):
     # No publisher in this session writes hardware TF topics.
     for endpoint in node.get_publishers_info_by_topic('/tf') + node.get_publishers_info_by_topic('/tf_static'):
         assert endpoint.node_name != node.get_name()
+
+
+def test_end_session_releases_only_its_backend_after_service_response(session):
+    assert not session.shutdown_requested
+    response = session.end_session(Trigger.Request(), Trigger.Response())
+    assert response.success
+    assert session.shutdown_requested
+    assert not session.recording
+    # Ending this session must not shut down a shared ROS context in the callback.
+    assert session.context.ok()

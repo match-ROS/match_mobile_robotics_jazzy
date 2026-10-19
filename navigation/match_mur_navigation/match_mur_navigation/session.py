@@ -12,7 +12,7 @@ from geometry_msgs.msg import PoseStamped, TransformStamped
 from nav_msgs.msg import OccupancyGrid, Odometry
 from sensor_msgs.msg import LaserScan
 from std_msgs.msg import Bool, String
-from std_srvs.srv import SetBool
+from std_srvs.srv import SetBool, Trigger
 from tf2_msgs.msg import TFMessage
 
 from .settings import DEFAULTS, local_transform, map_frame, validate
@@ -46,6 +46,7 @@ class MappingSession(Node):
         if self.count_publishers('status'):
             raise RuntimeError('Another mapping session already owns this namespace')
         self.recording = True
+        self.shutdown_requested = False
         self.received = {}
         self.static_edges = {}
         self.map = None
@@ -72,6 +73,7 @@ class MappingSession(Node):
         self.create_subscription(OccupancyGrid, 'map_raw', self.on_map, LATCHED)
         self.create_subscription(String, 'mapper_status', self.on_mapper_status, 10)
         self.create_service(SetBool, 'set_recording', self.set_recording)
+        self.create_service(Trigger, 'end_session', self.end_session)
         self.create_timer(0.2, self.publish_status)
         self.record_pub.publish(Bool(data=True))
 
@@ -195,13 +197,23 @@ class MappingSession(Node):
                       for k in ('integrated', 'discarded')})
         self.status_pub.publish(String(data=json.dumps(status)))
 
+    def end_session(self, _request, response):
+        self.set_recording(SetBool.Request(data=False), SetBool.Response())
+        self.shutdown_requested = True
+        response.success = True
+        response.message = f'Ending mapping session for {self.robot}'
+        return response
+
 
 def main():
     rclpy.init()
     node = None
     try:
         node = MappingSession()
-        rclpy.spin(node)
+        # Return only after the service response has been sent. The launch file
+        # stops the remaining mapping backend when this session exits.
+        while rclpy.ok() and not node.shutdown_requested:
+            rclpy.spin_once(node, timeout_sec=0.2)
     except KeyboardInterrupt:
         pass
     finally:
