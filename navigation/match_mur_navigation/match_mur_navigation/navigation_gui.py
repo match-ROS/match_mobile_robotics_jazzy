@@ -26,12 +26,26 @@ from .navigation_config import DEFAULTS, BOUNDS, validate
 from .saved_map import default_map, map_metadata
 from .session import LATCHED
 from .settings import ROBOTS
+from .comparison import yaw
 import shlex
+
+
+def clicked_pose_values(message):
+    """Validate an RViz map goal before reducing it to planar coordinates."""
+    frame = message.header.frame_id.strip('/')
+    p, q = message.pose.position, message.pose.orientation
+    if frame not in ('map', 'mocap'):
+        raise ValueError('Klickziel benötigt den Kartenrahmen map oder mocap')
+    if (not all(math.isfinite(v) for v in (p.x, p.y, p.z, q.x, q.y, q.z, q.w)) or
+            abs(sum(v*v for v in (q.x, q.y, q.z, q.w))-1.) > .01):
+        raise ValueError('Ungültige Klickziel-Pose')
+    return dict(frame=frame, x=p.x, y=p.y, yaw=yaw(q))
 
 
 class DrivingMonitor(QtCore.QThread):
     snapshot = QtCore.pyqtSignal(object)
     event = QtCore.pyqtSignal(str, str, bool)
+    clicked_goal = QtCore.pyqtSignal(str, str, object, float)
 
     def __init__(self):
         super().__init__()
@@ -64,11 +78,22 @@ class DrivingMonitor(QtCore.QThread):
                     statuses[robot] = (time.monotonic(), json.loads(message.data))
                 except ValueError:
                     pass
+            def clicked(robot, backend, message):
+                age = (node.get_clock().now().nanoseconds -
+                       message.header.stamp.sec*1000000000-message.header.stamp.nanosec)*1e-9
+                if not -.5 <= age <= 2.:
+                    self.event.emit(robot, 'Veraltetes Klickziel verworfen; erneut in RViz setzen', False)
+                    return
+                self.clicked_goal.emit(robot, backend, message, time.monotonic())
             for robot in ROBOTS:
                 ns = '/'+robot+'/navigation'
                 clients[robot] = ActionClient(node, NavigateToPose, ns+'/navigate_to_pose')
                 cancels[robot] = node.create_client(Trigger, ns+'/cancel')
                 node.create_subscription(String, ns+'/status', lambda m, r=robot: status(r,m), LATCHED)
+                node.create_subscription(PoseStamped, ns+'/goal_pose',
+                    lambda m, r=robot: clicked(r, 'nav2', m), 10)
+                node.create_subscription(PoseStamped, ns+'/mir_goal_pose',
+                    lambda m, r=robot: clicked(r, 'mir', m), 10)
             def pose_message(pose):
                 message = PoseStamped()
                 message.header.frame_id = pose['frame']
@@ -173,6 +198,7 @@ class DrivingPanel(QtWidgets.QWidget):
         self.state = {}
         self.session_robot = None
         self.goal_pending = False
+        self.rviz_selection = None
         self.profiles_path = Path(GUI_LOG_DIR).parent/'navigation_settings.yaml'
         self.profiles = {}
         try:
@@ -214,6 +240,11 @@ class DrivingPanel(QtWidgets.QWidget):
         self.status = QtWidgets.QLabel('Interne MiR-Navigation: Ziele wie bisher über MiR Goals senden.')
         self.status.setWordWrap(True)
         layout.addWidget(self.status)
+        click_hint = QtWidgets.QLabel('Klickziel: „Navigation in RViz“ öffnen, „2D Goal Pose“ wählen, '
+            'Zielposition anklicken und bei gedrückter Maustaste die Ausrichtung ziehen. '
+            'Loslassen sendet das Ziel an den gewählten MuR und das ausgewählte Backend.')
+        click_hint.setWordWrap(True)
+        layout.addWidget(click_hint)
         toggle = QtWidgets.QToolButton()
         toggle.setText('Navigationseinstellungen')
         toggle.setCheckable(True)
@@ -259,8 +290,9 @@ class DrivingPanel(QtWidgets.QWidget):
         self.worker = DrivingMonitor()
         self.worker.snapshot.connect(self.update_snapshot)
         self.worker.event.connect(self.event)
+        self.worker.clicked_goal.connect(self.receive_clicked_goal)
         self.worker.start()
-        self.backend.currentIndexChanged.connect(self.update_buttons)
+        self.backend.currentIndexChanged.connect(self.selection_changed)
         self.robot.currentTextChanged.connect(self.load_profile)
         self.update_selection()
 
@@ -283,6 +315,13 @@ class DrivingPanel(QtWidgets.QWidget):
             settings = DEFAULTS
         for key,field in self.fields.items():
             field.setValue(settings[key])
+        self.selection_changed()
+
+    def selection_changed(self):
+        selection = (self.robot.currentText(), self.backend.currentData())
+        if self.rviz_selection is not None and selection != self.rviz_selection:
+            self.module.terminate_owned('navigation_driving_rviz')
+            self.rviz_selection = None
         self.update_buttons()
 
     def settings(self):
@@ -385,6 +424,26 @@ class DrivingPanel(QtWidgets.QWidget):
         self.update_buttons()
         return True,'Nav2-Ziel angefordert'
 
+    def receive_clicked_goal(self, robot, backend, message, received_at):
+        # A stale RViz window must not redirect goals to another robot/backend.
+        if robot != self.robot.currentText() or backend != self.backend.currentData():
+            self.context.append_log('[navigation] Klickziel für einen anderen MuR / ein anderes Backend verworfen.')
+            return
+        if time.monotonic()-received_at > 2.:
+            self.event(robot, 'Verzögertes Klickziel verworfen; erneut in RViz setzen', False)
+            return
+        try:
+            pose = clicked_pose_values(message)
+        except ValueError as exc:
+            self.event(robot, str(exc), False)
+            return
+        result = self.send(robot, pose['frame'], pose['x'], pose['y'], pose['yaw'])
+        if result is None:
+            # Native map goals also wait for DDS discovery in the worker.
+            self.worker.request('native', robot, pose)
+            result = True, 'Klickziel für die interne MiR-Navigation angefordert'
+        self.event(robot, result[1], False)
+
     def event(self,robot,message,finished):
         self.context.append_log('[navigation] '+(robot+': ' if robot else '')+message)
         if not robot or robot == self.session_robot or self.backend.currentData() == 'mir':
@@ -417,13 +476,16 @@ class DrivingPanel(QtWidgets.QWidget):
         self.settings_widget.setEnabled(nav and not own and not busy)
         self.start_button.setEnabled(nav and not own and not busy and bool(self.robot.currentText()) and self.state.get('ready',False))
         self.stop_button.setEnabled(own)
-        self.rviz_button.setEnabled(own)
+        self.rviz_button.setEnabled(bool(self.robot.currentText()) and (own if nav else True))
         self.cancel_button.setEnabled(bool(self.robot.currentText()) and (own if nav else True))
 
     def open_rviz(self):
-        if self.session_robot and self.running() and not self.module.running('navigation_driving_rviz'):
+        nav = self.backend.currentData() == 'nav2'
+        robot = self.session_robot if nav else self.robot.currentText()
+        if robot and (self.running() or not nav) and not self.module.running('navigation_driving_rviz'):
+            self.rviz_selection = (robot, self.backend.currentData())
             self.context.start_process('navigation_driving_rviz',self.module.command('match_mur_navigation.rviz',
-                ['--robot',self.session_robot,'--mode','navigation']))
+                ['--robot',robot,'--mode','navigation' if nav else 'mir']))
 
     def description(self):
         return ('Zielbackend: interne MiR-Navigation' if self.backend.currentData() == 'mir' else

@@ -23,6 +23,7 @@ class Monitor(QtCore.QObject):
 class DrivingWorker(QtCore.QObject):
     snapshot = QtCore.pyqtSignal(object)
     event = QtCore.pyqtSignal(str,str,bool)
+    clicked_goal = QtCore.pyqtSignal(str,str,object,float)
     def start(self): pass
     def shutdown(self): pass
     def wait(self,_timeout): pass
@@ -259,6 +260,41 @@ def test_default_map_load_and_amcl_are_separate_from_mapping(monkeypatch):
     panel.snapshot = {'discovery_ready': True, 'localization_owners': {'mur620c': True}}
     panel.start_amcl()
     assert len(context.commands) == count  # Never terminate/reconfigure an external AMCL.
+    module.on_shutdown()
+    context.window.close()
+    app.processEvents()
+
+
+def test_localization_distinguishes_orphan_adapter_from_reusable_map(monkeypatch):
+    app = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
+    monkeypatch.setattr(gui, 'NavigationMonitor', Monitor)
+    context = Context()
+    module = gui.NavigationModule()
+    module.setup_ui(context)
+    panel = module.localization_panel
+    state = dict(discovery_ready=True, localization_owners={'mur620c': True},
+                 localization_backends={'mur620c': dict(map=True, adapter=True, amcl=False)},
+                 localization_map_paths={'mur620c': str(panel.path.resolve())})
+    module.update_snapshot(state)
+    assert not panel.start_button.isEnabled()
+    assert 'AMCL-Prozess fehlt' in panel.status.text()
+    panel.start_amcl()
+    assert not context.commands
+    state['localization_backends']['mur620c']['adapter'] = False
+    state['localization_map_paths']['mur620c'] = '/tmp/different-map.yaml'
+    module.update_snapshot(state)
+    assert not panel.start_button.isEnabled()
+    panel.start_amcl()
+    assert not context.commands
+    state['localization_map_paths']['mur620c'] = str(panel.path.resolve())
+    module.update_snapshot(state)
+    assert panel.start_button.isEnabled()
+    assert 'AMCL ist nicht gestartet' in panel.status.text()
+    panel.start_amcl()
+    assert 'load_map:=false' in context.commands[-1][1]
+    assert 'localize:=true' in context.commands[-1][1]
+    assert panel.localizing
+    panel.stop()
     module.on_shutdown()
     context.window.close()
     app.processEvents()

@@ -86,6 +86,9 @@ stop_old_hardware() {
     "ewellix_dual_state_to_joint_state.py"
     "ewellix_state_to_joint_state.py"
     "fake_mir_wheel_joint_states.py"
+    "mir_driver/lib/mir_driver/fake_mir_joint_publisher"
+    "ira_laser_tools/lib/ira_laser_tools/laserscan_multi_merger"
+    "__node:=moveit_base_footprint_alias"
     "bms_can_node.py"
     "mir_launch_hardware/lib/mir_launch_hardware/mir_camera_bridge"
     "move_group"
@@ -102,6 +105,15 @@ stop_old_hardware() {
   )
 
   echo "[start_mur620_hardware_logged] Stopping old hardware bringup processes..."
+  # SIGTERM cancels ROS launch without reaping its children. Give the previous
+  # launch time to perform its regular shutdown before cleaning legacy orphans.
+  pkill -INT -f '[r]os2 launch mur_launch_hardware' 2>/dev/null || true
+  for ((attempt = 0; attempt < 50; attempt++)); do
+    if ! pgrep -f '[r]os2 launch mur_launch_hardware' >/dev/null; then
+      break
+    fi
+    sleep 0.1
+  done
   for pattern in "${patterns[@]}"; do
     pkill -TERM -f "$pattern" 2>/dev/null || true
   done

@@ -92,6 +92,24 @@ ein eigener Arbeitsgang.
    GUI-eigenen Stack. Für einen Backendwechsel zuerst Nav2 stoppen. Das Öffnen
    von MiR Jog beendet den eigenen Stack ebenfalls, bevor manuell gefahren wird.
 
+Alternativ im Tab **Navigation** auf **Navigation in RViz** klicken. Dort
+**2D Goal Pose** wählen, die Zielposition auf der Karte anklicken und bei
+gedrückter linker Maustaste die Zielausrichtung ziehen. **Loslassen sendet das
+Fahrziel sofort** an den ausgewählten MuR und das im Navigationstab gewählte
+Backend. Bei Nav2 muss der eigene Stack bereit sein; während einer Fahrt zuerst
+**Fahrt abbrechen** und deren Ende abwarten. Bei interner MiR-Navigation kann
+RViz ohne eigenen Nav2-Stack geöffnet werden und zeigt die MiR-Karte im Frame
+`map`; die Nav2-Ansicht verwendet die Mocap-Karte im Frame `mocap`.
+
+Die Klickziele gehen über `/<robot>/navigation/goal_pose` (Nav2) beziehungsweise
+`/<robot>/navigation/mir_goal_pose` (MiR) an die GUI. Sie verwendet dieselben
+Bereitschaftsprüfungen und Zielumrechnungen wie bei den bestehenden Zielen.
+Veraltete oder ungültige Klickziele sowie Ziele für einen anderen ausgewählten
+Roboter oder ein anderes Backend werden verworfen. Beim Wechsel von Roboter
+oder Backend wird die zugehörige RViz-Ansicht geschlossen. Klickziele erfordern
+eine laufende Navigations-GUI; die reinen Lokalisierungs- und Kartierungsansichten
+enthalten kein Fahrziel-Werkzeug.
+
 Ziele behalten ihren gespeicherten Frame. `map`-Ziele werden für Nav2 über das
 vorhandene statische `map -> mocap` nach `mocap` transformiert. `mocap`-Ziele
 werden für die interne MiR-Navigation nach `map` umgerechnet. Ohne passende
@@ -400,6 +418,27 @@ Nav2-Karten-YAML speichert keinen ROS-Frame: Beim späteren Laden ist
 Lokalisierung und Karte auf denselben Frame konfigurieren; sie darf die
 Mocap-Karte nicht stillschweigend als bisherige MiR-`map` interpretieren.
 
+## Fehlersuche bei AMCL und TF
+
+AMCL verwendet ausschließlich `/<robot>/localization/tf` und
+`/<robot>/localization/tf_static`. Die Verbindung lautet
+`mocap -> <robot>/localization/odom -> <robot>/base_footprint`.
+Im globalen `/tf` bleibt die ausgewählte Hardware-Lokalisierung zuständig.
+Fehlt AMCL selbst, fehlt auch die erste Verbindung im privaten Baum;
+RViz verwirft dann Scans trotz laufendem Laserempfang.
+
+Ein Kartenserver oder ein laufender Vergleichsadapter allein bedeutet nicht,
+dass AMCL aktiv ist. Die GUI unterscheidet diese Fälle. Einen externen
+Kartenserver kann sie für AMCL weiterverwenden, wenn dessen `yaml_filename`
+zur gewählten Karte passt. Einen Adapter ohne AMCL meldet sie als unvollständige
+alte Sitzung; fremde Prozesse werden nicht automatisch beendet.
+
+GUI-eigene Navigationsprozesse werden beim Schließen zuerst mit `SIGINT`
+beendet. `SIGTERM` auf ROS Launch kann Kindprozesse zurücklassen. Auch der
+Hardware-Neustart versucht deshalb zunächst einen regulären Launch-Stopp und
+bereinigt anschließend alte Scan-Merger, MiR-Gelenk-Publisher und den
+MoveIt-TF-Alias. Diese Hilfsknoten dürfen pro Hardware-Sitzung nur einmal laufen.
+
 ## Tests und Hardware-Abnahme
 
 ```bash
@@ -409,6 +448,8 @@ python3 -m pytest -q navigation/match_mur_navigation/test/test_navigation.py \
   navigation/match_mur_navigation/test/test_navigation_runtime.py
 # Für Änderungen am AMCL-Vergleich gezielt dessen Tests ausführen:
 python3 -m pytest -q navigation/match_mur_navigation/test/test_localization.py
+# Für Änderungen am Beenden der GUI-eigenen ROS-Prozesse:
+python3 -m pytest -q navigation/match_mur_navigation/test/test_process_shutdown.py
 # Weitere Tests nur auswählen, wenn die Änderung deren Schnittstellen betrifft.
 ```
 

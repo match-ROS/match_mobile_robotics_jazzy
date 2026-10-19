@@ -113,8 +113,10 @@ class LocalizationPanel(QtWidgets.QWidget):
     def update_buttons(self):
         own = self.started or self.module.running('navigation_localization')
         external = self.snapshot.get('localization_owners', {}).get(self.robot.currentText(), False) and not own
+        backend = self.snapshot.get('localization_backends', {}).get(self.robot.currentText())
+        map_only = external and backend and backend['map'] and not backend['amcl'] and not backend['adapter'] and self.external_map_matches()
         ready = self.snapshot.get('discovery_ready', False)
-        self.start_button.setEnabled(ready and not self.localizing and not external)
+        self.start_button.setEnabled(ready and not self.localizing and (not external or bool(map_only)))
         self.load_button.setEnabled(ready and not self.localizing and not external)
         self.choose_button.setEnabled(not own and not external)
         self.robot.setEnabled(not own)
@@ -122,10 +124,18 @@ class LocalizationPanel(QtWidgets.QWidget):
         self.stop_button.setEnabled(own)
         self.rviz_button.setEnabled(bool(own or external))
 
+    def external_map_matches(self):
+        path = self.snapshot.get('localization_map_paths', {}).get(self.robot.currentText())
+        return bool(path and Path(path).resolve() == self.path.resolve())
+
     def launch(self, localize):
         robot = self.robot.currentText()
-        if self.snapshot.get('localization_owners', {}).get(robot, False) and not (
-                self.started or self.module.running('navigation_localization')):
+        external = self.snapshot.get('localization_owners', {}).get(robot, False) and not (
+            self.started or self.module.running('navigation_localization'))
+        backend = self.snapshot.get('localization_backends', {}).get(robot)
+        reuse_map = bool(external and localize and backend and backend['map']
+                        and not backend['amcl'] and not backend['adapter'] and self.external_map_matches())
+        if external and not reuse_map:
             self.status.setText('Vorhandener externer Kartenserver / AMCL wird angezeigt. '
                                 'Zum Neustart in der zugehörigen Anwendung beenden.')
             return
@@ -146,6 +156,7 @@ class LocalizationPanel(QtWidgets.QWidget):
         self.autoload = False
         arguments = ['ros2', 'launch', 'match_mur_navigation', 'localization.launch.py',
             f'robot:={robot}', f'map:={path}', f'localize:={str(localize).lower()}',
+            f'load_map:={str(not reuse_map).lower()}',
             f'stationary_updates:={str(self.stationary.isChecked()).lower()}',
             f'output_directory:={self.output_directory}']
         self.context.start_process('navigation_localization', setup_prefix()+'exec '+shlex.join(arguments),
@@ -225,6 +236,15 @@ class LocalizationPanel(QtWidgets.QWidget):
                     f"Beobachtete Positionsspanne {data['reference_span_m']:.2f} m\n"
                     + ('Standmessung: korrelierte Stichproben; keine Aussage über Fahrgenauigkeit.\n'
                        if data['stationary_updates'] else '') + 'Dateien: '+data['output']+'.{csv,json}')
+        backend = snapshot.get('localization_backends', {}).get(robot)
+        if backend and not backend['amcl'] and not self.localizing:
+            if backend['adapter']:
+                self.status.setText('AMCL-Prozess fehlt; ein Lokalisierungsadapter aus einer älteren '
+                                    'Sitzung läuft noch. Diese Sitzung auf ihrem Rechner beenden.')
+            elif backend['map']:
+                self.status.setText('Karte geladen · AMCL ist nicht gestartet. ' +
+                    ('AMCL kann mit diesem Kartenserver gestartet werden.' if self.external_map_matches()
+                     else 'Für AMCL muss die gewählte Karte der Karte des externen Servers entsprechen.'))
         self.update_buttons()
 
     def open_rviz(self):

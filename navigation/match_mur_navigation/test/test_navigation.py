@@ -1,6 +1,7 @@
 import math
 import json
 import time
+import sys
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -14,6 +15,8 @@ from tf2_ros import Buffer, TransformException
 from match_mur_navigation.navigation_config import DEFAULTS, parameters, validate
 from match_mur_navigation.navigation_session import NavigationSession, map_to_odom
 from match_mur_navigation.rviz import configuration
+from match_mur_navigation import rviz
+import yaml
 
 
 def test_limits_reach_planner_controller_costmaps_and_smoother():
@@ -81,6 +84,46 @@ def test_localization_alignment_and_private_rviz():
     assert '/mur620c/navigation/plan' in topics
     assert '/mur620c/navigation/front_scan' in topics
     assert '/mur620c/navigation/rear_scan' in topics
+
+
+@pytest.mark.parametrize('robot', ['mur620a', 'mur620c'])
+@pytest.mark.parametrize('mode,frame,suffix', [('navigation','mocap','goal_pose'), ('mir','map','mir_goal_pose')])
+def test_rviz_click_tool_targets_gui_for_exact_robot_and_backend(robot, mode, frame, suffix):
+    config = configuration(robot, mode)['Visualization Manager']
+    assert config['Global Options']['Fixed Frame'] == frame
+    tool, = [t for t in config['Tools'] if t['Class'] == 'rviz_default_plugins/SetGoal']
+    assert tool['Topic']['Value'] == f'/{robot}/navigation/{suffix}'
+    assert tool['Topic']['Reliability Policy'] == 'Reliable'
+    assert tool['Topic']['Durability Policy'] == 'Volatile'
+    assert all(t['Class'] != 'nav2_rviz_plugins/GoalTool' for t in config['Tools'])
+    if mode == 'mir':
+        topics = [d['Topic']['Value'] for d in config['Displays'] if 'Topic' in d]
+        assert f'/{robot}/map' in topics
+        assert f'/{robot}/f_scan' in topics
+        assert f'/{robot}/b_scan' in topics
+    for view in ('localization', 'mocap', 'slam'):
+        assert not any(t['Class'] == 'rviz_default_plugins/SetGoal'
+                       for t in configuration(robot, view)['Visualization Manager']['Tools'])
+
+
+@pytest.mark.parametrize('mode', ['navigation', 'mir'])
+def test_rviz_launch_keeps_private_and_hardware_tf_separate(monkeypatch, mode):
+    captured = []
+    def process(arguments):
+        config = yaml.safe_load(Path(arguments[arguments.index('-d')+1]).read_text())
+        captured.append((arguments, config))
+        return SimpleNamespace(wait=lambda:0, poll=lambda:0)
+    monkeypatch.setattr(rviz.subprocess, 'Popen', process)
+    monkeypatch.setattr(rviz.signal, 'signal', lambda *_:None)
+    monkeypatch.setattr(sys, 'argv', ['rviz', '--robot', 'mur620c', '--mode', mode])
+    assert rviz.main() == 0
+    arguments, config = captured[0]
+    if mode == 'navigation':
+        assert '/tf:=/mur620c/navigation/tf' in arguments
+        assert '/tf_static:=/mur620c/navigation/tf_static' in arguments
+    else:
+        assert not any(arg.startswith(('/tf:=', '/tf_static:=')) for arg in arguments)
+    assert config['Visualization Manager']['Global Options']['Fixed Frame'] == ('map' if mode == 'mir' else 'mocap')
 
 
 def test_native_cancel_stamp_conversion():

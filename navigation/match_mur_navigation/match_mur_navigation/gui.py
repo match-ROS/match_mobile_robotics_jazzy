@@ -19,10 +19,12 @@ from nav_msgs.msg import OccupancyGrid
 from rclpy.executors import SingleThreadedExecutor, ExternalShutdownException
 from std_msgs.msg import String
 from std_srvs.srv import SetBool, Trigger
+from rcl_interfaces.srv import GetParameters
 import yaml
 
 from match_mur_gui.base_gui import MurBaseGui, MurGuiModule, setup_prefix
 from match_mur_gui.app_icon import configure_gui_icon
+from match_mur_gui.processes import stop_ros_process
 from .session import LATCHED, valid_pose
 from .settings import DEFAULTS, ROBOTS, validate
 from .localization_gui import LocalizationPanel
@@ -48,6 +50,7 @@ class NavigationMonitor(QtCore.QThread):
         self.expected_sessions = {}
         self.comparisons = {}
         self.localization_maps = {}
+        self.localization_map_paths = {}
 
     def cache_topic(self, robot):
         return f'/{robot}/mapping/gui_{self.identifier}/map'
@@ -73,6 +76,9 @@ class NavigationMonitor(QtCore.QThread):
         clients = {}
         end_clients = {}
         stationary_clients = {}
+        map_clients = {}
+        map_queries = {}
+        map_query_times = {}
         pending = []
         try:
             rclpy.init(args=[], context=context)
@@ -124,6 +130,7 @@ class NavigationMonitor(QtCore.QThread):
                 clients[robot] = node.create_client(SetBool, f'/{robot}/mapping/set_recording')
                 end_clients[robot] = node.create_client(Trigger, f'/{robot}/mapping/end_session')
                 stationary_clients[robot] = node.create_client(SetBool, f'/{robot}/localization/set_stationary_updates')
+                map_clients[robot] = node.create_client(GetParameters, f'/{robot}/localization/map_server/get_parameters')
             next_snapshot = 0
             discovery_started = time.monotonic()
             while context.ok() and not self.stop_event.is_set():
@@ -179,6 +186,25 @@ class NavigationMonitor(QtCore.QThread):
                 if time.monotonic() >= next_snapshot:
                     now = time.monotonic()
                     names = node.get_node_names()
+                    node_graph = set(node.get_node_names_and_namespaces())
+                    for robot, client in map_clients.items():
+                        query = map_queries.get(robot)
+                        if query is not None and query.done():
+                            try:
+                                values = query.result().values
+                                self.localization_map_paths[robot] = values[0].string_value if values else ''
+                            except Exception:
+                                self.localization_map_paths.pop(robot, None)
+                            del map_queries[robot]
+                        elif query is not None and now-map_query_times[robot] > 3:
+                            query.cancel()
+                            del map_queries[robot]
+                            self.localization_map_paths.pop(robot, None)
+                        if not client.service_is_ready():
+                            self.localization_map_paths.pop(robot, None)
+                        elif robot not in map_queries and now-map_query_times.get(robot, -100) >= 2:
+                            map_queries[robot] = client.call_async(GetParameters.Request(names=['yaml_filename']))
+                            map_query_times[robot] = now
                     self.snapshot.emit(dict(
                         discovery_ready=now-discovery_started >= 2,
                         raw={r: now - self.sources.get(r, -100) < 0.5 for r in ROBOTS},
@@ -187,6 +213,12 @@ class NavigationMonitor(QtCore.QThread):
                                                 node.count_publishers(f'/{r}/localization/comparison') > 0
                                              for r in ROBOTS},
                         localization_maps=dict(self.localization_maps),
+                        localization_map_paths=dict(self.localization_map_paths),
+                        localization_backends={r: dict(
+                            amcl=('amcl', f'/{r}/localization') in node_graph,
+                            adapter=('localization_session', f'/{r}/localization') in node_graph,
+                            map=node.count_publishers(f'/{r}/localization/map') > 0)
+                            for r in ROBOTS},
                         comparisons={r: value for r, (stamp, value) in self.comparisons.items() if now-stamp < 5},
                         owners={r: (node.count_publishers(f'/{r}/mapping/status') > 0 or
                                     node.count_publishers(f'/{r}/mapping/map_raw') > 0) for r in ROBOTS},
@@ -437,15 +469,7 @@ class NavigationModule(MurGuiModule):
         process = self.context.window.processes.get(name)
         if process is None or process.state() == QtCore.QProcess.NotRunning:
             return
-        try:
-            os.kill(int(process.processId()), signal.SIGINT)
-        except ProcessLookupError:
-            return
-        if not process.waitForFinished(4000):
-            process.terminate()
-            if not process.waitForFinished(2000):
-                process.kill()
-                process.waitForFinished(1000)
+        stop_ros_process(process)
 
     def stop_mocap(self):
         self.terminate_owned('navigation_mocap')
