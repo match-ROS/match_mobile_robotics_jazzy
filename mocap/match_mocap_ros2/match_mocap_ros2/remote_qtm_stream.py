@@ -16,7 +16,7 @@ import xml.etree.ElementTree as ET
 import qtm
 
 
-MAP_LAUNCH_PATH = Path('/home/rosmatch/catkin_ws/src/match_mocap/launch_mocap/launch/mocap_launch.launch')
+MAP_LAUNCH_PATH = Path.home() / 'catkin_ws/src/match_mocap/launch_mocap/launch/mocap_launch.launch'
 
 
 async def main():

@@ -896,7 +896,7 @@
 		</gazebo-->
   <gazebo>
     <plugin filename="libgz_ros2_control-system.so" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
-      <parameters>/home/rosmatch/colcon_ws/install/mir_description/share/mir_description/config/mur_controllers.yaml</parameters>
+      <parameters>$(find mir_description)/config/mur_controllers.yaml</parameters>
       <ros>
         <controlPeriod>0.001</controlPeriod>
         <legacyModeNS>true</legacyModeNS>

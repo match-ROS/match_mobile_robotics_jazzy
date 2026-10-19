@@ -1,5 +1,33 @@
 # Qualisys to ROS 2
 
+**Required: configure your workspace path in `~/.bashrc` before using these commands.**
+Replace the example directory below with the actual name and location of your
+workspace. `WS` must point to the workspace root containing `src/`, not to a
+repository inside `src/`. There is no automatic workspace discovery.
+
+```bash
+# Add these lines to ~/.bashrc; adjust the workspace folder to match your setup.
+export WS="$HOME/your_workspace_folder"
+source /opt/ros/jazzy/setup.bash
+if [ -f "$WS/install/setup.bash" ]; then
+    source "$WS/install/setup.bash"
+fi
+export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-62}"
+```
+
+Then reload and verify the configured path:
+
+```bash
+source ~/.bashrc
+printf 'Workspace: %s\n' "$WS"
+test -d "$WS/src" && echo "Workspace src directory found" || echo "Fix WS in ~/.bashrc"
+```
+
+Check that the printed path matches your actual workspace folder name. Update
+`WS` whenever you move or rename the workspace. Remote workspaces can differ;
+set `REMOTE_WS` or the GUI's Remote WS field to the path on the remote computer.
+
+
 `qualisys_ssh_bridge` runs on a ROS 2 Jazzy computer. It starts the existing
 `qtm` Python SDK on `roscore` over SSH and forwards tracked 6D rigid bodies as
 `geometry_msgs/PoseStamped` on `/qualisys/<body_name>/pose`. No ROS 2 install,
@@ -24,7 +52,7 @@ causal 0.2-second mean adds roughly 0.1 s of lag during constant-speed motion.
 
 ```bash
 source /opt/ros/jazzy/setup.bash
-source /home/rosmatch/colcon_ws/install/setup.bash
+source "$WS"/install/setup.bash
 export ROS_DOMAIN_ID=62
 ros2 run match_mocap_ros2 qualisys_ssh_bridge
 ```
@@ -43,7 +71,7 @@ its names are read again.
 
 Map output is enabled by default. At each connection the bridge reads the
 `map_to_mocap` static transform directly from
-`/home/rosmatch/catkin_ws/src/match_mocap/launch_mocap/launch/mocap_launch.launch`
+`~/catkin_ws/src/match_mocap/launch_mocap/launch/mocap_launch.launch`
 on `roscore`. It accepts only an unambiguous planar `map -> mocap` transform.
 The currently verified numerical calibration is also pinned in
 `map_transform.py` because the roscore worktree has not committed it and the

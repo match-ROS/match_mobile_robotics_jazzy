@@ -1,6 +1,34 @@
 # MuR Navigation und Kartierung
 
-Die Anwendung erweitert `MurBaseGui` um **Navigation / Lokalisierung** und **Kartierung**. Hardwarestart,
+**Required: configure your workspace path in `~/.bashrc` before using these commands.**
+Replace the example directory below with the actual name and location of your
+workspace. `WS` must point to the workspace root containing `src/`, not to a
+repository inside `src/`. There is no automatic workspace discovery.
+
+```bash
+# Add these lines to ~/.bashrc; adjust the workspace folder to match your setup.
+export WS="$HOME/your_workspace_folder"
+source /opt/ros/jazzy/setup.bash
+if [ -f "$WS/install/setup.bash" ]; then
+    source "$WS/install/setup.bash"
+fi
+export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-62}"
+```
+
+Then reload and verify the configured path:
+
+```bash
+source ~/.bashrc
+printf 'Workspace: %s\n' "$WS"
+test -d "$WS/src" && echo "Workspace src directory found" || echo "Fix WS in ~/.bashrc"
+```
+
+Check that the printed path matches your actual workspace folder name. Update
+`WS` whenever you move or rename the workspace. Remote workspaces can differ;
+set `REMOTE_WS` or the GUI's Remote WS field to the path on the remote computer.
+
+
+Die Anwendung erweitert `MurBaseGui` um den Tab **Kartierung**. Hardwarestart,
 MiR-Jog und die übrigen Basisfunktionen bleiben in der gemeinsamen Oberfläche.
 Eine Sitzung verwendet genau einen ausdrücklich markierten MuR. Die GUI und
 Kartierung laufen auf dem Bedienrechner; dessen ROS-Domain muss der Hardware
@@ -10,7 +38,7 @@ entsprechen (GUI-Standard: 62).
 
 ```bash
 source /opt/ros/jazzy/setup.bash
-cd /home/rosmatch/colcon_ws
+cd "$WS"
 rosdep install --from-paths src/match_mobile_robotics_jazzy/navigation/match_mur_navigation --ignore-src -r -y
 colcon build --packages-select match_mur_navigation --symlink-install
 source install/setup.bash
@@ -26,7 +54,7 @@ Workspace verfügbar sein. ROS-Abhängigkeiten sind unter anderem `slam_toolbox`
 Für den Startmenüeintrag **MuR Navigation** mit passendem Fenster- und Karten-Icon:
 
 ```bash
-python3 /home/rosmatch/colcon_ws/src/match_mur_gui/scripts/install_gui_desktop.py \
+python3 "$WS"/src/match_mur_gui/scripts/install_gui_desktop.py \
   --app navigation --no-desktop-shortcut
 ```
 
