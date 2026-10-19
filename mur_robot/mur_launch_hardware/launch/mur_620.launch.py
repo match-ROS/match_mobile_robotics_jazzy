@@ -72,6 +72,9 @@ def declare_arguments():
             description='The localization selector owns the MuR base TF; the URDF owns base_link.',
         ),
         DeclareLaunchArgument('mir_localization_timeout', default_value='1.0'),
+        DeclareLaunchArgument('mir_localization_source', default_value='auto',
+            choices=['auto', 'mir', 'mocap', 'amcl'],
+            description='Explicit base localization; auto is retained for legacy CLI launches.'),
         DeclareLaunchArgument('launch_bms', default_value='true'),
         DeclareLaunchArgument(
             'battery_node_id',
@@ -691,7 +694,7 @@ def make_mir_hardware_launch(robot_name, use_sim_time):
             'mir_type': LaunchConfiguration('mir_type'),
             'enabled_pub_topics': LaunchConfiguration('mir_enabled_pub_topics'),
             'tf_excluded_children': LaunchConfiguration('mir_tf_excluded_children'),
-            'localization_type': 'auto',
+            'localization_type': LaunchConfiguration('mir_localization_source'),
             'publish_localization_tf': 'true',
             'localization_topic': f'/qualisys_map/{robot_name}/pose',
             'localization_timeout': LaunchConfiguration('mir_localization_timeout'),

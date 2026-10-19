@@ -1,6 +1,6 @@
 # MuR Navigation und Kartierung
 
-Die Anwendung erweitert `MurBaseGui` um den Tab **Kartierung**. Hardwarestart,
+Die Anwendung erweitert `MurBaseGui` um **Navigation / Lokalisierung** und **Kartierung**. Hardwarestart,
 MiR-Jog und die übrigen Basisfunktionen bleiben in der gemeinsamen Oberfläche.
 Eine Sitzung verwendet genau einen ausdrücklich markierten MuR. Die GUI und
 Kartierung laufen auf dem Bedienrechner; dessen ROS-Domain muss der Hardware
@@ -19,7 +19,7 @@ ros2 run match_mur_navigation navigation_gui
 
 `match_mur_gui`, `match_mocap_ros2` und die Hardwarepakete müssen bereits im
 Workspace verfügbar sein. ROS-Abhängigkeiten sind unter anderem `slam_toolbox`,
-`nav2_map_server` und `rviz2`. Ein laufender Roboter muss seine lokalen TFs und
+`nav2_map_server`, `nav2_amcl`, `nav2_lifecycle_manager` und `rviz2`. Ein laufender Roboter muss seine lokalen TFs und
 `/<robot>/robot_description` bereitstellen; im SLAM-Modus außerdem
 `/<robot>/odom` und den zusammengeführten `/<robot>/scan`.
 
@@ -31,6 +31,92 @@ python3 /home/rosmatch/colcon_ws/src/match_mur_gui/scripts/install_gui_desktop.p
 ```
 
 Ohne `--no-desktop-shortcut` wird zusätzlich eine Verknüpfung auf dem Desktop angelegt.
+
+## Standardkarte und AMCL gegen Mocap
+
+Beim Öffnen zeigt die GUI `maps/mur620c_mocap.yaml` als Vorschau und lädt sie
+nach der ROS-Erkennung automatisch in einen Kartenserver. Dafür muss der MuR
+nicht erreichbar sein. Lokalisierungsroboter ist zunächst ausdrücklich `mur620c`;
+die Hardwareauswahl und der Kartierungsroboter werden dadurch nicht verändert.
+**Karte und Posen in RViz** öffnet die Karte im Frame `mocap`.
+
+1. MuR-Treiber verbinden; `/<robot>/odom_enc`, `/<robot>/f_scan` und lokale
+   Scanner-TFs müssen aktuell sein. Encoder-Odometrie muss den Child-Frame
+   `<robot>/base_footprint` beschreiben. Es gibt keinen stillen Rückfall auf
+   möglicherweise fusionierte Odometrie.
+2. Erwartet wird `/qualisys/<robot>/pose` im Frame `mocap`. Beim AMCL-Start
+   startet die GUI die reine Empfangs-Bridge automatisch, wenn keine vorhandene
+   Bridge erkannt wird. Im Tab Kartierung kann sie auch manuell gestartet werden.
+3. Im ersten Tab **AMCL starten · Startpose aus Mocap** klicken. Die GUI
+   ersetzt ausschließlich ihren eigenen Kartenserver durch Kartenserver + AMCL.
+   Nach Aktivierung und gültigen Eingangsdaten wird genau eine Startpose mit
+   Standardabweichung 0,25 m / 0,15 rad aus Mocap gesetzt. Danach erhält AMCL
+   ausschließlich den Frontlaser und Encoder-Odometrie. Ein neuer Versuch
+   benötigt einen Neustart über Stoppen und AMCL starten.
+4. **Standmessung** ist für den GUI-Vergleich voreingestellt und lässt sich
+   auch bei laufendem AMCL umschalten. Dies fordert etwa jede Sekunde
+   `request_nomotion_update` an. Ohne diese Option
+   aktualisiert AMCL bei Bewegung ab 0,02 m / 0,02 rad. Die Standmessung
+   liefert korrelierte Stichproben und misst keine Fahrgenauigkeit.
+   Eine ruhende AMCL-Pose gilt bei weiter laufender AMCL-Transformation als
+   gültige Lokalisierung; sie wird nicht nach einer Sekunde als ausgefallen
+   angezeigt. Ohne neue Filterupdates entstehen auch keine neuen Messproben.
+5. Für einen belastbaren Vergleich anschließend mehrere Positionen,
+   Fahrtrichtungen und Kurven aufnehmen. Fahrbefehle werden von diesem
+   Lokalisierungsmodul nicht gesendet. **AMCL / Kartenserver stoppen** beendet
+   nur die Prozesse dieser GUI; eine externe Sitzung muss dort beendet werden,
+   wo sie gestartet wurde.
+
+Alle Experimenttopics liegen unter `/<robot>/localization/`: `map`, `scan`,
+`amcl_pose`, `mocap_pose`, `initialpose`, `comparison` (JSON), `tf` und `tf_static`.
+Auch AMCLs `mocap -> <robot>/localization/odom` bleibt auf dem privaten TF-Topic.
+Die vorhandene MiR-/Mocap-Lokalisierung und globale Hardware-TFs werden nicht
+überschrieben. Damit wird die AMCL-Lokalisierung zunächst parallel untersucht;
+eine Umstellung der Fahrregelung auf AMCL ist ein separater Schritt.
+Die allgemeine MuR-GUI kann **AMCL** inzwischen beim Hardwarestart ausdrücklich
+als Quelle der globalen ROS-Roboterpose wählen (`mir_localization_source:=amcl`).
+Dann verwendet der Hardwareselektor den privaten AMCL-Baum und die geprüfte
+`map -> mocap`-Kalibrierung für seine einzige globale `map -> base_footprint`-
+Kante. Der reine Vergleichsstart dieses Pakets bleibt ohne Wirkung auf die
+globale Roboterpose. Die interne MiR-Fahrsteuerung wird nicht ersetzt.
+Der Dienst `set_stationary_updates` (`std_srvs/SetBool`) schaltet die
+Standmessung ohne erneute Startpose um; Umschaltzeitpunkte stehen im JSON.
+Der allgemeine **Open RViz**-Button verwendet in der Navigation die
+Navigationsansicht (im Kartierungstab bei vorhandener Sitzung deren Ansicht).
+Die AMCL-Pose wird auch für später geöffnetes RViz mit Transient-Local-QoS geladen.
+
+CSV und JSON landen bei GUI-Starts unter `match_mur_gui/logs/localization/`.
+Nach 5 s Einlaufzeit werden AMCL-Zeitstempel mit interpolierten Mocap-Posen
+verglichen. Keine Extrapolation; Referenzlücken über 0,1 s werden verworfen.
+Berichtet werden Anzahl, Positionsfehler und gewickelter Gierwinkelfehler als
+RMSE, Median und P95, verworfene Werte und die beobachtete Positionsspanne.
+Die Karte selbst wurde mit Mocap erzeugt, und die Startpose kommt einmalig
+aus Mocap: Dieser Versuch bewertet lokale Poseverfolgung, keine unabhängige
+Kartenvermessung oder globale Wiederlokalisierung. Zeitstempel sind
+Empfangszeitstempel der Bridges; Transportlatenz, Markerbezug und Scannerextrinsik
+können den gemessenen Fehler beeinflussen. 2-cm-Raster bedeutet nicht 2-cm-Genauigkeit.
+
+CLI ohne GUI (DDS wie beim Hardwarezugriff konfigurieren):
+
+```bash
+# Nur die Standardkarte laden:
+ros2 launch match_mur_navigation localization.launch.py robot:=mur620c
+# Separater AMCL-Vergleich, einmalige Mocap-Initialisierung:
+ros2 launch match_mur_navigation localization.launch.py robot:=mur620c \
+  localize:=true stationary_updates:=true output_directory:=/tmp/mur_amcl_comparison
+```
+
+Für einen separaten, ausschließlich lesenden Sensormitschnitt kann
+`sensor_namespace:=/experiment/input` gesetzt werden: Dann kommen `f_scan`,
+`odom_enc`, `tf` und `tf_static` aus diesem Namespace. Standardmäßig verwendet
+AMCL die normalen Hardwaretopics und globalen Eingangs-TFs; sämtliche
+Ausgangs-TFs bleiben in beiden Fällen privat.
+
+Als Ausgangspunkt dient das installierte [Nav2 AMCL](https://docs.nav2.org/jazzy/configuration_and_development/configuration_guide/others/configuring_amcl/).
+[Beluga AMCL](https://github.com/Ekumen-OS/beluga/tree/main/beluga_amcl) ist eine
+modernere Neuimplementierung mit derselben ROS-Schnittstelle und kann später
+unter denselben Messbedingungen verglichen werden. Daraus folgt keine pauschal
+höhere Genauigkeit; Beluga ist auf diesem Rechner bisher nicht installiert.
 
 1. MuR in der Basis-GUI markieren und Hardware starten beziehungsweise verbinden.
 2. Im Kartierungstab den Kartierungsroboter und die Betriebsart auswählen.
@@ -143,6 +229,11 @@ garantieren deshalb keine entsprechende Messgenauigkeit.
 
 ## ROS-Schnittstellen und Export
 
+Gespeicherte Karten liegen im Paket unter `maps/` und werden beim Paket-Build
+mit installiert. `maps/mur620c_mocap.yaml` gehört zu `mur620c_mocap.pgm` und
+`mur620c_mocap.mapping.yaml`: Mocap-Karte für `mur620c`, Frame `mocap`,
+Auflösung 0,02 m. Die drei Dateien gemeinsam verschieben; der Bildpfad ist relativ.
+
 Alle sitzungsbezogenen Topics liegen unter `/<robot>/mapping/`:
 
 | Name | Typ / Funktion |
@@ -183,8 +274,9 @@ Mocap-Karte nicht stillschweigend als bisherige MiR-`map` interpretieren.
 ## Tests und Hardware-Abnahme
 
 ```bash
-colcon test --packages-select match_mur_navigation
-colcon test-result --verbose
+# Für Änderungen am AMCL-Vergleich gezielt dessen Tests ausführen:
+python3 -m pytest -q navigation/match_mur_navigation/test/test_localization.py
+# Weitere Tests nur auswählen, wenn die Änderung deren Schnittstellen betrifft.
 ```
 
 Die Tests prüfen Rasterberechnung, Poseninterpolation, Sensor-/TF-Weiterleitung,

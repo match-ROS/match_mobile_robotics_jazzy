@@ -14,6 +14,7 @@ class Monitor(QtCore.QObject):
     def reset(self, robot, session_id): self.reset_robot = robot
     def request_stop(self, robot): self.stop_robot = robot
     def request_end(self, robot): self.end_robot = robot
+    def request_stationary(self, robot, enabled): self.stationary_request = (robot, enabled)
     def cache_topic(self, robot): return '/test/cache/' + robot
 
 
@@ -174,9 +175,20 @@ def test_module_in_actual_base_window(monkeypatch, tmp_path):
     window.resize(1280, 1000)
     window.show()
     app.processEvents()
-    assert window.module_tabs.tabText(0) == 'Kartierung'
+    assert window.module_tabs.tabText(0) == 'Navigation / Lokalisierung'
+    assert window.module_tabs.tabText(1) == 'Kartierung'
     assert module.robot.currentText() == 'mur620d'
     assert module.start_button.isEnabled()
+    captured = []
+    monkeypatch.setattr(window, 'start_process', lambda name, command, **kwargs: captured.append((name, command)))
+    window.open_rviz()
+    assert captured[-1][0] == 'navigation_localization_rviz'
+    assert '--robot mur620c --mode localization' in captured[-1][1]
+    assert 'moveit' not in captured[-1][1]
+    window.modules = [base_gui.MurGuiModule()]
+    window.open_rviz()
+    assert captured[-1][0] == 'rviz_moveit'  # Other applications keep the base view.
+    window.modules = [module]
     module.settings_panel.show()
     app.processEvents()
     assert window.height() == 1000
@@ -187,4 +199,49 @@ def test_module_in_actual_base_window(monkeypatch, tmp_path):
     assert module.robot.currentText() == 'mur620a'
     window.grab().save(str(tmp_path/'navigation.png'))
     window.close()
+    app.processEvents()
+
+
+def test_default_map_load_and_amcl_are_separate_from_mapping(monkeypatch):
+    app = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
+    monkeypatch.setattr(gui, 'NavigationMonitor', Monitor)
+    context = Context()
+    module = gui.NavigationModule()
+    module.setup_ui(context)
+    panel = module.localization_panel
+    assert panel.robot.currentText() == 'mur620c'
+    assert panel.path.name == 'mur620c_mocap.yaml'
+    assert panel.scene.items()
+    assert panel.stationary.isChecked()
+    assert not context.commands
+    module.update_snapshot({'discovery_ready': True})
+    name, command, _ = context.commands[-1]
+    assert name == 'navigation_localization'
+    assert 'localize:=false' in command
+    assert 'mur620c_mocap.yaml' in command
+    assert module.session is None and not module.active
+    panel.stationary.setChecked(True)
+    panel.start_amcl()
+    assert 'localize:=true' in context.commands[-1][1]
+    assert 'stationary_updates:=true' in context.commands[-1][1]
+    assert not panel.robot.isEnabled()
+    assert not panel.start_button.isEnabled()
+    assert panel.stationary.isEnabled()
+    panel.stationary.setChecked(False)
+    assert module.monitor.stationary_request == ('mur620c', False)
+    module.update_snapshot(dict(comparisons={'mur620c': dict(
+        live=dict(encoder_odom=True, front_scan=True, mocap=True, amcl=True, amcl_updates=False),
+        initialized_from_mocap_once=True, stationary_updates=False, samples=0)}))
+    assert 'AMCL lokalisiert' in panel.status.text()
+    assert 'Standmessung' in panel.metrics.text()
+    panel.stop()
+    count = len(context.commands)
+    module.update_snapshot({'discovery_ready': True})
+    assert len(context.commands) == count  # User stop must not auto-restart.
+    panel.started = False
+    panel.snapshot = {'discovery_ready': True, 'localization_owners': {'mur620c': True}}
+    panel.start_amcl()
+    assert len(context.commands) == count  # Never terminate/reconfigure an external AMCL.
+    module.on_shutdown()
+    context.window.close()
     app.processEvents()

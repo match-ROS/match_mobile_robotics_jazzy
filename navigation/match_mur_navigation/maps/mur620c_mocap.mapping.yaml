@@ -1,0 +1,18 @@
+frame: mocap
+mode: mocap
+pose_topic: /qualisys/mur620c/pose
+robot: mur620c
+settings:
+  front_time_offset: 0.0
+  map_update_interval: 1.0
+  max_cells: 25000000
+  max_pose_gap: 0.1
+  max_range: 10.0
+  min_range: 0.1
+  mocap_time_offset: 0.0
+  pose_timeout: 0.5
+  rear_time_offset: 0.0
+  resolution: 0.02
+stamp:
+  nanosec: 858856009
+  sec: 1792405849

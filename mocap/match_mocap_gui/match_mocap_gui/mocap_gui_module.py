@@ -141,6 +141,9 @@ class MocapGuiModule(MurGuiModule):
 
     def setup_ui(self, context):
         self.context = context
+        if hasattr(context.window, 'localization_source'):
+            context.window.localization_source.setCurrentIndex(
+                context.window.localization_source.findData('mocap'))
         self.start_button = context.add_action_button('Start Mocap', self.start_driver, section='Mocap')
         self.stop_button = context.add_action_button('Stop Mocap', self.stop_driver, section='Mocap')
         self.driver_status = QtWidgets.QLabel('driver stopped')
@@ -196,6 +199,9 @@ class MocapGuiModule(MurGuiModule):
 
     def on_hardware_start(self):
         super().on_hardware_start()
+        if (hasattr(self.context.window, 'localization_source') and
+                self.context.window.localization_source.currentData() == 'mir'):
+            return
         if not self.map_check.isChecked():
             return
         if any(state.get('map_live') for state in self.last_snapshot.values()):

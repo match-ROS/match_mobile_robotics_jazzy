@@ -25,6 +25,7 @@ from match_mur_gui.base_gui import MurBaseGui, MurGuiModule, setup_prefix
 from match_mur_gui.app_icon import configure_gui_icon
 from .session import LATCHED, valid_pose
 from .settings import DEFAULTS, ROBOTS, validate
+from .localization_gui import LocalizationPanel
 
 
 class NavigationMonitor(QtCore.QThread):
@@ -44,6 +45,8 @@ class NavigationMonitor(QtCore.QThread):
         self.digests = {}
         self.publishers = {}
         self.expected_sessions = {}
+        self.comparisons = {}
+        self.localization_maps = {}
 
     def cache_topic(self, robot):
         return f'/{robot}/mapping/gui_{self.identifier}/map'
@@ -53,6 +56,9 @@ class NavigationMonitor(QtCore.QThread):
 
     def request_end(self, robot):
         self.commands.put(('end', robot))
+
+    def request_stationary(self, robot, enabled):
+        self.commands.put(('stationary', (robot, enabled)))
 
     def reset(self, robot, session_id):
         self.commands.put(('reset', (robot, session_id)))
@@ -65,6 +71,7 @@ class NavigationMonitor(QtCore.QThread):
         node = executor = None
         clients = {}
         end_clients = {}
+        stationary_clients = {}
         pending = []
         try:
             rclpy.init(args=[], context=context)
@@ -77,6 +84,11 @@ class NavigationMonitor(QtCore.QThread):
             def status(robot, msg):
                 try:
                     self.statuses[robot] = (time.monotonic(), json.loads(msg.data))
+                except ValueError:
+                    pass
+            def comparison(robot, msg):
+                try:
+                    self.comparisons[robot] = (time.monotonic(), json.loads(msg.data))
                 except ValueError:
                     pass
             def map_received(robot, msg):
@@ -97,6 +109,10 @@ class NavigationMonitor(QtCore.QThread):
                     self.revisions[robot] += 1
                     self.map_changed.emit(robot, session_id, self.revisions[robot])
             for robot in ROBOTS:
+                node.create_subscription(String, f'/{robot}/localization/comparison',
+                                         lambda m, r=robot: comparison(r, m), LATCHED)
+                node.create_subscription(OccupancyGrid, f'/{robot}/localization/map',
+                    lambda m, r=robot: self.localization_maps.update({r: m.header.frame_id == 'mocap' and bool(m.data)}), LATCHED)
                 self.publishers[robot] = node.create_publisher(OccupancyGrid, self.cache_topic(robot), LATCHED)
                 node.create_subscription(PoseStamped, f'/qualisys/{robot}/pose',
                                          lambda m, r=robot: raw(r, m), 100)
@@ -106,6 +122,7 @@ class NavigationMonitor(QtCore.QThread):
                                          lambda m, r=robot: map_received(r, m), LATCHED)
                 clients[robot] = node.create_client(SetBool, f'/{robot}/mapping/set_recording')
                 end_clients[robot] = node.create_client(Trigger, f'/{robot}/mapping/end_session')
+                stationary_clients[robot] = node.create_client(SetBool, f'/{robot}/localization/set_stationary_updates')
             next_snapshot = 0
             discovery_started = time.monotonic()
             while context.ok() and not self.stop_event.is_set():
@@ -119,6 +136,13 @@ class NavigationMonitor(QtCore.QThread):
                         self.statuses.pop(robot, None)
                         node.destroy_publisher(self.publishers[robot])
                         self.publishers[robot] = node.create_publisher(OccupancyGrid, self.cache_topic(robot), LATCHED)
+                    elif action == 'stationary':
+                        robot, enabled = value
+                        if stationary_clients[robot].service_is_ready():
+                            pending.append((stationary_clients[robot].call_async(SetBool.Request(data=enabled)),
+                                            time.monotonic(), action, robot))
+                        else:
+                            self.log.emit('[localization] Standmessungs-Dienst fehlt; AMCL für das Update neu starten.')
                     elif action == 'end':
                         if end_clients[value].service_is_ready():
                             pending.append((end_clients[value].call_async(Trigger.Request()),
@@ -136,7 +160,8 @@ class NavigationMonitor(QtCore.QThread):
                     if future.done():
                         try:
                             result = future.result()
-                            self.log.emit('[mapping] ' + result.message)
+                            prefix = '[localization] ' if action == 'stationary' else '[mapping] '
+                            self.log.emit(prefix + result.message)
                             if action == 'end':
                                 self.session_end_result.emit(robot, result.success, result.message)
                         except Exception as exc:
@@ -157,6 +182,11 @@ class NavigationMonitor(QtCore.QThread):
                         discovery_ready=now-discovery_started >= 2,
                         raw={r: now - self.sources.get(r, -100) < 0.5 for r in ROBOTS},
                         bridge_present='qualisys_ssh_bridge' in names,
+                        localization_owners={r: node.count_publishers(f'/{r}/localization/map') > 0 or
+                                                node.count_publishers(f'/{r}/localization/comparison') > 0
+                                             for r in ROBOTS},
+                        localization_maps=dict(self.localization_maps),
+                        comparisons={r: value for r, (stamp, value) in self.comparisons.items() if now-stamp < 5},
                         owners={r: (node.count_publishers(f'/{r}/mapping/status') > 0 or
                                     node.count_publishers(f'/{r}/mapping/map_raw') > 0) for r in ROBOTS},
                         statuses={r: value for r, (stamp, value) in self.statuses.items() if now-stamp < 2}))
@@ -206,6 +236,12 @@ class NavigationModule(MurGuiModule):
 
     def setup_ui(self, context):
         self.context = context
+        self.localization_panel = LocalizationPanel(self)
+        self.localization_scroll = QtWidgets.QScrollArea()
+        self.localization_scroll.setWidgetResizable(True)
+        self.localization_scroll.setFrameShape(QtWidgets.QFrame.NoFrame)
+        self.localization_scroll.setWidget(self.localization_panel)
+        context.add_module_tab(self.localization_scroll, 'Navigation / Lokalisierung')
         self.panel = QtWidgets.QWidget()
         layout = QtWidgets.QVBoxLayout(self.panel)
         form = QtWidgets.QFormLayout()
@@ -336,6 +372,14 @@ class NavigationModule(MurGuiModule):
     def running(self, name):
         process = self.context.window.processes.get(name)
         return process is not None and process.state() != QtCore.QProcess.NotRunning
+
+    def on_open_rviz(self):
+        # The shared button used to open the unrelated MoveIt configuration.
+        if self.context.window.module_tabs.currentWidget() is self.localization_scroll or not self.session:
+            self.localization_panel.open_rviz()
+        else:
+            self.open_rviz()
+        return True
 
     def command(self, module, arguments):
         return setup_prefix() + 'exec python3 -m ' + module + ' ' + shlex.join(arguments)
@@ -490,6 +534,7 @@ class NavigationModule(MurGuiModule):
 
     def update_snapshot(self, snapshot):
         self.last_snapshot = snapshot
+        self.localization_panel.update_snapshot(snapshot)
         if self.ending_robot and not snapshot.get('owners', {}).get(self.ending_robot):
             robot = self.ending_robot
             self.ending_robot = None

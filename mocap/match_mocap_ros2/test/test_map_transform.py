@@ -15,6 +15,25 @@ LAUNCH = '''<launch><node pkg="tf" type="static_transform_publisher"
     name="map_to_mocap" args="48.2795 43.2532 0 1.290419 0 0 map mocap 1" /></launch>'''
 
 
+def test_running_raw_bridge_can_enable_checked_map_output_without_restart():
+    sent = []
+    logger = SimpleNamespace(info=lambda *_: None, error=lambda *_: None)
+    fake = SimpleNamespace(map_config=None, map_transform=None, publish_map_pose=False,
+        clear_map_publishers=lambda: None, frame_id='mocap', get_logger=lambda: logger,
+        get_clock=lambda: SimpleNamespace(now=lambda: SimpleNamespace(to_msg=lambda: Time(sec=10))),
+        static_tf_broadcaster=SimpleNamespace(sendTransform=sent.append))
+    fake.configure_map_transform = lambda config: QualisysSshBridge.configure_map_transform(fake, config)
+    fake.configure_map_transform({'map_launch_xml': LAUNCH})
+    assert not sent and fake.map_transform is None
+    response = QualisysSshBridge.enable_map_output(fake, SimpleNamespace(data=True), SimpleNamespace())
+    assert response.success and fake.publish_map_pose
+    assert len(sent) == 1
+    assert (sent[0].header.frame_id, sent[0].child_frame_id) == ('map', 'mocap')
+    fake.map_config = {'map_launch_xml': LAUNCH.replace('48.2795', '38.2691')}
+    response = QualisysSshBridge.enable_map_output(fake, SimpleNamespace(data=True), SimpleNamespace())
+    assert not response.success and fake.map_transform is None
+
+
 def test_ros1_map_to_mocap_direction_and_pose():
     transform = MapToMocap.from_ros1_launch(LAUNCH)
     pose = PoseStamped()

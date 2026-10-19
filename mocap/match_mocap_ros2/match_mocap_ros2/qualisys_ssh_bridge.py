@@ -119,6 +119,8 @@ class QualisysSshBridge(Node):
         self._smoothed_publishers = {}
         self._map_publishers = {}
         self.map_transform = None
+        self.map_config = None
+        self.create_service(SetBool, '/qualisys/enable_map_output', self.enable_map_output)
         self.static_tf_broadcaster = StaticTransformBroadcaster(self)
         self.body_tf_broadcaster = TransformBroadcaster(self)
         self._smoothers = {}
@@ -282,6 +284,7 @@ class QualisysSshBridge(Node):
         self._last_smoothed_at[body_name] = received_at
 
     def configure_map_transform(self, config):
+        self.map_config = config
         self.clear_map_publishers()
         self.map_transform = None
         if not self.publish_map_pose:
@@ -313,6 +316,16 @@ class QualisysSshBridge(Node):
             f'Using roscore map -> mocap: x={transform.x:.4f} m, '
             f'y={transform.y:.4f} m, z={transform.z:.4f} m, yaw={transform.yaw:.6f} rad'
         )
+
+    def enable_map_output(self, request, response):
+        self.publish_map_pose = request.data
+        if self.map_config is not None:
+            self.configure_map_transform(self.map_config)
+        response.success = not request.data or self.map_config is None or self.map_transform is not None
+        response.message = ('Map-Ausgabe deaktiviert.' if not request.data else
+            'Map-Ausgabe aktiviert; warte ggf. auf QTM-Konfiguration.' if response.success else
+            'Map-Ausgabe nicht möglich: Kalibrierung im Bridge-Log prüfen.')
+        return response
 
     def publish_body_tf(self, body_name, pose):
         if self.map_transform is None:

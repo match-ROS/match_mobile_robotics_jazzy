@@ -37,6 +37,18 @@ def test_native_start_mocap_priority_timeout_and_recovery():
     assert selection.select(12.1)[0] == 'mocap'
 
 
+@pytest.mark.parametrize('source', ['mir', 'mocap', 'amcl'])
+def test_explicit_source_never_falls_back(source):
+    selection = AutomaticLocalization(1.0, sources=(source,))
+    for candidate in ('mir', 'mocap', 'amcl'):
+        selection.observe(candidate, pose(1.0), 10.0, 100.0)
+    assert selection.select(10.1)[0] == source
+    for candidate in ('mir', 'mocap', 'amcl'):
+        if candidate != source:
+            selection.observe(candidate, pose(9.0), 11.2, 100.0)
+    assert selection.select(11.2) == ('waiting', None)
+
+
 @pytest.mark.parametrize('bad', [
     pose(9.0, frame='mocap'), pose(9.0, stamp=90.0), pose(9.0, stamp=110.0),
     pose(float('nan')), pose(float('inf')),
@@ -105,6 +117,65 @@ def test_ros_source_handoff_keeps_one_map_to_base_edge():
         assert selector.localization_source == 'mocap'
         assert all(t.header.frame_id == 'map' and t.child_frame_id == 'mur620c/base_footprint'
                    for msg in transforms for t in msg.transforms)
+    finally:
+        executor.shutdown()
+        selector.destroy_node()
+        probe.destroy_node()
+        rclpy.shutdown()
+
+
+def test_amcl_global_pose_uses_private_tf_and_calibration_without_native_fallback():
+    from geometry_msgs.msg import TransformStamped
+    from rclpy.qos import QoSProfile, DurabilityPolicy
+    rclpy.init(args=['--ros-args', '-r', '__ns:=/mur620c', '-p', 'localization_type:=amcl',
+                     '-p', 'publish_robot_tf:=true', '-p', 'localization_timeout:=0.3'])
+    selector = MirPoseSimple()
+    probe = Node('amcl_selection_probe', use_global_arguments=False)
+    executor = SingleThreadedExecutor()
+    executor.add_node(selector)
+    executor.add_node(probe)
+    native = probe.create_publisher(Pose, '/mur620c/robot_pose', 10)
+    private = probe.create_publisher(TFMessage, '/mur620c/localization/tf', 100)
+    calibration = probe.create_publisher(TFMessage, '/tf_static',
+        QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL))
+    transforms = []
+    probe.create_subscription(TFMessage, '/tf', transforms.append, 100)
+    def pump(seconds, *, aligned=False, tracking=True):
+        deadline = time.monotonic()+seconds
+        while time.monotonic() < deadline:
+            stamp = probe.get_clock().now().to_msg()
+            native.publish(pose(99., stamp.sec+stamp.nanosec*1e-9).pose)
+            if tracking:
+                edges = []
+                for parent, child, x, y in [('mocap', 'mur620c/localization/odom', 1., 2.),
+                        ('mur620c/localization/odom', 'mur620c/base_footprint', 3., 4.)]:
+                    t = TransformStamped(child_frame_id=child)
+                    t.header.frame_id, t.header.stamp = parent, stamp
+                    t.transform.translation.x, t.transform.translation.y = x, y
+                    t.transform.rotation.w = 1.
+                    edges.append(t)
+                private.publish(TFMessage(transforms=edges))
+            if aligned:
+                import math
+                t = TransformStamped(child_frame_id='mocap')
+                t.header.frame_id = 'map'
+                t.transform.translation.x, t.transform.translation.y = 10., -2.
+                t.transform.rotation.z = t.transform.rotation.w = math.sqrt(.5)
+                calibration.publish(TFMessage(transforms=[t]))
+            executor.spin_once(timeout_sec=.01)
+    try:
+        pump(.6)
+        assert selector.localization_source == 'waiting'
+        assert not transforms  # Native poses cannot replace missing AMCL calibration.
+        pump(.8, aligned=True)
+        assert selector.localization_source == 'amcl'
+        t = transforms[-1].transforms[-1]
+        assert (t.header.frame_id, t.child_frame_id) == ('map', 'mur620c/base_footprint')
+        assert t.transform.translation.x == pytest.approx(4.)
+        assert t.transform.translation.y == pytest.approx(2.)
+        pump(.8, aligned=True, tracking=False)
+        assert selector.localization_source == 'waiting'
+        assert all(t.transform.translation.x != 99. for m in transforms for t in m.transforms)
     finally:
         executor.shutdown()
         selector.destroy_node()
