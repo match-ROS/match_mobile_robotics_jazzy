@@ -289,7 +289,7 @@ class DrivingPanel(QtWidgets.QWidget):
         layout.addStretch()
         self.worker = DrivingMonitor()
         self.worker.snapshot.connect(self.update_snapshot)
-        self.worker.event.connect(self.event)
+        self.worker.event.connect(self.handle_navigation_event)
         self.worker.clicked_goal.connect(self.receive_clicked_goal)
         self.worker.start()
         self.backend.currentIndexChanged.connect(self.selection_changed)
@@ -430,21 +430,21 @@ class DrivingPanel(QtWidgets.QWidget):
             self.context.append_log('[navigation] Klickziel für einen anderen MuR / ein anderes Backend verworfen.')
             return
         if time.monotonic()-received_at > 2.:
-            self.event(robot, 'Verzögertes Klickziel verworfen; erneut in RViz setzen', False)
+            self.handle_navigation_event(robot, 'Verzögertes Klickziel verworfen; erneut in RViz setzen', False)
             return
         try:
             pose = clicked_pose_values(message)
         except ValueError as exc:
-            self.event(robot, str(exc), False)
+            self.handle_navigation_event(robot, str(exc), False)
             return
         result = self.send(robot, pose['frame'], pose['x'], pose['y'], pose['yaw'])
         if result is None:
             # Native map goals also wait for DDS discovery in the worker.
             self.worker.request('native', robot, pose)
             result = True, 'Klickziel für die interne MiR-Navigation angefordert'
-        self.event(robot, result[1], False)
+        self.handle_navigation_event(robot, result[1], False)
 
-    def event(self,robot,message,finished):
+    def handle_navigation_event(self,robot,message,finished):
         self.context.append_log('[navigation] '+(robot+': ' if robot else '')+message)
         if not robot or robot == self.session_robot or self.backend.currentData() == 'mir':
             self.status.setText(message)

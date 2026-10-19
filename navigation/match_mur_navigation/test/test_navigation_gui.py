@@ -149,3 +149,13 @@ def test_native_rviz_opens_without_nav2_and_closes_on_backend_change(panel):
     widget.backend.setCurrentIndex(1)
     assert 'navigation_driving_rviz' not in processes
     assert not widget.rviz_button.isEnabled()
+
+
+def test_qt_events_and_navigation_notifications(panel):
+    widget, _, logs = panel
+    # Qt dispatches one QEvent argument to QWidget.event().
+    event = QtCore.QEvent(QtCore.QEvent.User)
+    QtWidgets.QApplication.sendEvent(widget, event)
+    widget.worker.event.emit('mur620c', 'Navigation bereit', False)
+    assert widget.status.text() == 'Navigation bereit'
+    assert logs[-1] == '[navigation] mur620c: Navigation bereit'
