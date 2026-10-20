@@ -65,16 +65,23 @@ fresh map pose and robot TF alive through temporary QTM occlusion; raw QTM
 poses continue for diagnosis. The standalone Mocap GUI remains a monitor and
 bridge launcher.
 
-## Ubuntu application shortcut
+## Commissioning: install the Ubuntu desktop shortcut
 
-After building this package in the GUI computer's Jazzy workspace, install its
+As part of initial setup on each Ubuntu operator PC, after building this package
+and `match_mur_gui` in the Jazzy workspace, install its
 application-search entry and matching desktop icon with:
 
 ```bash
-python3 "$WS"/src/match_mur_gui/scripts/install_gui_desktop.py --app mocap
+python3 "$WS"/src/match_mur_gui/scripts/install_gui_desktop.py --workspace "$WS" --app mocap
 ```
 
 The shared installer in `match_mur_gui` checks the executable and creates a
 user-level launcher that sources Jazzy and the workspace before opening the GUI.
 Use `--workspace PATH` for a different Colcon workspace. No terminal is needed
 to launch “MuR Mocap” afterward.
+
+The shortcut appears on the desktop and in the application menu for the current
+user, without `sudo`. If required, right-click it and select **Allow Launching**
+(**Starten erlauben**). Re-run the installer after moving the workspace.
+For the Basis, Mocap and Navigation shortcuts together, follow the
+[repository setup step](../../README.md#gui-desktop-shortcuts-commissioning-on-the-operator-pc).

@@ -167,6 +167,33 @@ colcon test --packages-select match_gazebo
 colcon test-result --verbose
 ```
 
+## GUI desktop shortcuts (commissioning on the operator PC)
+
+After building the workspace, install the three GUI shortcuts as part of the
+initial setup on each Ubuntu operator PC. The companion repository
+`match_mur_gui` must be available at `$WS/src/match_mur_gui`, and the packages
+`match_mur_gui`, `match_mocap_gui` and `match_mur_navigation` must be built.
+
+```bash
+for app in base mocap navigation; do
+  python3 "$WS"/src/match_mur_gui/scripts/install_gui_desktop.py \
+    --workspace "$WS" --app "$app" || break
+done
+```
+
+This creates **MuR Basis-GUI**, **MuR Mocap** and **MuR Navigation** with their
+icons on the desktop and in the application menu for the current user; no
+`sudo` is needed. Double-click a shortcut to open the GUI. Each launcher sources
+ROS 2 Jazzy and this workspace automatically, using ROS domain 62 unless
+`ROS_DOMAIN_ID` is already set. Installing the shortcuts does not start robot
+hardware.
+
+If Ubuntu requests it, right-click the desktop shortcut and select **Allow
+Launching** (German: **Starten erlauben**). Re-run the installer after moving the
+workspace. For individual setup, see the [Mocap GUI README](mocap/match_mocap_gui/README.md)
+and [Navigation README](navigation/match_mur_navigation/README.md); the shared
+installer is documented in `match_mur_gui/README.md`.
+
 ## Running Simulation (Gazebo / gz sim)
 
 Launch gazebo with a world (default: `maze`):

@@ -19,7 +19,7 @@ def main():
     icon = configure_gui_icon(app, "mur-mocap-gui")
     window = MurBaseGui(modules=[MocapGuiModule()], window_title='MuR Mocap GUI')
     window.setWindowIcon(icon)
-    window.show()
+    window.showFullScreen()
     sys.exit(app.exec_())
 
 

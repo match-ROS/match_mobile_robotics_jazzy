@@ -51,14 +51,23 @@ Workspace verfügbar sein. ROS-Abhängigkeiten sind unter anderem `slam_toolbox`
 `/<robot>/robot_description` bereitstellen; im SLAM-Modus außerdem
 `/<robot>/odom` und den zusammengeführten `/<robot>/scan`.
 
-Für den Startmenüeintrag **MuR Navigation** mit passendem Fenster- und Karten-Icon:
+### Inbetriebnahme: Desktop-Verknüpfung installieren
+
+Nach dem Build auf jedem Ubuntu-Bedienrechner die Desktop-Verknüpfung und den
+Startmenüeintrag **MuR Navigation** mit passendem Icon installieren. Der
+Installer liegt im gemeinsamen Repository `$WS/src/match_mur_gui`:
 
 ```bash
 python3 "$WS"/src/match_mur_gui/scripts/install_gui_desktop.py \
-  --app navigation --no-desktop-shortcut
+  --workspace "$WS" --app navigation
 ```
 
-Ohne `--no-desktop-shortcut` wird zusätzlich eine Verknüpfung auf dem Desktop angelegt.
+Danach **MuR Navigation** per Doppelklick starten. Der Launcher lädt ROS 2 Jazzy
+und den Workspace automatisch; ohne gesetzte `ROS_DOMAIN_ID` gilt Domain 62.
+Es wird kein `sudo` benötigt. Falls nötig, per Rechtsklick **Starten erlauben**
+auswählen. Nach einem Workspace-Umzug den Installer erneut ausführen.
+`--no-desktop-shortcut` richtet ausschließlich den Startmenüeintrag ein.
+Für alle drei GUIs siehe [Einrichtung im Repository-README](../../README.md#gui-desktop-shortcuts-commissioning-on-the-operator-pc).
 
 ## Fahren: interne MiR-Navigation oder Nav2
 

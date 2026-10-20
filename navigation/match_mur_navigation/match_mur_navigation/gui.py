@@ -687,5 +687,5 @@ def main():
     window = MurBaseGui(modules=[NavigationModule()], window_title='MuR Navigation')
     window.setWindowIcon(icon)
     window.resize(1280, 1000)
-    window.show()
+    window.showFullScreen()
     sys.exit(app.exec_())
