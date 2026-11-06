@@ -834,7 +834,9 @@ def launch_setup(context, *args, **kwargs):  # executed at runtime
             parameters=[
                 {'robot_description': robot_desc},
                 {'use_sim_time': use_sim_time},
-                {'publish_frequency': 0.0},  # suppress periodic republishes (supported in newer versions)
+                # Lyrical rejects zero; this publisher's TF topics are remapped
+                # below, so a low valid rate cannot duplicate the robot TF.
+                {'publish_frequency': 1.0},
             ],
             remappings=[('/tf', 'unused_tf'), ('/tf_static', 'unused_tf_static')],  # optional to avoid duplicates
             output='screen',
