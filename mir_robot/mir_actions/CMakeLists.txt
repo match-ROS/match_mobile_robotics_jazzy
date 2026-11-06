@@ -12,6 +12,7 @@ find_package(nav_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/Pose2D.msg"
   "action/MirMoveBase.action"
   DEPENDENCIES builtin_interfaces geometry_msgs nav_msgs
 )

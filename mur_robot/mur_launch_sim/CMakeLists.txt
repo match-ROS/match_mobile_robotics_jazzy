@@ -10,8 +10,8 @@ find_package(ament_cmake REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(gz_msgs_vendor REQUIRED)
 find_package(gz_transport_vendor REQUIRED)
-find_package(gz-msgs10 REQUIRED)
-find_package(gz-transport13 REQUIRED)
+find_package(gz-msgs REQUIRED)
+find_package(gz-transport REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 # uncomment the following section in order to fill in
@@ -19,14 +19,14 @@ find_package(rclcpp REQUIRED)
 # find_package(<dependency> REQUIRED)
 
 add_executable(gz_ground_truth_publisher src/gz_ground_truth_publisher.cpp)
-ament_target_dependencies(gz_ground_truth_publisher
-  geometry_msgs
-  nav_msgs
-  rclcpp
+target_link_libraries(gz_ground_truth_publisher
+  ${geometry_msgs_TARGETS}
+  ${nav_msgs_TARGETS}
+  ${rclcpp_TARGETS}
 )
 target_link_libraries(gz_ground_truth_publisher
-  gz-msgs10::gz-msgs10
-  gz-transport13::gz-transport13
+  gz-msgs::gz-msgs
+  gz-transport::gz-transport
 )
 
 if(BUILD_TESTING)

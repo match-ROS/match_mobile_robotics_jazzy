@@ -38,8 +38,8 @@ int32 pattern_value
 bool only_track
 bool same_goal
 string pose_frame
-geometry_msgs/Pose2D pose
-geometry_msgs/Pose2D offset
+mir_actions/Pose2D pose
+mir_actions/Pose2D offset
 float64 bar_length
 float64 bar_distance
 float64 shelf_leg_asymmetry_x
@@ -81,7 +81,7 @@ int16 end_state
 geometry_msgs/PoseStamped end_pose
 
 #docking results
-geometry_msgs/Pose2D pose
+mir_actions/Pose2D pose
 
 #feedback for UI
 string message
@@ -114,5 +114,5 @@ geometry_msgs/PoseStamped dist_to_goal
 #int8 DOCKING = 0
 #int8 COLLISION = 1
 #int8 state
-geometry_msgs/Pose2D pose
+mir_actions/Pose2D pose
 bool marker_inversion

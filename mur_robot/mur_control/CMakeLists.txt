@@ -10,7 +10,7 @@ find_package(controller_interface REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(hardware_interface REQUIRED)
 find_package(kdl_parser REQUIRED)
-find_package(orocos_kdl REQUIRED)
+find_package(orocos_kdl_vendor REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
@@ -24,34 +24,34 @@ find_package(visualization_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 add_executable(jparse_velocity_controller src/jparse_velocity_controller.cpp)
-ament_target_dependencies(jparse_velocity_controller
-  geometry_msgs
-  kdl_parser
-  orocos_kdl
-  rclcpp
-  sensor_msgs
-  std_msgs
+target_link_libraries(jparse_velocity_controller
+  ${geometry_msgs_TARGETS}
+  ${kdl_parser_TARGETS}
+  orocos-kdl
+  ${rclcpp_TARGETS}
+  ${sensor_msgs_TARGETS}
+  ${std_msgs_TARGETS}
 )
 target_link_libraries(jparse_velocity_controller
   Eigen3::Eigen
 )
 
 add_executable(arm_velocity_safety_node src/arm_velocity_safety_node.cpp)
-ament_target_dependencies(arm_velocity_safety_node
-  geometry_msgs
-  rclcpp
-  sensor_msgs
-  std_msgs
-  tf2
-  tf2_ros
+target_link_libraries(arm_velocity_safety_node
+  ${geometry_msgs_TARGETS}
+  ${rclcpp_TARGETS}
+  ${sensor_msgs_TARGETS}
+  ${std_msgs_TARGETS}
+  ${tf2_TARGETS}
+  ${tf2_ros_TARGETS}
 )
 
 add_executable(cartesian_admittance_controller src/cartesian_admittance_controller.cpp)
-ament_target_dependencies(cartesian_admittance_controller
-  geometry_msgs
-  rclcpp
-  tf2
-  tf2_ros
+target_link_libraries(cartesian_admittance_controller
+  ${geometry_msgs_TARGETS}
+  ${rclcpp_TARGETS}
+  ${tf2_TARGETS}
+  ${tf2_ros_TARGETS}
 )
 
 add_library(integrated_cartesian_admittance_controller SHARED
@@ -60,20 +60,20 @@ add_library(integrated_cartesian_admittance_controller SHARED
 target_include_directories(integrated_cartesian_admittance_controller
   PRIVATE include
 )
-ament_target_dependencies(integrated_cartesian_admittance_controller
-  controller_interface
-  geometry_msgs
-  hardware_interface
-  kdl_parser
-  orocos_kdl
-  pluginlib
-  rclcpp
-  rclcpp_lifecycle
-  realtime_tools
-  std_msgs
-  tf2
-  tf2_ros
-  visualization_msgs
+target_link_libraries(integrated_cartesian_admittance_controller
+  ${controller_interface_TARGETS}
+  ${geometry_msgs_TARGETS}
+  ${hardware_interface_TARGETS}
+  ${kdl_parser_TARGETS}
+  orocos-kdl
+  ${pluginlib_TARGETS}
+  ${rclcpp_TARGETS}
+  ${rclcpp_lifecycle_TARGETS}
+  ${realtime_tools_TARGETS}
+  ${std_msgs_TARGETS}
+  ${tf2_TARGETS}
+  ${tf2_ros_TARGETS}
+  ${visualization_msgs_TARGETS}
 )
 target_link_libraries(integrated_cartesian_admittance_controller
   Eigen3::Eigen
@@ -131,6 +131,14 @@ install(DIRECTORY
 if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
   find_package(ament_cmake_pytest REQUIRED)
+  ament_add_gtest(test_controller_plugins test/test_controller_plugins.cpp)
+  target_link_libraries(test_controller_plugins
+    ${controller_interface_TARGETS}
+    ${hardware_interface_TARGETS}
+    ${pluginlib_TARGETS}
+    ${rclcpp_TARGETS}
+    ${rclcpp_lifecycle_TARGETS}
+  )
   ament_add_pytest_test(test_moveit_proxy_startup test/test_moveit_proxy_startup.py)
   find_package(ament_lint_auto REQUIRED)
 

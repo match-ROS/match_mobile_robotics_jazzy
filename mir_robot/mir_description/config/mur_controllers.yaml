@@ -9,7 +9,7 @@ controller_manager:
       type: diff_drive_controller/DiffDriveController
 
     lift_controller_l: 
-      type: position_controllers/JointGroupPositionController # for some reason the single joint controller doesn't work - so we use the group controller with a single joint #TODO: fix this
+      type: forward_command_controller/ForwardCommandController # for some reason the single joint controller doesn't work - so we use the group controller with a single joint #TODO: fix this
       interface_name: position
       joints: ["left_lift_joint"]
       pid:
@@ -18,7 +18,7 @@ controller_manager:
         i_clamp: 100.0
 
     lift_controller_r: 
-      type: position_controllers/JointGroupPositionController
+      type: forward_command_controller/ForwardCommandController
       interface_name: position
       joints: ["right_lift_joint"]
       pid:
@@ -27,26 +27,26 @@ controller_manager:
         i_clamp: 100.0
 
     lift_effort_controller_l:
-      type: effort_controllers/JointGroupEffortController
+      type: forward_command_controller/ForwardCommandController
 
     lift_effort_controller_r:
-      type: effort_controllers/JointGroupEffortController
+      type: forward_command_controller/ForwardCommandController
 
     force_torque_sensor_broadcaster:
       #type: ur_controllers/ForceTorqueStateBroadcaster
       type: force_torque_sensor_broadcaster/ForceTorqueSensorBroadcaster
 
     forward_velocity_controller_l:
-      type: velocity_controllers/JointGroupVelocityController
+      type: forward_command_controller/ForwardCommandController
 
     forward_position_controller_l:
-      type: position_controllers/JointGroupPositionController
+      type: forward_command_controller/ForwardCommandController
 
     forward_velocity_controller_r:
-      type: velocity_controllers/JointGroupVelocityController
+      type: forward_command_controller/ForwardCommandController
 
     forward_position_controller_r:
-      type: position_controllers/JointGroupPositionController
+      type: forward_command_controller/ForwardCommandController
 
     joint_trajectory_controller_l:
       type: joint_trajectory_controller/JointTrajectoryController
@@ -99,7 +99,7 @@ mobile_base_controller:
 
 lift_controller_l:
   ros__parameters:
-    type: position_controllers/JointGroupPositionController
+    type: forward_command_controller/ForwardCommandController
     joints: ["left_lift_joint"]
     interface_name: position
     pid:
@@ -109,7 +109,7 @@ lift_controller_l:
 
 lift_controller_r:
   ros__parameters:
-    type: position_controllers/JointGroupPositionController
+    type: forward_command_controller/ForwardCommandController
     joints: ["right_lift_joint"]
     interface_name: position
     pid:
@@ -119,12 +119,14 @@ lift_controller_r:
 
 lift_effort_controller_l:
   ros__parameters:
-    type: effort_controllers/JointGroupEffortController
+    interface_name: effort
+    type: forward_command_controller/ForwardCommandController
     joints: ["left_lift_joint"]
 
 lift_effort_controller_r:
   ros__parameters:
-    type: effort_controllers/JointGroupEffortController
+    interface_name: effort
+    type: forward_command_controller/ForwardCommandController
     joints: ["right_lift_joint"]
 
 speed_scaling_state_broadcaster:
@@ -169,6 +171,7 @@ forward_velocity_controller_r:
 
 forward_position_controller_l:
   ros__parameters:
+    interface_name: position
     joints:
       - UR10_l/shoulder_pan_joint
       - UR10_l/shoulder_lift_joint
@@ -179,6 +182,7 @@ forward_position_controller_l:
 
 forward_position_controller_r:
   ros__parameters:
+    interface_name: position
     joints:
       - UR10_r/shoulder_pan_joint
       - UR10_r/shoulder_lift_joint

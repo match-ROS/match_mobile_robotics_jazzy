@@ -10,7 +10,16 @@ endforeach()
 add_executable(mocap_mapper src/mocap_mapper.cpp)
 target_include_directories(mocap_mapper PRIVATE include)
 target_compile_options(mocap_mapper PRIVATE -Wall -Wextra -Wpedantic)
-ament_target_dependencies(mocap_mapper rclcpp geometry_msgs nav_msgs sensor_msgs std_msgs tf2 tf2_ros tf2_geometry_msgs)
+target_link_libraries(mocap_mapper
+  ${rclcpp_TARGETS}
+  ${geometry_msgs_TARGETS}
+  ${nav_msgs_TARGETS}
+  ${sensor_msgs_TARGETS}
+  ${std_msgs_TARGETS}
+  ${tf2_TARGETS}
+  ${tf2_ros_TARGETS}
+  ${tf2_geometry_msgs_TARGETS}
+)
 ament_python_install_package(${PROJECT_NAME})
 install(TARGETS mocap_mapper DESTINATION lib/${PROJECT_NAME})
 install(PROGRAMS scripts/navigation_gui scripts/mapping_session scripts/save_mapping scripts/open_mapping_rviz scripts/localization_session scripts/navigation_session
@@ -22,7 +31,9 @@ if(BUILD_TESTING)
   find_package(ament_cmake_pytest REQUIRED)
   ament_add_gtest(test_mapping_core test/test_mapping_core.cpp)
   target_include_directories(test_mapping_core PRIVATE include)
-  ament_target_dependencies(test_mapping_core tf2)
+  target_link_libraries(test_mapping_core
+  ${tf2_TARGETS}
+)
   ament_add_pytest_test(test_session test/test_session.py TIMEOUT 90)
   ament_add_pytest_test(test_gui test/test_gui.py ENV "QT_QPA_PLATFORM=offscreen")
   ament_add_pytest_test(test_localization test/test_localization.py TIMEOUT 60)
